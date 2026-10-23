@@ -99,7 +99,8 @@ a { color: inherit; }
 .theme button { border: 0; background: none; padding: 3px 9px; border-radius: 999px; color: var(--muted); cursor: pointer; font-size: var(--t-xs); }
 .theme button.on { background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--line); }
 
-main.page { min-width: 0; padding: 40px clamp(20px, 4vw, 56px) 96px; }
+/* a container, so a section can reach its full width (cqw) from inside a narrower .wrap */
+main.page { --pad: clamp(20px, 4vw, 56px); min-width: 0; padding: 40px var(--pad) 96px; container-type: inline-size; }
 .wrap { max-width: 1240px; margin: 0 auto; }
 
 @media (max-width: 860px) {
@@ -117,7 +118,7 @@ main.page { min-width: 0; padding: 40px clamp(20px, 4vw, 56px) 96px; }
   .rail-h { display: none; }
   .brand em { display: none; }
   .rail .foot { display: none; }
-  main.page { padding: 24px 16px 72px; }
+  main.page { --pad: 16px; padding: 24px var(--pad) 72px; }
 }
 
 /* ---------- type ---------- */
@@ -717,11 +718,15 @@ a.vsb:hover { background: var(--raised); }
 
 /* ---------- the planet, first thing on the front page ---------- */
 .planet {
+  /* the whole width of the page beside the rail, edge to edge, out of the This week column */
   position: relative; height: min(100svh, 980px); min-height: 560px;
-  margin: -40px calc(-1 * clamp(20px, 4vw, 56px)) 0; overflow: hidden;
+  width: calc(100cqw + 2 * var(--pad)); margin: -40px 0 0 calc(50% - 50cqw - var(--pad)); overflow: hidden;
 }
+/* the picture fades into the page below it; the words on it (names, legend) stay sharp */
+.pl-stage canvas { mask-image: linear-gradient(to bottom, #000 calc(100% - 180px), transparent); -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 180px), transparent); }
 .pl-words {
-  position: absolute; left: clamp(20px, 4vw, 56px); top: 50%; transform: translateY(-50%); width: min(460px, 38%);
+  /* in line with the This week column (.thisweek, 1180px) below */
+  position: absolute; left: calc(var(--pad) + max(0px, (100cqw - 1180px) / 2)); top: 50%; transform: translateY(-50%); width: min(460px, 38%);
   pointer-events: none;
 }
 .pl-words > * { pointer-events: auto; }
@@ -740,7 +745,7 @@ a.vsb:hover { background: var(--raised); }
   .pl-scrim { display: none; }
   .pl-caption { position: static; text-align: left; padding: 8px clamp(16px, 4vw, 56px) 0; }
 }
-@media (max-width: 860px) { .planet { margin-top: -24px; margin-left: -16px; margin-right: -16px; } }
+@media (max-width: 860px) { .planet { margin-top: -24px; } }
 .wsum { font: 500 var(--t-xl)/1.35 var(--display); letter-spacing: -.015em; color: var(--ink); margin-bottom: 6px; }
 .account { margin: 0; padding: 0 6px 14px 156px; font-size: var(--t-s); color: var(--ink-2); max-width: 86ch; border-bottom: 1px solid var(--line); }
 .account .cite { font-size: var(--t-xs); color: var(--focus); text-decoration: none; margin: 0 2px; padding: 0 4px; border-radius: 4px; background: var(--glow); }
