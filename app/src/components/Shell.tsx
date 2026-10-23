@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useData } from "../lib/data";
 import { fmtDay, fmtN } from "../lib/format";
@@ -24,21 +24,8 @@ const NAV: [string, string, keyof typeof I][] = [
 ];
 const EXPLORE: [string, string][] = [["/portrait", "Portrait"], ["/lead", "How you lead"], ["/voice", "Your voice"], ["/projects", "Projects"]];
 
-type Theme = "system" | "light" | "dark";
-function useTheme(): [Theme, (t: Theme) => void] {
-  const [t, setT] = useState<Theme>(() => { try { return (localStorage.getItem("theme") as Theme) || "system"; } catch { return "system"; } });
-  useEffect(() => {
-    const el = document.documentElement;
-    if (t === "system") el.removeAttribute("data-theme"); else el.setAttribute("data-theme", t);
-    try { localStorage.setItem("theme", t); } catch { /* private window */ }
-    window.dispatchEvent(new Event("themechange"));
-  }, [t]);
-  return [t, setT];
-}
-
 export default function Shell() {
   const { state, core } = useData();
-  const [theme, setTheme] = useTheme();
   const loc = useLocation();
   useEffect(() => {
     if (!loc.hash) window.scrollTo(0, 0);
@@ -75,9 +62,6 @@ export default function Shell() {
             <i aria-hidden="true" />Share mode
           </button>
           <Postcard compact />
-          <div className="theme" role="group" aria-label="Theme">
-            {(["system", "light", "dark"] as Theme[]).map(x => <button key={x} className={theme === x ? "on" : ""} onClick={() => setTheme(x)}>{x === "system" ? "Auto" : x === "light" ? "Light" : "Dark"}</button>)}
-          </div>
         </div>
       </nav>
       <main className="page"><Outlet /></main>

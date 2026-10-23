@@ -3,7 +3,7 @@ export { Hero, default, shapesOf } from "./Hero";
 export type { HeroHandle, HeroPiece, HeroProps } from "./Hero";
 export { syntheticData } from "../src/shared/data";
 export type { PointsPayload, RawDay, RawMessage } from "../src/shared/data";
-export { makePostcard, postcardFacts, postcardLines, savePostcard } from "./postcard";
+export { makePostcard, makePostcardFilm, postcardFacts, postcardLines, savePostcard } from "./postcard";
 export type { PostcardFormat, PostcardOptions } from "./postcard";
 export { FirstRun, narration } from "./FirstRun";
 export type { EngineState, FirstRunProps } from "./FirstRun";

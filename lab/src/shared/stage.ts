@@ -1,35 +1,27 @@
 // The lab page around a piece: full-bleed canvas, a caption, a tooltip and the keys.
 //   S  save a PNG (with the caption)      L  record a 6 second loop (webm)
 //   P  share mode: shapes only            D  demo: synthetic data
-//   T  light or dark                      Space  pause
+//   Space  pause
 import "@fontsource-variable/bricolage-grotesque/standard.css";
 import "@fontsource-variable/instrument-sans/index.css";
 import "./stage.css";
 import { getMind, share, type Mind } from "./data";
-import { DARK, LIGHT, type Theme } from "./palette";
+import { DARK } from "./palette";
 import type { Piece, PieceFactory } from "./piece";
 import { recordLoop, savePNG } from "./capture";
 
 const params = new URLSearchParams(location.search);
 
-function initialTheme(): Theme {
-  const t = params.get("theme");
-  if (t === "light") return LIGHT;
-  if (t === "dark") return DARK;
-  return matchMedia("(prefers-color-scheme: dark)").matches ? DARK : LIGHT;
-}
-
 /** load: where the data comes from instead of the lab's engine (?demo still means synthetic); badge says whose it is. */
 export async function mountLab(name: string, factory: PieceFactory, source: { load?: () => Promise<Mind>; badge?: string } = {}) {
-  let theme = initialTheme();
-  document.documentElement.dataset.theme = theme.dark ? "dark" : "light";
+  const theme = DARK;
   document.title = `${name} · Wimym lab`;
   const root = document.createElement("div");
   root.className = "stage";
   root.innerHTML = `
     <canvas></canvas>
     <div class="cap"><p class="line"></p><p class="sub"></p></div>
-    <nav class="keys"><a href="/">Lab</a><span><kbd>S</kbd> still</span><span><kbd>L</kbd> loop</span><span><kbd>P</kbd> share</span><span><kbd>D</kbd> demo</span><span><kbd>T</kbd> theme</span></nav>
+    <nav class="keys"><a href="/">Lab</a><span><kbd>S</kbd> still</span><span><kbd>L</kbd> loop</span><span><kbd>P</kbd> share</span><span><kbd>D</kbd> demo</span></nav>
     <div class="badge"></div>
     <div class="labels"></div>
     <div class="tip" hidden></div>
@@ -102,12 +94,7 @@ export async function mountLab(name: string, factory: PieceFactory, source: { lo
     else if (k === "l") recordLoop(piece, name);
     else if (k === "p") { share.on = !share.on; piece.setShare(share.on); setCaption(); tip.hidden = true; }
     else if (k === "d") { params.has("demo") ? params.delete("demo") : params.set("demo", "1"); location.search = params.toString(); }
-    else if (k === "t") {
-      theme = theme.dark ? LIGHT : DARK;
-      document.documentElement.dataset.theme = theme.dark ? "dark" : "light";
-      piece.setTheme(theme);
-      if (still) piece.frame(8, 0);
-    } else if (k === " ") { paused = !paused; e.preventDefault(); }
+    else if (k === " ") { paused = !paused; e.preventDefault(); }
   });
 }
 

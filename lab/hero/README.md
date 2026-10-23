@@ -20,7 +20,6 @@ import { Hero } from "@wimym/hero";
 <Hero
   points={points}                // GET /api/points as is (96 KB gzipped): the light way in
   days={core.days}               // the app's Core.days from /api/core, as is (optional with points)
-  theme={resolvedTheme}          // "light" | "dark"
   share={shareMode}              // shapes only: tooltips give a time, never text or a project name
   shift={wide ? 0.17 : 0}        // move the planet right of centre to leave room for the headline
   onCaption={setCaption}         // { line, sub }: one sentence from the data, for the words beside it
@@ -34,7 +33,6 @@ import { Hero } from "@wimym/hero";
 | `points` | | `GET /api/points` as is (docs/contract-points.md). With it, a message's words are fetched one at a time on hover (`/api/points?ids=1` once, then `/api/message/<id>`), never in share mode. |
 | `messages`, `days` | | Or the app's `Message[]` and `Core.days`. With `points`, `days` is optional: without it the days are worked out from the points (no nights' lengths or switches, which the planet doesn't need). |
 | `piece` | `"planet"` | `"planet"`, `"nebula"`, `"core"`, `"organism"` (which also reads `/api/vitals`) or `"loom"`: the strummed Loom with its aurora on, on a 2D canvas (no WebGL needed), leaving the page's wheel and keys alone. With points it has no session ids and guesses sessions from pauses. |
-| `theme` | required | Redraws in place when it changes. |
 | `share` | `false` | Can change at any time; from then on no text or project name leaves the component. |
 | `motion` | `"auto"` | `"auto"` follows `prefers-reduced-motion`; `"still"` draws one frame and holds it; `"full"` always moves. |
 | `fallbackSrc` | a still | The image shown where WebGL isn't available. |
@@ -58,11 +56,11 @@ seconds, March first. Reduced motion and later visits skip it.
 Hovering a latitude rings that day and gives its date, hours and how many messages came after
 9 pm; outside share mode it adds the message nearest the pointer. A click calls `onSelect(day)`.
 
-Where WebGL isn't available it shows a still (`fallback-planet-dark.jpg`, `-light.jpg`, drawn on
-made-up data), or `fallbackSrc`. `onCaption` isn't called then; the app keeps its own words.
+Where WebGL isn't available it shows a still (`fallback-planet-dark.jpg`, drawn on made-up data),
+or `fallbackSrc`. `onCaption` isn't called then; the app keeps its own words.
 
-Measured on this Mac at 1440x900 and 2x DPR (a 2880x1800 canvas): about 95 fps in dark (median
-8.7 ms, 95th percentile 17 ms, with the bloom) and 120 fps in light.
+Measured on this Mac at 1440x900 and 2x DPR (a 2880x1800 canvas): about 95 fps (median 8.7 ms,
+95th percentile 17 ms, with the bloom).
 
 ## The first run
 
@@ -80,7 +78,7 @@ import { FirstRun } from "@wimym/hero";
 <FirstRun
   state={engineState}                         // GET /api/state → .state, every second while first is true
   points={engineState?.first === false ? points : null}   // the data once it exists (or messages and days)
-  theme={theme} shift={wide ? 0.17 : 0}       // and any other Hero prop, passed on to the planet
+  shift={wide ? 0.17 : 0}                     // and any other Hero prop, passed on to the planet
   onDone={() => setFirstRunOver(true)}
   style={{ height: "100svh" }}
 />
@@ -99,13 +97,17 @@ for a new person's quick build, `?seconds=34` for Alex's from nothing, `?real` t
 
 ## The postcard
 
-`savePostcard` makes the picture Alex will post: the planet in share mode, "Where is your mind?",
-three true lines computed from the record, and a small Wimym mark. No project names, no message
-text: counts and times only.
+`savePostcard` makes the film Alex will post: six seconds of the strummed Loom in share mode under its
+aurora, "Where is your mind?", three true lines computed from the record, and a small Wimym mark. No
+project names, no message text: counts and times only. It opens on every string lit, the last messages
+are woven and ring their strings, and a hand sweeps across again so the last frame is the first: it loops.
 
 - 1200x630 (`format: "landscape"`, link previews, X, LinkedIn) or 1080x1350 (`"portrait"`, Instagram).
-- Dark by default, or `theme: "light"`.
-- Saves a PNG (unless `download: false`) and returns the canvas.
+- An MP4 (H.264, 30 fps, about 2-3 MB) encoded with WebCodecs through mediabunny, a few seconds to make,
+  `onProgress` telling how far along. Where the browser can't encode it, the picture as a PNG instead.
+- Saves the file (unless `download: false`) and returns `{ kind: "film" | "picture", blob }`.
+- `makePostcard(mind)` is the picture alone (it returns the canvas), as is `HeroHandle.savePostcard`;
+  `makePostcardFilm(mind)` the film alone, or null.
 
 The lines, from `postcardLines(mind)`, read like "15,476 messages to AI agents since March.",
 "85 days in a row, and counting." and "2,575 sent after 9 pm, the latest at 01:52.". A run under
@@ -135,12 +137,12 @@ before). It morphs when the week changes, so a person feels the difference befor
 ```tsx
 import { WeekForm } from "@wimym/hero";
 
-<WeekForm week={weekPayload} vitals={vitals} theme={theme} share={share}
+<WeekForm week={weekPayload} vitals={vitals} share={share}
   shift={wide ? 0.2 : 0} onCaption={setCaption} style={{ height: "min(62vh, 560px)" }} />
 ```
 
 Props: `week` (`GET /api/week?start=…` as is), `vitals` (accepted; the week's own vitals and bands
-are what is read), `theme`, `share` (accepted; nothing personal is drawn), `motion` ("auto" follows
+are what is read), `share` (accepted; nothing personal is drawn), `motion` ("auto" follows
 reduced motion, "still", "full"), `shift`, `caption` (draw the words under the form, default false),
 `onCaption({ line, sub })`, `fallbackSrc`, `className`, `style`. Ref: `savePNG()`.
 
@@ -156,7 +158,7 @@ exported on their own. Watch it at `lab/hero/week.html` (`?week=2026-10-12`, arr
 
 - `Hero` (default too), with `HeroProps`, `HeroHandle` (`savePNG`, `recordLoop`, `savePostcard`), `HeroPiece`
 - `FirstRun`, `FirstRunProps`, `EngineState`, `narration`, `mockEngineState`
-- `savePostcard`, `makePostcard`, `postcardFacts`, `postcardLines`, `PostcardOptions`, `PostcardFormat`
+- `savePostcard`, `makePostcard`, `makePostcardFilm`, `postcardFacts`, `postcardLines`, `PostcardOptions`, `PostcardFormat`
 - `WeekForm`, `WeekFormProps`, `WeekFormHandle`, `WeekPayload`, `weekShape`, `weekCaption`
 - `syntheticData`, `RawMessage`, `RawDay`, `PointsPayload`, `shapesOf`
 

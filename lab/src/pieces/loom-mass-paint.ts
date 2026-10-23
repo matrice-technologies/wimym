@@ -28,10 +28,10 @@ export const PROJECT = 3;            // numbers per project: project, mean a, me
 
 /** What a picture is painted from. */
 export interface Job {
-  gw: number; gh: number; y0: number; mid: number; tall: number; t: number; W: number; dark: boolean;
+  gw: number; gh: number; y0: number; mid: number; tall: number; t: number; W: number;
   curtains: Float32Array; flares: Float32Array; projects: Float32Array;
 }
-export interface Picture { px: Uint8ClampedArray; gw: number; gh: number; y0: number; dark: boolean }
+export interface Picture { px: Uint8ClampedArray; gw: number; gh: number; y0: number }
 
 /** A project's colour at depth d: the average hue of its messages (mean OKLab a and b), at an aurora's strength,
  * less where its types pull every way at once, and less far off. */
@@ -45,7 +45,7 @@ export function curtainColour(ma: number, mb: number, d: number): [number, numbe
  * brightest just above that edge and fading upward, in rays that are the curtain's own and shimmer. The sky turns:
  * a curtain going out at one side comes back in at the other (W px around). */
 export function paintField(job: Job): Picture {
-  const { gw, gh, y0, mid, tall: bandTall, t, W, dark, curtains, flares, projects } = job;
+  const { gw, gh, y0, mid, tall: bandTall, t, W, curtains, flares, projects } = job;
   const NP = projects.length / PROJECT, acc = new Float32Array(gw * gh * 3), G = new Float32Array(NP * gw);
   // where a struck string flares, in its project's stretch
   for (let f = 0; f < flares.length; f += FLARE) {
@@ -99,7 +99,7 @@ export function paintField(job: Job): Picture {
       }
     }
   }
-  // in the dark it is laid on as light; in the light, as its colour, deepened, where it would shine
+  // it is laid on as light
   const px = new Uint8ClampedArray(gw * gh * 4), fadeTop = 60 / CELL, fadeBot = 20 / CELL;
   for (let r = 0; r < gh; r++) {
     // it thins out at the top and toward the horizon, so it never ends on a line
@@ -107,11 +107,10 @@ export function paintField(job: Job): Picture {
     for (let c = 0; c < gw; c++) {
       const i = (r * gw + c) * 3, o = (r * gw + c) * 4, R = acc[i], G = acc[i + 1], B = acc[i + 2], m = Math.max(R, G, B);
       if (m < 0.002) continue;
-      if (dark) { px[o] = R * 255; px[o + 1] = G * 255; px[o + 2] = B * 255; px[o + 3] = v * 255; }
-      else { px[o] = R / m * 150; px[o + 1] = G / m * 150; px[o + 2] = B / m * 150; px[o + 3] = Math.min(1, m * 1.3) * v * 255; }
+      px[o] = R * 255; px[o + 1] = G * 255; px[o + 2] = B * 255; px[o + 3] = v * 255;
     }
   }
-  return { px, gw, gh, y0, dark };
+  return { px, gw, gh, y0 };
 }
 
 /** A curtain's light at h px above its lower edge, for a curtain H px tall: nothing a few px below the edge, rising

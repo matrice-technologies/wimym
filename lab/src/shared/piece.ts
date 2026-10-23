@@ -7,7 +7,6 @@ export interface Piece {
   resize(w: number, h: number, dpr: number): void;
   /** t in seconds since start, dt since the last frame. Reduced motion calls this once with dt 0. */
   frame(t: number, dt: number): void;
-  setTheme(theme: Theme): void;
   setShare(on: boolean): void;
   /** What sits under the pointer, as a short line or two of HTML, or null. */
   hover(x: number, y: number): string | null;

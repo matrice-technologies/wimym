@@ -33,7 +33,7 @@ const OTHER = 1e6;            // the order of projects that never had a column: 
 /** What the aurora reads from the loom in front of it. */
 export interface Front {
   mind: Mind; order: number[]; A: Float64Array; cur: number; sessOf: Int32Array; onLoom: number[]; cols: { p: number; key: number }[];
-  w: number; h: number; dpr: number; fell: number; t: number; theme: { dark: boolean; ground: string };
+  w: number; h: number; dpr: number; fell: number; t: number;
 }
 /** What only the loom can say: where a string crosses the fell now, and the colour of the light a message sent on it. */
 export interface Strings { x(s: number): number; light(s: number, i: number): string }
@@ -59,9 +59,11 @@ export class Mass {
   private before: Shown | null = null; private latest: Shown | null = null; private came = -Infinity;
   private strings: Strings;
 
-  constructor(strings: Strings) {
+  /** worker: false paints every picture at once, on the caller's time: for a still made by running the loom on
+   * (the postcard), where a worker's pictures would come too late. */
+  constructor(strings: Strings, worker = true) {
     this.strings = strings;
-    try {
+    if (worker) try {
       this.worker = new Worker(new URL("./loom-mass-paint.ts", import.meta.url), { type: "module" });
       this.worker.onmessage = (e: MessageEvent<Picture>) => { this.busy = false; this.show(e.data); };
     } catch { this.worker = null; }
@@ -73,17 +75,17 @@ export class Mass {
   draw(g: CanvasRenderingContext2D, L: Front, still: boolean) {
     const dt = this.then < 0 || L.t < this.then ? 0 : Math.min(0.25, L.t - this.then);
     this.then = L.t; this.since += dt;
-    if (L.t - this.asked >= 1 / REFRESH || L.t < this.asked || !this.latest || this.latest.pic.dark !== L.theme.dark) {
+    if (L.t - this.asked >= 1 / REFRESH || L.t < this.asked || !this.latest) {
       if (!this.busy || still) { this.step(L, still ? 0 : this.since); this.since = 0; this.asked = L.t; this.ask(L, still); }
     }
     const k = still || !this.before ? 1 : Math.min(1, (L.t - this.came) * REFRESH);
     g.save();
-    if (L.theme.dark) g.globalCompositeOperation = "screen";
+    g.globalCompositeOperation = "screen";
     // smoothed plainly: the sky is soft enough that "high" changes it by at most 3 levels in 255, and it costs about
     // 9 ms of the GPU's time for each of the two pictures, every frame
     g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "low";
     for (const [s, a] of [[this.before, 1 - k], [this.latest, k]] as const) {
-      if (!s || a <= 0 || s.pic.dark !== L.theme.dark) continue;
+      if (!s || a <= 0) continue;
       g.globalAlpha = a;
       g.drawImage(s.cv, 0, 0, s.pic.gw, s.pic.gh, 0, s.pic.y0, s.pic.gw * CELL, s.pic.gh * CELL);
     }
@@ -236,7 +238,7 @@ export class Mass {
     });
     const fl = this.flares.filter(f => slot.has(f.p)), flares = new Float32Array(fl.length * FLARE);
     fl.forEach((f, n) => flares.set([slot.get(f.p)!, this.turned(L, f.x, 0), f.k], n * FLARE));
-    const job: Job = { gw, gh, y0, mid: b.mid, tall: b.tall, t: L.t, W: L.w, dark: L.theme.dark, curtains, flares, projects };
+    const job: Job = { gw, gh, y0, mid: b.mid, tall: b.tall, t: L.t, W: L.w, curtains, flares, projects };
     if (still || !this.worker) { this.show(paintField(job)); this.came = -Infinity; return; }
     this.busy = true;
     this.worker.postMessage(job);

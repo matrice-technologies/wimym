@@ -22,7 +22,7 @@ const VERT = /* glsl */ `
   attribute vec3 aColor;
   attribute float aGlow;    // 1 for this week
   attribute float aSeed;
-  uniform float uTime, uReveal, uPx, uHover, uDust, uDark;
+  uniform float uTime, uReveal, uPx, uHover, uDust;
   varying vec3 vColor; varying float vAlpha;
   void main() {
     vec4 mv = modelViewMatrix * vec4(position, 1.0);
@@ -37,7 +37,7 @@ const VERT = /* glsl */ `
     vAlpha = seen * (uDust > 0.0 ? 1.0 : min(1.0, flash));
   }`;
 const FRAG = /* glsl */ `
-  uniform float uDust, uDark;  // uDust: 0 for stars, else the glow's strength
+  uniform float uDust;  // 0 for stars, else the glow's strength
   varying vec3 vColor; varying float vAlpha;
   void main() {
     vec2 p = gl_PointCoord * 2.0 - 1.0;
@@ -45,9 +45,7 @@ const FRAG = /* glsl */ `
     if (d > 1.0) discard;
     float core = exp(-d * 9.0), halo = exp(-d * 2.6) * 0.35;
     float a = uDust > 0.0 ? exp(-d * 2.2) * 0.9 * uDust : core + halo;
-    vec3 c = uDark > 0.5 ? vColor * (0.45 + core * 0.9) : vColor;
-    // on paper a star is a crisp drop of ink
-    if (uDark < 0.5 && uDust == 0.0) a = smoothstep(0.75, 0.25, d) * 0.9;
+    vec3 c = vColor * (0.45 + core * 0.9);
     gl_FragColor = vec4(c, a * vAlpha);
   }`;
 
@@ -70,7 +68,7 @@ class Nebula implements Piece {
   group = new THREE.Group();
   stars: THREE.Points; dust: THREE.Points;
   pos: Float32Array; tOf: Float32Array;
-  uniforms = { uTime: { value: 0 }, uReveal: { value: 0 }, uPx: { value: 1 }, uHover: { value: -1 }, uDust: { value: 0 }, uDark: { value: 1 } };
+  uniforms = { uTime: { value: 0 }, uReveal: { value: 0 }, uPx: { value: 1 }, uHover: { value: -1 }, uDust: { value: 0 } };
   dustU = { ...this.uniforms, uDust: { value: 1 }, uHover: { value: -1 } };
   w = 1; h = 1; hoverI = -1; mx = 0; my = 0;
   theme: Theme;
@@ -118,7 +116,7 @@ class Nebula implements Piece {
     geo.setAttribute("aGlow", new THREE.BufferAttribute(glow, 1));
     geo.setAttribute("aSeed", new THREE.BufferAttribute(seed, 1));
     geo.setAttribute("aColor", new THREE.BufferAttribute(new Float32Array(n * 3), 3));
-    this.stars = new THREE.Points(geo, new THREE.ShaderMaterial({ vertexShader: VERT, fragmentShader: FRAG, uniforms: this.uniforms, transparent: true, depthWrite: false }));
+    this.stars = new THREE.Points(geo, new THREE.ShaderMaterial({ vertexShader: VERT, fragmentShader: FRAG, uniforms: this.uniforms, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
 
     // the glow of the nebula: the same stars, blown up and very faint
     const dgeo = geo.clone();
@@ -126,16 +124,15 @@ class Nebula implements Piece {
     for (let i = 0; i < n; i++) dsize[i] = 6 + rnd() * 9;
     dgeo.setAttribute("aSize", new THREE.BufferAttribute(dsize, 1));
     dgeo.setAttribute("aGlow", new THREE.BufferAttribute(new Float32Array(n), 1));
-    this.dust = new THREE.Points(dgeo, new THREE.ShaderMaterial({ vertexShader: VERT, fragmentShader: FRAG, uniforms: this.dustU, transparent: true, depthWrite: false }));
+    this.dust = new THREE.Points(dgeo, new THREE.ShaderMaterial({ vertexShader: VERT, fragmentShader: FRAG, uniforms: this.dustU, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
     this.group.add(this.dust, this.stars);
     this.group.rotation.x = -Math.PI / 2;
     this.scene.add(this.group);
-    this.setTheme(theme);
+    this.colour(theme);
     canvas.addEventListener("pointermove", e => { this.mx = e.offsetX / this.w - 0.5; this.my = e.offsetY / this.h - 0.5; });
   }
 
-  setTheme(theme: Theme) {
-    this.theme = theme;
+  private colour(theme: Theme) {
     const m = this.mind, col = this.stars.geometry.getAttribute("aColor") as THREE.BufferAttribute;
     const fam = theme.fam.map(hex), plain = hex(theme.plain), ember = hex(theme.ember), now = hex(theme.now);
     const D = m.days.length;
@@ -148,16 +145,11 @@ class Nebula implements Piece {
       col.setXYZ(i, c[0], c[1], c[2]);
     }
     col.needsUpdate = true;
-    // the glow: on a dark sky a faint light added up, on paper a faint wash of ink
+    // the glow: a faint light added up
     const dcol = this.dust.geometry.getAttribute("aColor") as THREE.BufferAttribute;
-    const k = theme.dark ? 0.07 : 1;
+    const k = 0.07;
     for (let i = 0; i < m.n; i++) dcol.setXYZ(i, col.getX(i) * k, col.getY(i) * k, col.getZ(i) * k * 1.15);
     dcol.needsUpdate = true;
-    const blend = theme.dark ? THREE.AdditiveBlending : THREE.NormalBlending;
-    for (const p of [this.stars, this.dust]) { (p.material as THREE.ShaderMaterial).blending = blend; (p.material as THREE.ShaderMaterial).needsUpdate = true; }
-    this.uniforms.uDark.value = theme.dark ? 1 : 0;
-    this.dustU.uDust.value = theme.dark ? 1 : 0.04;
-    (this.scene.background as THREE.Texture | null)?.dispose();
     this.scene.background = backdrop(theme);
   }
 
@@ -194,8 +186,8 @@ class Nebula implements Piece {
     const L = this.camera.position.length() || 38;
     this.camera.position.set(Math.sin(az) * Math.cos(el) * L, Math.sin(el) * L, Math.cos(az) * Math.cos(el) * L);
     this.camera.lookAt(0, -0.6, 0);
-    // light in the dark: bloom. On paper, ink doesn't glow.
-    if (this.theme.dark) this.composer.render(); else this.renderer.render(this.scene, this.camera);
+    // light in the dark: bloom
+    this.composer.render();
   }
 
   private v = new THREE.Vector3();

@@ -2,7 +2,7 @@ import * as THREE from "three";
 import type { Theme } from "./palette";
 
 /** A soft radial ground as a scene background, so post-processing and saved stills keep it. */
-export function backdrop(theme: Theme, glow = theme.dark ? "#121a30" : "#f8f9fc") {
+export function backdrop(theme: Theme, glow = "#121a30") {
   const c = document.createElement("canvas");
   c.width = c.height = 512;
   const g = c.getContext("2d")!;

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-/** The theme's colors, read from CSS, re-read when the theme flips. */
+/** The theme's colors, read from CSS. */
 export function useColors() {
   const read = () => {
     const s = getComputedStyle(document.documentElement);
@@ -12,17 +12,9 @@ export function useColors() {
         ask: g("--f-ask"), steer: g("--f-steer"), make: g("--f-make"), approve: g("--f-approve"),
         run: g("--f-run"), ship: g("--f-ship"), think: g("--f-think"), none: g("--f-none"),
       } as Record<string, string>,
-      dark: s.colorScheme === "dark" || g("color-scheme") === "dark",
     };
   };
-  const [c, setC] = useState(read);
-  useEffect(() => {
-    const mq = matchMedia("(prefers-color-scheme: dark)");
-    const on = () => setC(read());
-    mq.addEventListener("change", on);
-    window.addEventListener("themechange", on);
-    return () => { mq.removeEventListener("change", on); window.removeEventListener("themechange", on); };
-  }, []);
+  const [c] = useState(read);
   return c;
 }
 export type Colors = ReturnType<typeof useColors>;

@@ -5,7 +5,7 @@ import DayStrip from "../components/DayStrip";
 import Loading from "../components/Loading";
 import { fmtUnit, SUMMED } from "../components/Vital";
 import { usualDay } from "../lib/blocks";
-import { useColors, useWide } from "../lib/hooks";
+import { useWide } from "../lib/hooks";
 import { shareOn } from "../lib/share";
 import type { WeekPayload } from "@wimym/hero";
 import { useData, useVitals, useWeek, useMessages } from "../lib/data";
@@ -40,7 +40,6 @@ const WeekForm = lazy(() => import("@wimym/hero").then(m => ({ default: m.WeekFo
 export default function WeekRetro() {
   const { core } = useData();
   const [params, setParams] = useSearchParams();
-  const C = useColors();
   const wide = useWide();
   const [caption, setCaption] = useState<{ line: string; sub: string } | null>(null);
   const start = params.get("start");
@@ -73,7 +72,7 @@ export default function WeekRetro() {
       <section className="wform" aria-label="This week's signs, as one form">
         <div className="wf-stage">
           <Suspense fallback={null}>
-            <WeekForm week={wk as unknown as WeekPayload} vitals={vitals && vitals !== "absent" ? vitals : undefined} theme={C.dark ? "dark" : "light"} share={shareOn}
+            <WeekForm week={wk as unknown as WeekPayload} vitals={vitals && vitals !== "absent" ? vitals : undefined} share={shareOn}
               shift={wide ? 0.2 : 0} onCaption={setCaption} style={{ position: "absolute", inset: 0 }} />
           </Suspense>
         </div>

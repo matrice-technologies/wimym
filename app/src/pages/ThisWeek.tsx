@@ -1,7 +1,7 @@
 import * as d3 from "d3";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useColors, useWide } from "../lib/hooks";
+import { useWide } from "../lib/hooks";
 import { shareOn } from "../lib/share";
 import Judgement from "../components/Judgement";
 import { Priorities, StopHour } from "../components/Limits";
@@ -32,7 +32,6 @@ export default function ThisWeek() {
   const [firstRun, setFirstRun] = useState<boolean | null>(null);
   useEffect(() => { if (firstRun == null && (state || core)) setFirstRun(!!state?.first); }, [state, core, firstRun]);
   const pts = points && points !== "absent" ? points : null;
-  const C = useColors();
   const nav = useNavigate();
   const wide = useWide();
   const [caption, setCaption] = useState<{ line: string; sub: string } | null>(null);
@@ -52,12 +51,11 @@ export default function ThisWeek() {
   const usual = useMemo(() => (core && week ? usualDay(core.days, week.mon) : null), [core, week]);
 
   if (vitals === "absent" || wk === "absent") return <Older />;
-  const theme = C.dark ? "dark" as const : "light" as const;
   // the Loom draws from /api/points alone, so it starts before the rest of the data is here
   const stage = firstRun
     ? <Suspense fallback={null}><FirstRun state={state} points={state?.first === false ? pts : null} days={core?.days ?? null}
-        theme={theme} share={shareOn} shift={wide ? 0.25 : 0} onSelect={d => nav(`/days/${d}`)} onCaption={setCaption} style={{ position: "absolute", inset: 0 }} /></Suspense>
-    : pts && <Suspense fallback={null}><Hero piece="loom" points={pts} days={core?.days} theme={theme} share={shareOn}
+        share={shareOn} shift={wide ? 0.25 : 0} onSelect={d => nav(`/days/${d}`)} onCaption={setCaption} style={{ position: "absolute", inset: 0 }} /></Suspense>
+    : pts && <Suspense fallback={null}><Hero piece="loom" points={pts} days={core?.days} share={shareOn}
         onSelect={d => nav(`/days/${d}`)} onCaption={setCaption} style={{ position: "absolute", inset: 0 }} /></Suspense>;
   if (!core || !vitals || !week) {
     // The question is there from the first paint; the same first elements as below, so the Loom

@@ -125,17 +125,16 @@ class Core implements Piece {
     this.controls.autoRotateSpeed = 0.45;
     this.controls.minDistance = this.H * 0.6;
     this.controls.maxDistance = this.H * 3.5;
-    this.setTheme(theme);
+    this.colour(theme);
   }
 
   /** Noon faces the viewer at rest, so the day side is what you see first and the night groove sits behind. */
   angle(a: number) { return (a / A) * Math.PI * 2 + Math.PI / 2 - ((12 - 5) / 24) * Math.PI * 2; }
 
-  setTheme(theme: Theme) {
-    this.theme = theme;
+  private colour(theme: Theme) {
     const m = this.mind, D = this.D;
-    const fam = theme.fam.map(hex), plain = hex(theme.dark ? "#c9c2b4" : "#d9d1c3"), pale = hex(theme.dark ? "#3a4152" : "#f4f1ea");
-    const ember = hex(theme.ember), now = hex(theme.dark ? "#ffe2a8" : "#f2b33d");
+    const fam = theme.fam.map(hex), plain = hex("#c9c2b4"), pale = hex("#3a4152");
+    const ember = hex(theme.ember), now = hex("#ffe2a8");
     // each day's colour: the mix of what it asked for, softened toward bone
     const mix = new Float32Array(D * 3), n = new Float32Array(D);
     for (let i = 0; i < m.n; i++) {
@@ -155,11 +154,10 @@ class Core implements Piece {
       }
     }
     col.needsUpdate = true;
-    (this.marks.material as THREE.LineBasicMaterial).color.set(theme.dark ? "#e9edf5" : "#121725");
-    (this.hoverRing.material as THREE.MeshBasicMaterial).color.set(theme.dark ? "#ffffff" : "#121725");
-    (this.scene.background as THREE.Texture | null)?.dispose();
+    (this.marks.material as THREE.LineBasicMaterial).color.set("#e9edf5");
+    (this.hoverRing.material as THREE.MeshBasicMaterial).color.set("#ffffff");
     this.scene.background = backdrop(theme);
-    this.renderer.toneMappingExposure = theme.dark ? 1.0 : 1.15;
+    this.renderer.toneMappingExposure = 1.0;
   }
 
   setShare(on: boolean) { this.share = on; }

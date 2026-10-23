@@ -16,7 +16,7 @@ export default defineConfig({
     alias: [
       { find: "@wimym/hero", replacement: here("../lab/hero/index.ts") },
       // the lab's own imports come from app/node_modules, so the app builds without lab/node_modules
-      { find: /^(three|react|react-dom)(\/.*)?$/, replacement: here("./node_modules/$1$2") },
+      { find: /^(three|react|react-dom|mediabunny)(\/.*)?$/, replacement: here("./node_modules/$1$2") },
     ],
     dedupe: ["react", "react-dom", "three"],
   },

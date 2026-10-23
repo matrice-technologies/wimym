@@ -39,10 +39,10 @@ export default function WhenChart({ messages, days, focus, height = 420, stopHou
       ctx.fillStyle = C.muted; ctx.fillText(fmtHour(h), m.l - 8, y(h));
     }
     // weekends, lightly
-    for (const d of days) if (d.dow >= 5) { ctx.fillStyle = alpha(C.ink, C.dark ? .03 : .025); ctx.fillRect(x(d.day)! - bw * .1, m.t, bw * 1.2, height - m.t - m.b); }
+    for (const d of days) if (d.dow >= 5) { ctx.fillStyle = alpha(C.ink, .03); ctx.fillRect(x(d.day)! - bw * .1, m.t, bw * 1.2, height - m.t - m.b); }
     for (const d of days) {
       if (!d.n || d.start == null || d.end == null) continue;
-      ctx.fillStyle = alpha(C.ink, C.dark ? .09 : .07);
+      ctx.fillStyle = alpha(C.ink, .09);
       const y0 = y(d.start), y1 = y(d.end);
       ctx.beginPath(); ctx.roundRect(x(d.day)!, y0 - 2, bw, Math.max(4, y1 - y0 + 4), Math.min(4, bw / 2)); ctx.fill();
     }

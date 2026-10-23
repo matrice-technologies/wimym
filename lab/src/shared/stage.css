@@ -1,12 +1,8 @@
 :root {
-  color-scheme: light;
-  --ground: #eef0f4; --ink: #121725; --ink-2: #3d4559; --muted: #6b7386; --line: #dce0e8; --surface: #ffffff;
-  --display: "Bricolage Grotesque Variable", "Avenir Next", system-ui, sans-serif;
-  --text: "Instrument Sans Variable", -apple-system, system-ui, sans-serif;
-}
-:root[data-theme="dark"] {
   color-scheme: dark;
   --ground: #080b14; --ink: #e9edf5; --ink-2: #b4bccb; --muted: #7d8698; --line: #242c3d; --surface: #141925;
+  --display: "Bricolage Grotesque Variable", "Avenir Next", system-ui, sans-serif;
+  --text: "Instrument Sans Variable", -apple-system, system-ui, sans-serif;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--ground); color: var(--ink); font: 400 15px/1.5 var(--text); -webkit-font-smoothing: antialiased; }

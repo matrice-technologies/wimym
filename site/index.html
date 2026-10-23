@@ -100,26 +100,37 @@ img, video { display: block; max-width: 100%; height: auto; }
 .btn.ghost:hover { border-color: var(--ink-2); opacity: 1; }
 .top .btn { padding: 8px 14px; font-size: 14px; }
 
-/* hero */
-.hero { position: relative; padding: 28px 0 40px; }
-.hero .wrap { display: grid; gap: 8px; align-items: center; }
-@media (min-width: 960px) { .hero { padding: 40px 0 64px; } .hero .wrap { grid-template-columns: 1fr 1.05fr; gap: 24px; } }
+/* hero: the strummed Loom and its aurora across the first screen (live/live.js), the words over its left side */
+.hero { position: relative; height: clamp(600px, calc(100svh - 60px), 940px); overflow: hidden; }
+.hero .stage { position: absolute; inset: 0; }
+.hero .live { position: absolute; inset: 0; opacity: 0; transition: opacity 1.2s ease; }
+.hero.is-live .live { opacity: 1; }
+/* the picture fades into the page below; the words on it (names, legend) stay sharp */
+.hero .live canvas { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 160px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 160px), transparent); }
+.lm-labels { position: absolute; inset: 0; pointer-events: none; font: 500 12px/1 var(--text); color: var(--muted); }
+.lm-labels span { position: absolute; left: 0; top: 0; white-space: nowrap; }
+.lm-tip, .dy-tip { position: absolute; z-index: 2; max-width: 320px; padding: 9px 11px; border-radius: 8px; pointer-events: none; font-size: 13px; line-height: 1.4; color: var(--ink);
+  background: color-mix(in srgb, var(--surface) 94%, transparent); border: 1px solid var(--line); box-shadow: var(--shadow); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.lm-tip .m, .dy-tip .m { color: var(--muted); }
+.lm-tip .q { margin-top: 5px; color: var(--ink-2); }
+.hero .scrim { position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(90deg, var(--ground) 0%, color-mix(in srgb, var(--ground) 82%, transparent) 28%, transparent 50%); }
+.hero .words { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: center; pointer-events: none; }
+.hero .words > * { pointer-events: auto; max-width: 540px; }
 .wiym { font: 650 clamp(48px, 9vw, 92px)/.96 var(--display); letter-spacing: -.035em; margin: 0; text-wrap: balance; }
 .lede { margin: 22px 0 0; color: var(--ink-2); font-size: clamp(18px, 2vw, 21px); line-height: 1.45; max-width: 34ch; text-wrap: pretty; }
 .sub { margin: 14px 0 0; color: var(--muted); font-size: 15.5px; max-width: 46ch; text-wrap: pretty; }
 .ctas { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
-.planet { width: 100%; max-width: 560px; margin: 24px auto 0; }
-@media (min-width: 960px) { .planet { max-width: none; margin: 0; } }
-.disc { position: relative; aspect-ratio: 1; }
-.planet img, .planet video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
-  -webkit-mask-image: radial-gradient(closest-side, #000 82%, transparent 100%); mask-image: radial-gradient(closest-side, #000 82%, transparent 100%); }
-.planet video { opacity: 0; transition: opacity .4s ease; }
-.planet video.on { opacity: 1; }
-.planet figcaption { margin-top: -2%; text-align: center; font-size: 13px; color: var(--muted); }
-.replay { position: absolute; right: 8%; top: 8%; font: 500 12.5px/1 var(--text); color: var(--muted); background: none;
-  border: 1px solid var(--line-2); border-radius: 999px; padding: 6px 10px; cursor: pointer; opacity: 0; transition: opacity .3s; }
-.replay.on { opacity: 1; }
-.replay:hover { color: var(--ink); }
+.hero .cap { position: absolute; left: 0; right: 0; bottom: 22px; margin: 0 auto; font-size: 13px; color: var(--muted); pointer-events: none; }
+.hero .cap span { display: block; max-width: 46ch; }
+@media (max-width: 959px) {
+  .hero { height: auto; display: flex; flex-direction: column; }
+  .hero .words { order: -1; height: auto; padding-top: 28px; }
+  .hero .stage { position: relative; height: min(118vw, 640px); margin-top: 8px; }
+  .hero .live canvas { -webkit-mask-image: linear-gradient(to bottom, transparent, #000 60px, #000 calc(100% - 120px), transparent); mask-image: linear-gradient(to bottom, transparent, #000 60px, #000 calc(100% - 120px), transparent); }
+  .hero .scrim { display: none; }
+  .hero .cap { position: static; padding-bottom: 28px; }
+}
 
 /* sections */
 section.block { padding: 56px 0; border-top: 1px solid var(--line); }
@@ -130,13 +141,46 @@ h3 { font: 620 21px/1.25 var(--display); letter-spacing: -.012em; margin: 0; }
 .intro { color: var(--ink-2); font-size: 18px; max-width: 60ch; margin: 18px 0 0; text-wrap: pretty; }
 p { text-wrap: pretty; }
 
-.risks { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r-l); overflow: hidden; margin-top: 36px;
-  grid-template-columns: 1fr; }
-@media (min-width: 640px) { .risks { grid-template-columns: 1fr 1fr; } }
-@media (min-width: 960px) { .risks { grid-template-columns: repeat(4, 1fr); } }
-.risks div { background: var(--surface); padding: 20px 20px 22px; }
-.risks h3 { font-size: 17.5px; }
-.risks p { margin: 6px 0 0; color: var(--muted); font-size: 15px; line-height: 1.5; }
+/* one of Robin's days as a score (live/live.js) */
+.day { position: relative; margin: 36px 0 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-l); box-shadow: var(--shadow); padding: 20px 0 0; }
+.dy-top { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between; padding: 0 20px; }
+.dy-head { margin: 0; font: 560 17px/1.35 var(--display); letter-spacing: -.01em; min-height: 1.35em; }
+.dy-days { display: flex; flex-wrap: wrap; gap: 6px; }
+.dy-days button, .dy-moments button { font: inherit; color: inherit; background: none; cursor: pointer; }
+.dy-days button { font-size: 13px; color: var(--ink-2); border: 1px solid var(--line-2); border-radius: 999px; padding: 5px 11px; }
+.dy-days button:hover { border-color: var(--ink-2); }
+.dy-days button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--ground); }
+.dy-score { overflow-x: auto; margin-top: 18px; padding: 0 4px; min-height: 230px; -webkit-overflow-scrolling: touch; }
+.dy-score svg { display: block; touch-action: pan-x pan-y; }
+.dy-score text { font: 500 12px var(--text); fill: var(--muted); }
+.dy-score .dy-name { font-size: 13px; fill: var(--ink-2); }
+.dy-score .dy-hour-t { text-anchor: middle; font-variant-numeric: tabular-nums; fill: var(--faint); }
+.dy-hour { stroke: var(--line); stroke-width: 1; }
+.dy-lane { stroke: var(--line-2); stroke-width: 1; }
+.dy-night { fill: color-mix(in srgb, var(--night) 9%, transparent); }
+.dy-stop { stroke: var(--late); stroke-width: 1.5; stroke-dasharray: 3 4; }
+.dy-score .dy-stop-t { fill: var(--late); }
+.dy-thread { fill: none; stroke: var(--ink-2); stroke-width: 1; opacity: .16; transition: opacity .25s; }
+.dy-thread.on { opacity: .55; }
+.dy-span { fill: var(--glow); stroke: var(--focus); stroke-width: 1; }
+.dy-m { transition: opacity .25s; }
+.dy-m.dim { opacity: .13; }
+.dy-moments { list-style: none; margin: 4px 0 0; padding: 0; display: grid; grid-template-columns: 1fr; border-top: 1px solid var(--line); }
+@media (min-width: 640px) { .dy-moments { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 960px) { .dy-moments { grid-template-columns: repeat(3, 1fr); } }
+.dy-moments li { border-bottom: 1px solid var(--line); }
+@media (min-width: 640px) and (max-width: 959px) { .dy-moments li:nth-child(odd) { border-right: 1px solid var(--line); } }
+@media (min-width: 960px) { .dy-moments li { border-right: 1px solid var(--line); } .dy-moments li:nth-child(3n) { border-right: 0; } }
+.dy-moments button { display: block; width: 100%; height: 100%; text-align: left; padding: 16px 20px 18px; border: 0; transition: background .2s; }
+.dy-moments button:hover, .dy-moments button[aria-pressed="true"] { background: var(--raised); }
+.dy-moments button[data-quiet] { cursor: default; }
+.dy-moments b { display: block; font: 620 17px/1.25 var(--display); letter-spacing: -.012em; }
+.dy-moments button[aria-pressed="true"] b { color: var(--late); }
+.dy-moments span { display: block; margin-top: 5px; color: var(--muted); font-size: 15px; line-height: 1.5; }
+.dy-tip .m { display: block; }
+.dy-tip .q { display: block; margin-top: 4px; color: var(--ink); }
+.day figcaption { margin: -1px 0 0; padding: 12px 20px 14px; font-size: 13.5px; color: var(--muted); border-top: 1px solid var(--line); }
+.day:not(.is-live) .dy-score { display: none; }
 
 .feature { display: grid; gap: 28px; align-items: center; margin-top: 8px; }
 @media (min-width: 960px) { .feature { grid-template-columns: 5fr 7fr; gap: 56px; } .feature.flip { grid-template-columns: 7fr 5fr; } .feature.flip .shot { order: -1; } }
@@ -212,46 +256,48 @@ footer p { margin: 0; max-width: 70ch; }
 </header>
 
 <main>
-  <section class="hero">
-    <div class="wrap">
-      <div>
-        <h1 class="wiym">Where is your mind?</h1>
-        <p class="lede">For people who work with agents on ambitious projects, and want to look after their mind while they do it.</p>
-        <p class="sub">Wimym reads your Claude Code transcripts on your own Mac and shows, against your own usual, how your weeks are going for your health and your work. A weekly retro then helps you decide what to change, and the next weeks show whether it held.</p>
-        <div class="ctas">
-          <a class="btn" href="#setup">Set it up on your Mac</a>
-          <a class="btn ghost" href="#what">See what it shows</a>
-        </div>
+  <section class="hero" id="loom" aria-label="Robin's messages as a harp of light, under an aurora of the weight each project carries">
+    <div class="stage"><div class="live"></div></div>
+    <div class="scrim" aria-hidden="true"></div>
+    <div class="wrap words">
+      <h1 class="wiym">Where is your mind?</h1>
+      <p class="lede">For people who work with agents on ambitious projects, and want to look after their mind while they do it.</p>
+      <p class="sub">Wimym reads your Claude Code transcripts on your own Mac and shows, against your own usual, how your weeks are going for your health and your work. A weekly retro then helps you decide what to change, and the next weeks show whether it held.</p>
+      <div class="ctas">
+        <a class="btn" href="#setup">Set it up on your Mac</a>
+        <a class="btn ghost" href="#what">See what it shows</a>
       </div>
-      <figure class="planet" id="planet">
-        <div class="disc">
-        <picture>
-          <source srcset="/media/planet-dark.webp" media="(prefers-color-scheme: dark)">
-          <img src="/media/planet-light.webp" width="800" height="800" alt="A planet striped with days: each line of latitude is a day, the land is when the person was working, and each light is a message. Lights spill onto the night side for messages sent late.">
-        </picture>
-        <button class="replay" type="button" hidden>Replay</button>
-        </div>
-        <figcaption>Robin's last three months: every message a light. Robin is made up.</figcaption>
-      </figure>
     </div>
+    <p class="wrap cap"><span>Robin's messages since July, strummed in the order they were sent: a column for each project, a string for each session, and above them an aurora of the weight each one carries. Robin is made up. Point at a string to read it.</span></p>
   </section>
 
   <section class="block" id="what">
     <div class="wrap">
       <p class="kicker">A new kind of work</p>
       <h2>Fast, impressive, never quite predictable, and nothing in it says stop.</h2>
-      <p class="intro">You state what you want, answer, choose, correct and approve, often in several sessions at once, while the agents do the making. Something new exists within minutes. Another session is always waiting, and the agent never tires. Some people spend fourteen hours a day in this loop, for months. The days are full and the output is real, but it is hard to tell whether you are getting better, or only busier.</p>
-      <div class="risks">
-        <div><h3>Losing the hours</h3><p>Sessions run past the time you meant to stop, start again late at night, carry on from a phone.</p></div>
-        <div><h3>No end of day</h3><p>The agents set the pace, and evenings and weekends turn into working time without anyone deciding it.</p></div>
-        <div><h3>Dispersion</h3><p>Starting costs almost nothing, so much gets started and less gets finished. Attention switches every few minutes.</p></div>
-        <div><h3>Loss of depth</h3><p>The gaps while an agent works fill with another session instead of thought.</p></div>
-        <div><h3>Rubber-stamping</h3><p>Hundreds of decisions a day, and go-aheads sent faster than the reply could have been read.</p></div>
-        <div><h3>Isolation</h3><p>Asking, reviewing and deciding used to involve colleagues. Now they happen alone.</p></div>
-        <div><h3>Crowding out</h3><p>Sleep, rest, family and everything else get whatever time is left over.</p></div>
-        <div><h3>Strain</h3><p>Decision fatigue, irritation and short nights build up over weeks, and get noticed late.</p></div>
-      </div>
-      <p class="note">This work is written down as it happens. Claude Code keeps every message with its time and what followed. Wimym reads that record so you can see these things for yourself. It shows signs. It diagnoses nothing, and how you say you are comes first.</p>
+      <p class="intro">You state what you want, answer, choose, correct and approve, often in several sessions at once, while the agents do the making. Another session is always waiting, and the agent never tires. The days are full and the output is real, but it is hard to tell whether you are getting better, or only busier. Here is one day of it, as Claude Code wrote it down.</p>
+      <figure class="day" id="day">
+        <div class="dy-top">
+          <p class="dy-head">Wednesday 14 October: 133 messages from 08:55 to 23:11, in 3 projects.</p>
+          <div class="dy-days" role="group" aria-label="Another of Robin's days">
+            <button type="button" data-day="2026-10-14" aria-pressed="true">Wed 14 Oct</button>
+            <button type="button" data-day="2026-08-20" aria-pressed="false">Thu 20 Aug</button>
+            <button type="button" data-day="2026-07-29" aria-pressed="false">Wed 29 Jul</button>
+          </div>
+        </div>
+        <div class="dy-score"></div>
+        <ol class="dy-moments">
+          <li><button type="button" data-key="late" aria-pressed="false"><b>Losing the hours</b><span>13 messages after 21:30, the hour Robin meant to stop. The last at 23:11.</span></button></li>
+          <li><button type="button" data-key="streak" aria-pressed="false"><b>No end of day</b><span>Day 35 in a row without a day off, from 08:55 to 23:11.</span></button></li>
+          <li><button type="button" data-key="switch" aria-pressed="false"><b>Dispersion</b><span>77 switches between 3 projects: one every 11 minutes.</span></button></li>
+          <li><button type="button" data-key="deep" aria-pressed="false"><b>Loss of depth</b><span>Before 18:00, the longest stretch on one project was 54 minutes, from 11:02.</span></button></li>
+          <li><button type="button" data-key="quick" aria-pressed="false"><b>Rubber-stamping</b><span>21 go-aheads of three words or fewer: “yes”, “sounds good, go”, “perfect, thank you”.</span></button></li>
+          <li><button type="button" data-key="steer" aria-pressed="false"><b>Strain</b><span>16 times the agent was sent back. At 13:21: “This is the third try at the retry queue; slow down and read…”</span></button></li>
+        </ol>
+        <div class="dy-tip" hidden></div>
+        <figcaption>One of Robin's days, as Wimym reads it: a lane for each project, a mark for each message, as long as it is wordy and in the colour of its type, and a thread at every switch. Point at a moment to see it in the day.</figcaption>
+      </figure>
+      <p class="note">Two more show over weeks rather than in a day: isolation, when asking, reviewing and deciding happen alone, and crowding out, when sleep, rest and family get whatever time is left. Wimym shows signs like these against your own usual. It diagnoses nothing, and how you say you are comes first.</p>
     </div>
   </section>
 
@@ -260,17 +306,17 @@ footer p { margin: 0; max-width: 70ch; }
       <div class="feature">
         <div>
           <p class="kicker">This week</p>
-          <h2>Your days as a planet.</h2>
-          <p>Each day is a line of latitude, and the land is when you were at it. Every message you sent is a light, and the night side lights up with the hours you worked after dark. Below it, the week so far, one turn of a spiral per day, against your usual day and the hour you meant to stop.</p>
+          <h2>Your attention as one thread.</h2>
+          <p>The front page opens on a loom woven from your messages, in the order you sent them. The projects you worked on most each have a column, which rests while the project is quiet; each session is a string the shuttle strums as it passes, lit in the colour of what the message asked for. Above it, an aurora shows the weight each project carries. Point at a string to read the message. Below it, the week so far, one turn of a spiral per day, against your usual day and the hour you meant to stop.</p>
         </div>
         <figure class="shot">
           <a href="/media/front-dark-1440.webp">
             <picture>
               <source media="(prefers-color-scheme: dark)" srcset="/media/front-dark-800.webp 800w, /media/front-dark-1440.webp 1440w" sizes="(min-width: 960px) 640px, 100vw">
-              <img src="/media/front-light-1440.webp" srcset="/media/front-light-800.webp 800w, /media/front-light-1440.webp 1440w" sizes="(min-width: 960px) 640px, 100vw" width="1440" height="900" loading="lazy" decoding="async" alt="Wimym's front page in share mode: Where is your mind? beside the planet, and a line saying the person has worked 44 days in a row.">
+              <img src="/media/front-light-1440.webp" srcset="/media/front-light-800.webp 800w, /media/front-light-1440.webp 1440w" sizes="(min-width: 960px) 640px, 100vw" width="1440" height="900" loading="lazy" decoding="async" alt="Wimym's front page in share mode: Where is your mind? beside the loom, its strings lit under a golden aurora, the projects named Project 1 and Project 3, and a line saying the person has worked 44 days in a row.">
             </picture>
           </a>
-          <figcaption>The front page, with share mode on.</figcaption>
+          <figcaption>The front page, with share mode on: the projects go by Project 1, 2 and 3.</figcaption>
         </figure>
       </div>
 
@@ -510,31 +556,8 @@ python3 labeller/label.py --all</code></pre>
     pre.replaceWith(box); box.append(pre, b);
   }
 
-  // The planet's entrance: Robin's messages fall onto the planet, once, then it rests on the still.
-  const fig = document.getElementById("planet");
-  const still = matchMedia("(prefers-reduced-motion: reduce)");
-  const dark = matchMedia("(prefers-color-scheme: dark)");
-  if (still.matches || !fig) return;
-  const replay = fig.querySelector(".replay");
-  let video;
-  const play = () => {
-    if (video) video.remove();
-    const theme = dark.matches ? "dark" : "light";
-    video = document.createElement("video");
-    video.muted = true; video.playsInline = true; video.preload = "auto";
-    video.setAttribute("muted", ""); video.setAttribute("playsinline", ""); video.setAttribute("aria-hidden", "true");
-    for (const [ext, type] of [["webm", "video/webm"], ["mp4", "video/mp4"]]) {
-      const s = document.createElement("source"); s.src = `/media/planet-${theme}.${ext}`; s.type = type; video.appendChild(s);
-    }
-    video.addEventListener("playing", () => video.classList.add("on"), { once: true });
-    video.addEventListener("ended", () => { replay.hidden = false; requestAnimationFrame(() => replay.classList.add("on")); });
-    replay.parentNode.insertBefore(video, replay);
-    video.play().catch(() => video.remove());
-  };
-  replay.addEventListener("click", () => { replay.classList.remove("on"); play(); });
-  dark.addEventListener("change", play);
-  play();
 })();
 </script>
+<script type="module" src="/live/live.js"></script>
 </body>
 </html>

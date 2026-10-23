@@ -76,7 +76,7 @@ export default function Rings({ messages, days, focus, onHover }: {
     // your days: first message to last, as a faint arc
     days.forEach((d, i) => {
       if (!d.n || d.start == null || d.end == null || i > upto) return;
-      ctx.strokeStyle = alpha(C.ink, C.dark ? 0.07 : 0.06);
+      ctx.strokeStyle = alpha(C.ink, 0.07);
       ctx.lineWidth = Math.max(1, band * 0.92);
       ctx.beginPath();
       ctx.arc(cx, cy, rad(i), ang(d.start), ang(d.end));
@@ -88,7 +88,7 @@ export default function Rings({ messages, days, focus, onHover }: {
       const i = index.get(m.day);
       if (i == null || m.dur < 20 || i > upto) continue;
       const dim = focus && m.family !== focus;
-      ctx.strokeStyle = alpha(C.fam[m.family || "none"], dim ? 0.04 : C.dark ? 0.32 : 0.28);
+      ctx.strokeStyle = alpha(C.fam[m.family || "none"], dim ? 0.04 : 0.32);
       ctx.lineWidth = Math.max(0.8, band * 0.62);
       ctx.beginPath();
       ctx.arc(cx, cy, rad(i), ang(m.hour), ang(m.hour + Math.min(m.dur, 4 * 3600) / 3600));

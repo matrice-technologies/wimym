@@ -20,6 +20,8 @@ const LENGTH = 26;            // px, the pulse's half length along the thread
 const SHIVER = 1.6, WAVE = 20;  // px the string moves at most, and the length of its ripple
 const MAX = 400;              // waves alive at once at most
 const SWEEP_IN = 0.15, SWEEP = 0.9, SWEPT = 0.6;   // the opening sweep: seconds before it, across, and how hard
+/** Seconds from a hard sweep (Strum.sweep) until every string has been struck and rung a moment: the loom at its brightest. */
+export const SWEEP_RINGS = SWEEP_IN + SWEEP + 0.7;
 const SP_MIN = 4, SP_MAX = 12;  // px between strings at most and least: as far apart as the strings on screen let the loom fill its room
 const FIT = 1.6;              // how quickly the spacing follows (per second)
 const RUN = 1100;             // px a second a change in the loom runs up its strings, from the fell
@@ -28,12 +30,12 @@ const NAME_PAD = 18;          // px at least between two columns' names
 const DAY_EASE = 7;           // how quickly the days follow the cloth (per second): it moves on a pick at a time, they glide
 const DAY_IN = 24;            // px above the fell over which a day comes in
 const BIRTH = 0.9, BORN = 1.3;   // seconds a new session's spark lasts, and how hard its first strike rings
-// the types' colours, as lights in a dark room (and their light-theme twins): ask ice blue, steer ember, make gold,
+// the types' colours, as lights in a dark room: ask ice blue, steer ember, make gold,
 // approve a champagne white (the commonest type, kept quiet), run aqua, ship mint, think lavender; unlabelled slate.
 // Searched in OKLCH so that any two stay apart side by side: worst pair ΔE 14.7 for full colour vision and 7.4 under
 // protanopia or deuteranopia (the app's palette: 9.8, and 0.5 for ship and steer)
-const TYPE_DARK = ["#85cdff", "#ff7e75", "#f3c443", "#f9edda", "#00b5b7", "#7df292", "#bb94f4"], PLAIN_DARK = "#707883";
-const TYPE_LIGHT = ["#005da2", "#c44132", "#bb8800", "#7a654d", "#009a97", "#42b352", "#925ac9"], PLAIN_LIGHT = "#a0a5ac";
+export const TYPE_DARK = ["#85cdff", "#ff7e75", "#f3c443", "#f9edda", "#00b5b7", "#7df292", "#bb94f4"];
+export const PLAIN_DARK = "#707883";
 const QUIET = 320;            // px of cloth without a message after which a column rests
 // what strikes the strings at the fell: a spark of light, running along a faint horizon
 const SHED_UP = 11;           // px above the shed's line, at the fell, where the spark runs
@@ -48,8 +50,10 @@ export const loomHero: PieceFactory = (canvas, mind, theme, opts) =>
   new Strum(canvas, mind, theme, opts.share, opts.still, { mass: true, colour: "type", keys: false, caption: false, wheel: false });
 
 /** mass: the aurora at first; keys: C and M change the colour and the aurora; caption: a lab page's .cap spans the
- * bottom on a narrow screen, and the loom sits above it. */
-export interface StrumOptions extends LoomOptions { mass?: boolean; colour?: "project" | "type"; keys?: boolean; caption?: boolean }
+ * bottom on a narrow screen, and the loom sits above it; words: the patches the days and names sit on, and the
+ * legend's dots (false for a picture with no words on it); worker: the aurora painted in a worker (false for a still
+ * made by running the loom on). */
+export interface StrumOptions extends LoomOptions { mass?: boolean; colour?: "project" | "type"; keys?: boolean; caption?: boolean; words?: boolean; worker?: boolean }
 
 /** A strike on string s at Y; i: the message that struck it, -1 for a pluck. */
 interface Wave { s: number; Y: number; t0: number; a: number; i: number }
@@ -83,16 +87,16 @@ export class Strum extends Loom {
   born = new Set<number>();
   widths = new Map<string, number>(); font = "";
 
-  readonly keys: boolean; readonly overCaption: boolean;
+  readonly keys: boolean; readonly overCaption: boolean; readonly words: boolean;
 
   constructor(canvas: HTMLCanvasElement, mind: Mind, theme: Theme, share: boolean, still: boolean, opts: StrumOptions = {}) {
     super(canvas, mind, theme, share, still, opts);
     this.sk = this.cur;
     this.reach = new Float32Array(this.cols.length);
     this.colourBy = opts.colour ?? "type";
-    this.mass = new Mass({ x: s => this.xAt(s, this.nowY), light: (s, i) => this.colourOf(this.sess[s], i) });
+    this.mass = new Mass({ x: s => this.xAt(s, this.nowY), light: (s, i) => this.colourOf(this.sess[s], i) }, opts.worker ?? true);
     this.massOn = opts.mass ?? false;
-    this.keys = opts.keys ?? false; this.overCaption = opts.caption ?? false;
+    this.keys = opts.keys ?? false; this.overCaption = opts.caption ?? false; this.words = opts.words ?? true;
     if (this.keys) addEventListener("keydown", this.key);
   }
   key = (e: KeyboardEvent) => {
@@ -130,9 +134,26 @@ export class Strum extends Loom {
     this.record(t);
     this.strum(t);
     super.frame(t, 0);
+    if (!this.words) return;
     this.name();
     this.date(dt);
   }
+
+  /** For a picture to keep (the postcard; made with still false and worker false): the last `picks` messages woven
+   * and strummed, a frame every 1/24 s, so the aurora has gathered; then a hand swept hard across the loom, and the
+   * picture taken while every string on it still rings bright. The last `keep` of them are left to weave, for a film
+   * that runs on from the picture. Returns the loom's time. */
+  pose(picks = 40, keep = 0) {
+    const n = this.A.length, dt = 1 / 24, to = n - keep;
+    this.cur = this.sk = Math.max(1, n - picks - keep); this.e = 0;
+    let t = dt;
+    for (; this.cur < to && t < 60; t += dt) this.frame(t, dt);
+    this.sweep(t);
+    for (const end = t + SWEEP_RINGS; t < end; t += dt) this.frame(t, dt);
+    return t;
+  }
+  /** A hand swept hard across the loom at t: SWEEP_RINGS later, it's at its brightest. */
+  sweep(t: number) { this.reveal(t, 1.4); }
 
   /** The spacing of the strings, from how many are on the loom: each column as wide as the lanes its strings reach,
    * and one spacing for all, so that together they fill the loom's room, within SP_MIN and SP_MAX. */
@@ -332,12 +353,12 @@ export class Strum extends Loom {
     }
   }
   /** A hand swept across the loom, left to right: every string on it struck once at the fell, so it opens lit. */
-  private reveal(t: number) {
+  private reveal(t: number, hard = SWEPT) {
     const now = this.nowY, at: [number, number, number][] = [];
     for (const s of this.onLoom) if (this.sess[s].first < this.cur) at.push([s, now, this.xAt(s, now)]);
     if (!at.length) return;
     const xs = at.map(a => a[2]), x0 = Math.min(...xs), wide = Math.max(1, Math.max(...xs) - x0);
-    for (const [s, Y, x] of at) this.waves.push({ s, Y, t0: t + SWEEP_IN + SWEEP * (x - x0) / wide, a: SWEPT, i: this.lastSent(s) });
+    for (const [s, Y, x] of at) this.waves.push({ s, Y, t0: t + SWEEP_IN + SWEEP * (x - x0) / wide, a: hard, i: this.lastSent(s) });
   }
   private index() {
     this.bySess.clear();
@@ -370,12 +391,12 @@ export class Strum extends Loom {
 
   /** The light running up and down each struck thread, the thread glowing in its wake, and a flash where the shuttle touched it. */
   protected overCloth(off: number, t: number) {
-    const g = this.g, dark = this.theme.dark, now = this.woven() - this.back, wake = SPEED * AFTER;
+    const g = this.g, now = this.woven() - this.back, wake = SPEED * AFTER;
     // far back, before any light: the mass
     if (this.massOn) this.mass.draw(g, this, this.still);
     g.save();
     // light adds up in the dark; by type, it screens, so a string struck again and again keeps its colour
-    if (dark) g.globalCompositeOperation = this.colourBy === "type" ? "screen" : "lighter";
+    g.globalCompositeOperation = this.colourBy === "type" ? "screen" : "lighter";
     g.lineCap = "round";
     this.place(now);
     for (const w of this.waves) {
@@ -436,7 +457,7 @@ export class Strum extends Loom {
     // a white core at the pulse itself
     const ca = Math.max(a, front - LENGTH * 0.6), cb = Math.min(b, front + LENGTH * 0.6);
     if (cb > ca) {
-      const core = g.createLinearGradient(0, front - LENGTH * 0.6 + off, 0, front + LENGTH * 0.6 + off), white = (this.theme.dark ? 0.85 : 0.6) * (this.colourBy === "type" ? 0.45 : 1);
+      const core = g.createLinearGradient(0, front - LENGTH * 0.6 + off, 0, front + LENGTH * 0.6 + off), white = 0.85 * (this.colourBy === "type" ? 0.45 : 1);
       core.addColorStop(0, "rgba(255,255,255,0)"); core.addColorStop(0.5, `rgba(255,255,255,${white * Math.min(1, fall)})`); core.addColorStop(1, "rgba(255,255,255,0)");
       this.ray(S, ca, cb, off); g.strokeStyle = core; g.lineWidth = 1.1; g.stroke();
     }
@@ -463,8 +484,7 @@ export class Strum extends Loom {
     return grad;
   }
   private warpColour(S: Session) {
-    const dark = this.theme.dark;
-    const F = dark ? ["#a9c3f0", "#8fdccb", "#c6b6f5", "#f0cb8a", "#f2a9c5", "#acdcf0", "#d6e29a", "#c0cae6"] : ["#3f68b0", "#24806f", "#6a4fb8", "#9a6d1c", "#a8406e", "#1f7ea3", "#66781c", "#4f5a7a"];
+    const F = ["#a9c3f0", "#8fdccb", "#c6b6f5", "#f0cb8a", "#f2a9c5", "#acdcf0", "#d6e29a", "#c0cae6"];
     return F[this.cols[S.col].floss % F.length];
   }
 
@@ -473,14 +493,13 @@ export class Strum extends Loom {
   /** The colour of what the shuttle carries for pick k: its column's. */
   private tint(k: number) {
     if (this.colourBy === "type") return this.typeColour(this.mind.family[this.order[k]]);
-    const c = this.colOf[k]; return c < 0 ? (this.theme.dark ? "#e8ecf6" : "#2a3350") : this.warpColour(this.sess[this.sessOf[k]]);
+    const c = this.colOf[k]; return c < 0 ? "#e8ecf6" : this.warpColour(this.sess[this.sessOf[k]]);
   }
   /** The colour of the light a message sends along string S: the string's project's, or the message's type's. */
   private colourOf(S: Session, i: number) { return this.colourBy === "type" ? this.typeColour(i < 0 ? -1 : this.mind.family[i]) : this.warpColour(S); }
   /** A type's colour; unlabelled messages slate. */
   private typeColour(f: number) {
-    const dark = this.theme.dark;
-    return f < 0 ? (dark ? PLAIN_DARK : PLAIN_LIGHT) : (dark ? TYPE_DARK : TYPE_LIGHT)[f];
+    return f < 0 ? PLAIN_DARK : TYPE_DARK[f];
   }
   /** The last message sent on string s so far. */
   private lastSent(s: number) {
@@ -492,7 +511,7 @@ export class Strum extends Loom {
 
   /** A horizon across the room, faint, brightest under the cloth, with no ends: the line the spark runs along. */
   protected drawReed(_C: Parameters<Loom["drawReed"]>[0], l: number, r: number, _reedY: number, fy: number) {
-    const g = this.g, ink = this.theme.dark ? "214,224,246" : "36,44,70";
+    const g = this.g, ink = "214,224,246";
     const y = fy + SHED - SHED_UP, cx = (l + r) / 2, reach = Math.max(this.w * 0.42, (r - l) / 2 + 120);
     const hz = g.createLinearGradient(cx - reach, 0, cx + reach, 0);
     hz.addColorStop(0, `rgba(${ink},0)`); hz.addColorStop(0.5, `rgba(${ink},0.2)`); hz.addColorStop(1, `rgba(${ink},0)`);
@@ -501,13 +520,13 @@ export class Strum extends Loom {
 
   /** The spark: a point of light in the colour of the message it carries, with a short tail, breathing while it waits. */
   protected drawShuttle(_C: Parameters<Loom["drawShuttle"]>[0], sx: number, sY: number, k: number, stage: Stage, t: number) {
-    const g = this.g, dark = this.theme.dark, col = this.tint(k), off = this.fell - this.nowY, moving = stage === "cross" || stage === "fly";
+    const g = this.g, col = this.tint(k), off = this.fell - this.nowY, moving = stage === "cross" || stage === "fly";
     const y = sY - SHED_UP, tr = this.trail;
     // its path, kept along the cloth so that it rises with it
     tr.push({ x: sx, Y: y - off, t, col });
     while (tr.length && t - tr[0].t > TAIL) tr.shift();
     g.save();
-    if (dark) g.globalCompositeOperation = "lighter";
+    g.globalCompositeOperation = "lighter";
     g.lineCap = "round";
     for (let i = 1; i < tr.length; i++) {
       const a = tr[i - 1], b = tr[i], f = 1 - (t - b.t) / TAIL;
@@ -519,7 +538,7 @@ export class Strum extends Loom {
     const halo = g.createRadialGradient(sx, y, 0, sx, y, rh);
     halo.addColorStop(0, rgba(col, 0.55 * breath)); halo.addColorStop(1, rgba(col, 0));
     g.fillStyle = halo; g.beginPath(); g.arc(sx, y, rh, 0, Math.PI * 2); g.fill();
-    g.fillStyle = dark ? `rgba(255,255,255,${0.95 * breath})` : rgba(col, breath); g.beginPath(); g.arc(sx, y, 2, 0, Math.PI * 2); g.fill();
+    g.fillStyle = `rgba(255,255,255,${0.95 * breath})`; g.beginPath(); g.arc(sx, y, 2, 0, Math.PI * 2); g.fill();
     g.restore();
   }
 

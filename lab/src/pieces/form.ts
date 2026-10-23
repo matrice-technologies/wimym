@@ -27,10 +27,10 @@ export class Form {
   camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
   u = {
     uRes: { value: new THREE.Vector2(1, 1) }, uShift: { value: 0 }, uTime: { value: 0 }, uBreath: { value: 1 }, uCore: { value: 0.8 }, uK: { value: 0.6 },
-    uNoise: { value: 0.03 }, uFlow: { value: 0.2 }, uDark: { value: 1 }, uWarm: { value: 0 }, uN: { value: 0 },
+    uNoise: { value: 0.03 }, uFlow: { value: 0.2 }, uWarm: { value: 0 }, uN: { value: 0 },
     uB: { value: Array.from({ length: MAXB }, () => new THREE.Vector3()) }, uR: { value: new Array(MAXB).fill(0.3) },
     uCool: { value: new THREE.Color() }, uMid: { value: new THREE.Color() }, uHot: { value: new THREE.Color() }, uGround: { value: new THREE.Color() },
-    uDeep: { value: new THREE.Color() }, uInk: { value: new THREE.Color() },
+    uDeep: { value: new THREE.Color() },
   };
   shape: FormShape = { ...CALM };
   target: FormShape = { ...CALM };
@@ -43,7 +43,7 @@ export class Form {
       vertexShader: "varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }",
       fragmentShader: FORM_FRAG, uniforms: this.u,
     })));
-    this.setTheme(theme);
+    this.colour(theme);
   }
 
   /** The form to grow toward; `now` jumps straight there (the first week shown, or a still). */
@@ -52,15 +52,13 @@ export class Form {
     if (now || this.still) this.shape = { ...s };
   }
 
-  setTheme(theme: Theme) {
+  private colour(theme: Theme) {
     const u = this.u;
-    u.uDark.value = theme.dark ? 1 : 0;
-    u.uCool.value.setRGB(...hex(theme.dark ? "#6aa7f0" : "#2a78d6"));
-    u.uMid.value.setRGB(...hex(theme.dark ? "#a48cf0" : "#6250d6"));
-    u.uHot.value.setRGB(...hex(theme.dark ? "#ff7a45" : "#d8431c"));
-    u.uGround.value.setRGB(...hex(theme.dark ? "#0e1424" : "#f7f8fb"));
+    u.uCool.value.setRGB(...hex("#6aa7f0"));
+    u.uMid.value.setRGB(...hex("#a48cf0"));
+    u.uHot.value.setRGB(...hex("#ff7a45"));
+    u.uGround.value.setRGB(...hex("#0e1424"));
     u.uDeep.value.setRGB(...hex(theme.deep));
-    u.uInk.value.setRGB(...hex(theme.ink));
   }
   setShift(x: number) { this.u.uShift.value = x; }
 

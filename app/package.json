@@ -13,6 +13,7 @@
     "@fontsource-variable/bricolage-grotesque": "^5.2.8",
     "@fontsource-variable/instrument-sans": "^5.2.8",
     "d3": "^7.9.0",
+    "mediabunny": "1.61.3",
     "motion": "^12.23.24",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

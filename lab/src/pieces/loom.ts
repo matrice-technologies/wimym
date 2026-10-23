@@ -37,7 +37,6 @@ const ROLL = 170;             // px of cloth a second rolled through a pause
 export const SHED = 14;       // px past the fell where the shuttle flies
 const BOX = 26;               // px past the cloth's edge where the shuttle waits
 const FLOSS_DARK = ["#7f9fd6", "#6fb5a7", "#a693d8", "#cfa86a", "#d48aa6", "#8cc0d8", "#b7c47a", "#9aa6c4"];
-const FLOSS_LIGHT = ["#5a7db5", "#3f8f82", "#7a64ba", "#a9813b", "#b05d82", "#3d8fae", "#7f8f3a", "#69738f"];
 
 export const loom: PieceFactory = (canvas, mind, theme, opts) => new Loom(canvas, mind, theme, opts.share, opts.still);
 
@@ -387,15 +386,13 @@ export class Loom implements Piece {
     return to;
   }
 
-  setTheme(theme: Theme) { this.theme = theme; }
   setShare(on: boolean) { this.share = on; }
 
   protected colours() {
-    const dark = this.theme.dark;
     return {
-      dark, warp: dark ? FLOSS_DARK : FLOSS_LIGHT, silk: dark ? "#d8deec" : "#2a3350",
-      shadow: dark ? "rgba(0,0,0,.55)" : "rgba(28,34,58,.24)", shine: dark ? "rgba(255,255,255,.5)" : "rgba(255,255,255,.42)",
-      warm: dark ? ["#ffb85c", "#ff7a2e", "#ff3b24"] : ["#e2921f", "#df5c17", "#c42d17"],
+      warp: FLOSS_DARK, silk: "#d8deec",
+      shadow: "rgba(0,0,0,.55)", shine: "rgba(255,255,255,.5)",
+      warm: ["#ffb85c", "#ff7a2e", "#ff3b24"],
       ground: this.theme.ground, muted: this.theme.muted,
     };
   }
@@ -476,7 +473,7 @@ export class Loom implements Piece {
       const floss = C.warp[this.cols[c].floss];
       // the weft: its shadow, the thread, the light along it
       const hot = m.hour[i] >= 21, wide = k === this.hoverK ? W * 1.7 : W;
-      if (C.dark && hot) { g.globalAlpha = 0.3; g.strokeStyle = col; g.lineWidth = W * 3; line(g, x0, y, x1, y); g.globalAlpha = 1; }
+      if (hot) { g.globalAlpha = 0.3; g.strokeStyle = col; g.lineWidth = W * 3; line(g, x0, y, x1, y); g.globalAlpha = 1; }
       g.strokeStyle = C.shadow; g.lineWidth = wide + 1.4; line(g, x0, y + 0.6, x1, y + 0.6);
       g.strokeStyle = col; g.lineWidth = wide; line(g, x0, y, x1, y);
       g.strokeStyle = C.shine; g.lineWidth = 0.6; g.globalAlpha = 0.55; line(g, x0 + 1, y - wide * 0.22, x1 - 1, y - wide * 0.22); g.globalAlpha = 1;
@@ -598,9 +595,9 @@ export class Loom implements Piece {
     this.drawShuttle(C, sx, shed, done ? Math.max(0, last) : k, stage, t);
   }
   /** The reed, a comb across the open columns. */
-  protected drawReed(C: ReturnType<Loom["colours"]>, l: number, r: number, reedY: number, _fy: number) {
+  protected drawReed(_C: ReturnType<Loom["colours"]>, l: number, r: number, reedY: number, _fy: number) {
     const g = this.g;
-    g.strokeStyle = C.dark ? "rgba(205,214,234,.5)" : "rgba(40,48,72,.45)"; g.lineWidth = 1.4;
+    g.strokeStyle = "rgba(205,214,234,.5)"; g.lineWidth = 1.4;
     line(g, l - 22, reedY - 3, r + 22, reedY - 3); line(g, l - 22, reedY + 3, r + 22, reedY + 3);
     g.lineWidth = 0.6; g.globalAlpha = 0.5; g.beginPath();
     for (let x = l - 20; x <= r + 20; x += 3) { g.moveTo(x, reedY - 3); g.lineTo(x, reedY + 3); }
@@ -610,7 +607,7 @@ export class Loom implements Piece {
   protected drawShuttle(C: ReturnType<Loom["colours"]>, sx: number, sY: number, k: number, _stage: Stage, _t: number) {
     const g = this.g, L = 44;
     const wood = g.createLinearGradient(0, sY - 6, 0, sY + 6);
-    wood.addColorStop(0, C.dark ? "#e2c08a" : "#c49a5a"); wood.addColorStop(1, C.dark ? "#8a6634" : "#7a5426");
+    wood.addColorStop(0, "#e2c08a"); wood.addColorStop(1, "#8a6634");
     g.fillStyle = C.shadow; g.beginPath(); boat(g, sx, sY + 2, L); g.fill();
     g.fillStyle = wood; g.beginPath(); boat(g, sx, sY, L); g.fill();
     g.fillStyle = this.weftColour(this.order[k], C);

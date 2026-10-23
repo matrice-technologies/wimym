@@ -1,31 +1,21 @@
 /* Wimym (Where is your mind). Time is the spine: rings, scores, streams. Quiet chrome, loud data.
-   Seven families of what you ask for, one color each, everywhere (palette validated for both themes). */
+   Seven families of what you ask for, one color each, everywhere (palette validated on the dark ground). */
 @import "@fontsource-variable/bricolage-grotesque/standard.css";
 @import "@fontsource-variable/instrument-sans";
 @import "@fontsource-variable/instrument-sans/wght-italic.css";
 
 :root {
-  color-scheme: light;
-  --ground: #eef0f4;
-  --surface: #ffffff;
-  --raised: #f6f7fa;
-  --sunk: #e4e7ee;
-  --line: #dce0e8;
-  --line-2: #c9cfdb;
-  --ink: #121725;
-  --ink-2: #3d4559;
-  --muted: #6b7386;
-  --faint: #9aa1b1;
-  --focus: #2a78d6;
-  --glow: rgba(42, 120, 214, .14);
-  --shadow: 0 1px 2px rgba(18, 23, 37, .05), 0 8px 24px rgba(18, 23, 37, .06);
+  color-scheme: dark;
+  --ground: #0d1017; --surface: #141925; --raised: #1a2030; --sunk: #0a0d13; --line: #242c3d; --line-2: #313b50;
+  --ink: #e9edf5; --ink-2: #b4bccb; --muted: #7d8698; --faint: #525b6e; --focus: #6aa7f0; --glow: rgba(106, 167, 240, .16);
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 30px rgba(0, 0, 0, .35);
 
-  --f-ask: #2a78d6; --f-steer: #eb6834; --f-make: #1baf7a; --f-approve: #eda100;
-  --f-run: #e87ba4; --f-ship: #008300; --f-think: #6250d6; --f-none: #b9bfcb;
-  --up: #006300; --down: #b4361f;
+  --f-ask: #3987e5; --f-steer: #d95926; --f-make: #199e70; --f-approve: #c98500;
+  --f-run: #d55181; --f-ship: #008300; --f-think: #9085e9; --f-none: #3a4357;
+  --up: #0ca30c; --down: #e66767;
   /* the week: work, nights, the usual day, time past the usual stop, the person's range */
-  --work: #26304a; --night: #6366d1; --usual: #e6e9f0; --late: #d4791f; --band: rgba(38, 48, 74, .085); --bandmid: rgba(38, 48, 74, .22);
-  --flag: #c4691a;
+  --work: #dde4f2; --night: #8d8ff5; --usual: #161c29; --late: #f0a050; --band: rgba(221, 228, 242, .08); --bandmid: rgba(221, 228, 242, .2);
+  --flag: #eba05a;
 
   --display: "Bricolage Grotesque Variable", "Avenir Next", system-ui, sans-serif;
   --text: "Instrument Sans Variable", -apple-system, "Segoe UI", system-ui, sans-serif;
@@ -33,30 +23,6 @@
   --t-xs: 12px; --t-s: 13.5px; --t-m: 15px; --t-l: 18px; --t-xl: 23px; --t-2xl: 30px; --t-3xl: 40px; --t-4xl: 56px;
   --r-s: 6px; --r-m: 10px; --r-l: 16px;
   --rail: 216px;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-    --ground: #0d1017; --surface: #141925; --raised: #1a2030; --sunk: #0a0d13; --line: #242c3d; --line-2: #313b50;
-    --ink: #e9edf5; --ink-2: #b4bccb; --muted: #7d8698; --faint: #525b6e; --focus: #6aa7f0; --glow: rgba(106, 167, 240, .16);
-    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 30px rgba(0, 0, 0, .35);
-    --f-ask: #3987e5; --f-steer: #d95926; --f-make: #199e70; --f-approve: #c98500;
-    --f-run: #d55181; --f-ship: #008300; --f-think: #9085e9; --f-none: #3a4357;
-    --up: #0ca30c; --down: #e66767;
-    --work: #dde4f2; --night: #8d8ff5; --usual: #161c29; --late: #f0a050; --band: rgba(221, 228, 242, .08); --bandmid: rgba(221, 228, 242, .2);
-    --flag: #eba05a;
-  }
-}
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --ground: #0d1017; --surface: #141925; --raised: #1a2030; --sunk: #0a0d13; --line: #242c3d; --line-2: #313b50;
-  --ink: #e9edf5; --ink-2: #b4bccb; --muted: #7d8698; --faint: #525b6e; --focus: #6aa7f0; --glow: rgba(106, 167, 240, .16);
-  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 30px rgba(0, 0, 0, .35);
-  --f-ask: #3987e5; --f-steer: #d95926; --f-make: #199e70; --f-approve: #c98500;
-  --f-run: #d55181; --f-ship: #008300; --f-think: #9085e9; --f-none: #3a4357;
-  --up: #0ca30c; --down: #e66767;
-  --work: #dde4f2; --night: #8d8ff5; --usual: #161c29; --late: #f0a050; --band: rgba(221, 228, 242, .08); --bandmid: rgba(221, 228, 242, .2);
-  --flag: #eba05a;
 }
 
 * { box-sizing: border-box; }
@@ -95,9 +61,6 @@ a { color: inherit; }
 .rail .live { display: flex; align-items: center; gap: 7px; }
 .rail .live i { width: 7px; height: 7px; border-radius: 50%; background: var(--up); }
 .rail .live.busy i { background: var(--f-approve); }
-.theme { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 2px; width: max-content; }
-.theme button { border: 0; background: none; padding: 3px 9px; border-radius: 999px; color: var(--muted); cursor: pointer; font-size: var(--t-xs); }
-.theme button.on { background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--line); }
 
 /* a container, so a section can reach its full width (cqw) from inside a narrower .wrap */
 main.page { --pad: clamp(20px, 4vw, 56px); min-width: 0; padding: 40px var(--pad) 96px; container-type: inline-size; }

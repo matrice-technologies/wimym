@@ -12,9 +12,9 @@ export const MAXB = 10;
 
 export const FORM_FRAG = /* glsl */ `
   precision highp float;
-  uniform vec2 uRes; uniform float uShift; uniform float uTime, uBreath, uCore, uK, uNoise, uFlow, uDark, uWarm, uN;
+  uniform vec2 uRes; uniform float uShift; uniform float uTime, uBreath, uCore, uK, uNoise, uFlow, uWarm, uN;
   uniform vec3 uB[${MAXB}]; uniform float uR[${MAXB}];
-  uniform vec3 uCool, uMid, uHot, uGround, uDeep, uInk;
+  uniform vec3 uCool, uMid, uHot, uGround, uDeep;
   vec3 toneOf(float w) { return w < 0.5 ? mix(uCool, uMid, w * 2.0) : mix(uMid, uHot, w * 2.0 - 1.0); }
   varying vec2 vUv;
 
@@ -49,7 +49,7 @@ export const FORM_FRAG = /* glsl */ `
     // the ground: a soft glow behind the form
     float vig = length(uv);
     vec3 col = mix(uGround, uDeep, smoothstep(0.1, 0.95, vig));
-    col += (uDark > 0.5 ? 0.06 : 0.03) * toneOf(uWarm) * exp(-vig * vig * 4.0);
+    col += 0.06 * toneOf(uWarm) * exp(-vig * vig * 4.0);
     // march, inside a bounding sphere
     float b = dot(ro, rd), c = dot(ro, ro) - 2.6 * 2.6, disc = b * b - c;
     float t = 0.0, hit = 0.0, glow = 0.0;
@@ -73,17 +73,10 @@ export const FORM_FRAG = /* glsl */ `
       // light through the skin: thin parts glow
       float thick = clamp(field(p - n * 0.25) / -0.25, 0.0, 1.0);
       vec3 irid = 0.5 + 0.5 * cos(6.2831 * (fres * 0.6 + vec3(0.0, 0.33, 0.67) + uTime * 0.02));
-      if (uDark > 0.5) {
-        vec3 body = tone * (0.16 + 0.42 * diff) + tone * (1.0 - thick) * 0.7;
-        col = body + mix(tone, irid, 0.35) * fres * 1.1 + spec * 0.5;
-      } else {
-        vec3 paper = vec3(0.97, 0.965, 0.955);
-        vec3 body = mix(paper, tone, 0.18 + 0.25 * (1.0 - thick)) * (0.72 + 0.32 * diff);
-        col = body + mix(tone, irid, 0.4) * fres * 0.35 + spec * 0.35;
-        col = mix(col, uInk, fres * 0.18);
-      }
+      vec3 body = tone * (0.16 + 0.42 * diff) + tone * (1.0 - thick) * 0.7;
+      col = body + mix(tone, irid, 0.35) * fres * 1.1 + spec * 0.5;
     } else {
-      col += tone * glow * (uDark > 0.5 ? 1.0 : -0.25);
+      col += tone * glow;
     }
     gl_FragColor = vec4(col, 1.0);
   }`;
@@ -98,10 +91,10 @@ class Organism implements Piece {
   camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
   u = {
     uRes: { value: new THREE.Vector2(1, 1) }, uShift: { value: 0 }, uTime: { value: 0 }, uBreath: { value: 1 }, uCore: { value: 0.8 }, uK: { value: 0.6 },
-    uNoise: { value: 0.03 }, uFlow: { value: 0.2 }, uDark: { value: 1 }, uWarm: { value: 0 }, uN: { value: 0 },
+    uNoise: { value: 0.03 }, uFlow: { value: 0.2 }, uWarm: { value: 0 }, uN: { value: 0 },
     uB: { value: Array.from({ length: MAXB }, () => new THREE.Vector3()) }, uR: { value: new Array(MAXB).fill(0.3) },
     uCool: { value: new THREE.Color() }, uMid: { value: new THREE.Color() }, uHot: { value: new THREE.Color() }, uGround: { value: new THREE.Color() },
-    uDeep: { value: new THREE.Color() }, uInk: { value: new THREE.Color() },
+    uDeep: { value: new THREE.Color() },
   };
   signs: WeekSigns[] = [];
   week = -1;                      // the week shown
@@ -122,7 +115,7 @@ class Organism implements Piece {
       fragmentShader: FORM_FRAG, uniforms: this.u,
     }));
     this.scene.add(quad);
-    this.setTheme(theme);
+    this.colour(theme);
     loadSigns(mind).then(s => {
       this.signs = s;
       this.tour = !still;
@@ -162,16 +155,13 @@ class Organism implements Piece {
     };
   }
 
-  setTheme(theme: Theme) {
-    this.theme = theme;
+  private colour(theme: Theme) {
     const u = this.u;
-    u.uDark.value = theme.dark ? 1 : 0;
-    u.uCool.value.setRGB(...hex(theme.dark ? "#6aa7f0" : "#2a78d6"));
-    u.uMid.value.setRGB(...hex(theme.dark ? "#a48cf0" : "#6250d6"));
-    u.uHot.value.setRGB(...hex(theme.dark ? "#ff7a45" : "#d8431c"));
-    u.uGround.value.setRGB(...hex(theme.dark ? "#0e1424" : "#f7f8fb"));
+    u.uCool.value.setRGB(...hex("#6aa7f0"));
+    u.uMid.value.setRGB(...hex("#a48cf0"));
+    u.uHot.value.setRGB(...hex("#ff7a45"));
+    u.uGround.value.setRGB(...hex("#0e1424"));
     u.uDeep.value.setRGB(...hex(theme.deep));
-    u.uInk.value.setRGB(...hex(theme.ink));
   }
   setShare(on: boolean) { this.share = on; }
   setShift(x: number) { this.u.uShift.value = x; }

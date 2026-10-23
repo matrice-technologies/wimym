@@ -2,10 +2,9 @@
 // Data in (the app's messages and days), canvas out. The app sets the words around it; the piece
 // supplies its own caption through onCaption if the app wants it.
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState, type CSSProperties } from "react";
-import stillDark from "./fallback-planet-dark.jpg";
-import stillLight from "./fallback-planet-light.jpg";
+import planetStill from "./fallback-planet-dark.jpg";
 import { mindFrom, mindFromPoints, type Mind, type PointsPayload, type RawDay, type RawMessage } from "../src/shared/data";
-import { DARK, LIGHT } from "../src/shared/palette";
+import { DARK } from "../src/shared/palette";
 import type { Piece, PieceFactory } from "../src/shared/piece";
 import { recordLoop, savePNG } from "../src/shared/capture";
 import { globe } from "../src/pieces/globe";
@@ -30,8 +29,6 @@ export interface HeroProps {
   days?: readonly RawDay[] | null;
   /** Which picture. Default "planet". */
   piece?: HeroPiece;
-  /** The app's resolved theme. */
-  theme: "light" | "dark";
   /** Shapes only: tooltips give a time and nothing anyone wrote, no project names. Can change at any time. */
   share?: boolean;
   /** "auto" follows prefers-reduced-motion; "still" draws one frame and holds it. Default "auto". */
@@ -61,14 +58,14 @@ export interface HeroHandle {
   savePNG(withCaption?: boolean): void;
   /** Save six seconds as a webm. */
   recordLoop(seconds?: number): void;
-  /** The postcard to post: the planet in share mode, the question and two true lines. Saves a PNG and returns its canvas. */
+  /** The postcard to post: the strummed Loom in share mode, the question and three true lines. Saves a PNG and returns its canvas. */
   savePostcard(opts?: PostcardOptions): Promise<HTMLCanvasElement | null>;
 }
 
 const reduced = () => typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 export const Hero = forwardRef<HeroHandle, HeroProps>(function Hero(props, ref) {
-  const { points, messages, days, piece = "planet", theme, share = false, motion = "auto", labels = true, tooltips = true, shift = 0, entrance = "auto", onSelect, onCaption, fallbackSrc, className, style } = props;
+  const { points, messages, days, piece = "planet", share = false, motion = "auto", labels = true, tooltips = true, shift = 0, entrance = "auto", onSelect, onCaption, fallbackSrc, className, style } = props;
   const [noGL, setNoGL] = useState(() => !webgl2());
   const box = useRef<HTMLDivElement>(null);
   const stage = useRef<HTMLDivElement>(null);
@@ -76,8 +73,8 @@ export const Hero = forwardRef<HeroHandle, HeroProps>(function Hero(props, ref) 
   const tipRef = useRef<HTMLDivElement>(null);
   const live = useRef<{ piece: Piece; t: number } | null>(null);
   // props the running loop reads without restarting it
-  const latest = useRef({ share, theme, labels, tooltips, shift, onSelect, onCaption });
-  latest.current = { share, theme, labels, tooltips, shift, onSelect, onCaption };
+  const latest = useRef({ share, labels, tooltips, shift, onSelect, onCaption });
+  latest.current = { share, labels, tooltips, shift, onSelect, onCaption };
 
   const mind = useMemo(() => shapesOf(points, messages, days, () => latest.current.share), [points, messages, days]);
   const shapes = useMemo(() => shapesOf(points, messages, days, () => true), [points, messages, days]);
@@ -95,7 +92,7 @@ export const Hero = forwardRef<HeroHandle, HeroProps>(function Hero(props, ref) 
     holder.append(canvas);
     let p: Piece;
     try {
-      p = PIECES[piece](canvas, mind, latest.current.theme === "dark" ? DARK : LIGHT, { share: latest.current.share, still, intro: entrance === "auto" ? undefined : entrance === "always" });
+      p = PIECES[piece](canvas, mind, DARK, { share: latest.current.share, still, intro: entrance === "auto" ? undefined : entrance === "always" });
     } catch (e) {
       console.warn("Hero: no WebGL, showing a still instead", e);
       canvas.remove();
@@ -197,32 +194,30 @@ export const Hero = forwardRef<HeroHandle, HeroProps>(function Hero(props, ref) 
     };
   }, [mind, piece, still, blocked]);  // entrance is read once, when the piece is made
 
-  useEffect(() => { live.current?.piece.setTheme(theme === "dark" ? DARK : LIGHT); }, [theme]);
   useEffect(() => { live.current?.piece.setShift?.(shift); }, [shift]);
   useEffect(() => { live.current?.piece.setShare(share); if (tipRef.current) tipRef.current.hidden = true; }, [share]);
 
   useImperativeHandle(ref, () => ({
-    savePNG: (withCaption = true) => { const l = live.current; if (l) savePNG(l.piece, theme === "dark" ? DARK : LIGHT, piece, still ? 8 : l.t, withCaption); },
+    savePNG: (withCaption = true) => { const l = live.current; if (l) savePNG(l.piece, DARK, piece, still ? 8 : l.t, withCaption); },
     recordLoop: (seconds = 6) => { const l = live.current; if (l) recordLoop(l.piece, piece, seconds); },
     // its own copy of the shapes, with share mode fixed on
-    savePostcard: async (opts = {}) => (shapes ? makePostcard(shapes, { theme, ...opts }) : null),
-  }), [theme, piece, still, shapes]);
+    savePostcard: async (opts = {}) => (shapes ? makePostcard(shapes, opts) : null),
+  }), [piece, still, shapes]);
 
-  const ink = theme === "dark" ? "#e9edf5" : "#121725";
   return (
     <div ref={box} className={className} style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden", ...style }}>
       <div ref={stage} style={{ position: "absolute", inset: 0 }} />
-      {blocked && <img src={fallbackSrc ?? (theme === "dark" ? stillDark : stillLight)} alt="A planet whose night side is covered in small warm lights" style={{
+      {blocked && <img src={fallbackSrc ?? planetStill} alt="A planet whose night side is covered in small warm lights" style={{
         position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", objectPosition: `${50 + shift * 100}% 50%`,
         maskImage: "radial-gradient(closest-side, #000 82%, transparent)", WebkitMaskImage: "radial-gradient(closest-side, #000 82%, transparent)",
       }} />}
-      <div ref={labelRef} aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none", font: "500 12px/1 var(--text, system-ui)", color: theme === "dark" ? "#7d8698" : "#6b7386" }} className="wimym-hero-labels" />
+      <div ref={labelRef} aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none", font: "500 12px/1 var(--text, system-ui)", color: "#7d8698" }} className="wimym-hero-labels" />
       <div ref={tipRef} hidden className="wimym-hero-tip" style={{
-        position: "absolute", zIndex: 2, maxWidth: 320, padding: "9px 11px", borderRadius: 8, pointerEvents: "none", font: "13px/1.4 var(--text, system-ui)", color: ink,
-        background: theme === "dark" ? "rgba(20,25,37,.92)" : "rgba(255,255,255,.94)", border: `1px solid ${theme === "dark" ? "#242c3d" : "#dce0e8"}`,
+        position: "absolute", zIndex: 2, maxWidth: 320, padding: "9px 11px", borderRadius: 8, pointerEvents: "none", font: "13px/1.4 var(--text, system-ui)", color: "#e9edf5",
+        background: "rgba(20,25,37,.92)", border: "1px solid #242c3d",
         boxShadow: "0 8px 30px rgba(0,0,0,.18)", backdropFilter: "blur(6px)",
       }} />
-      <style>{`.wimym-hero-labels span{position:absolute;left:0;top:0;white-space:nowrap}.wimym-hero-tip .m{color:${theme === "dark" ? "#7d8698" : "#6b7386"}}.wimym-hero-tip .q{margin-top:5px;color:${theme === "dark" ? "#b4bccb" : "#3d4559"}}`}</style>
+      <style>{`.wimym-hero-labels span{position:absolute;left:0;top:0;white-space:nowrap}.wimym-hero-tip .m{color:#7d8698}.wimym-hero-tip .q{margin-top:5px;color:#b4bccb}`}</style>
     </div>
   );
 });

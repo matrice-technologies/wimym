@@ -6,17 +6,15 @@
 // before it is read.
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState, type CSSProperties } from "react";
 import { Form } from "../src/pieces/form";
-import { DARK, LIGHT } from "../src/shared/palette";
+import { DARK } from "../src/shared/palette";
 import { weekCaption, weekShape, type WeekPayload } from "./weekShape";
 import stillDark from "./fallback-week-dark.jpg";
-import stillLight from "./fallback-week-light.jpg";
 
 export interface WeekFormProps {
   /** GET /api/week?start=… as is (docs/contract-week.md). Its vitals carry the bands the form is read against. */
   week: WeekPayload | null;
   /** GET /api/vitals, accepted for the page's convenience; the week's own vitals and bands are what is read. */
   vitals?: unknown;
-  theme: "light" | "dark";
   /** Nothing personal is ever drawn (only the form and counts); accepted so pages pass it everywhere alike. */
   share?: boolean;
   /** "auto" follows prefers-reduced-motion; "still" draws one frame and holds it. Default "auto". */
@@ -41,15 +39,15 @@ function webgl2() {
 }
 
 export const WeekForm = forwardRef<WeekFormHandle, WeekFormProps>(function WeekForm(props, ref) {
-  const { week, theme, motion = "auto", shift = 0, caption = false, onCaption, fallbackSrc, className, style } = props;
+  const { week, motion = "auto", shift = 0, caption = false, onCaption, fallbackSrc, className, style } = props;
   const box = useRef<HTMLDivElement>(null), holder = useRef<HTMLDivElement>(null);
   const live = useRef<{ form: Form; t: number } | null>(null);
   const [noGL, setNoGL] = useState(() => !webgl2());
   const still = motion === "still" || (motion === "auto" && reduced());
   const shape = useMemo(() => weekShape(week), [week]);
   const words = useMemo(() => weekCaption(week), [week]);
-  const latest = useRef({ shape, theme, shift });
-  latest.current = { shape, theme, shift };
+  const latest = useRef({ shape, shift });
+  latest.current = { shape, shift };
 
   useEffect(() => {
     const el = box.current, hold = holder.current;
@@ -60,7 +58,7 @@ export const WeekForm = forwardRef<WeekFormHandle, WeekFormProps>(function WeekF
     Object.assign(canvas.style, { display: "block", width: "100%", height: "100%" });
     hold.append(canvas);
     let form: Form;
-    try { form = new Form(canvas, latest.current.theme === "dark" ? DARK : LIGHT, still); } catch { canvas.remove(); setNoGL(true); return; }
+    try { form = new Form(canvas, DARK, still); } catch { canvas.remove(); setNoGL(true); return; }
     form.setShape(latest.current.shape, true);
     form.setShift(latest.current.shift);
     const state = { form, t: 0 };
@@ -91,7 +89,6 @@ export const WeekForm = forwardRef<WeekFormHandle, WeekFormProps>(function WeekF
   }, [still, noGL]);
 
   useEffect(() => { live.current?.form.setShape(shape); }, [shape]);
-  useEffect(() => { live.current?.form.setTheme(theme === "dark" ? DARK : LIGHT); }, [theme]);
   useEffect(() => { live.current?.form.setShift(shift); }, [shift]);
   useEffect(() => { onCaption?.(words); }, [words]);
 
@@ -107,11 +104,11 @@ export const WeekForm = forwardRef<WeekFormHandle, WeekFormProps>(function WeekF
     },
   }), [week]);
 
-  const muted = theme === "dark" ? "#7d8698" : "#6b7386", ink = theme === "dark" ? "#b4bccb" : "#3d4559";
+  const muted = "#7d8698", ink = "#b4bccb";
   return (
     <div ref={box} className={className} style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden", ...style }}>
       <div ref={holder} style={{ position: "absolute", inset: 0 }} />
-      {noGL && <img src={fallbackSrc ?? (theme === "dark" ? stillDark : stillLight)} alt="A soft, rounded form" style={{
+      {noGL && <img src={fallbackSrc ?? stillDark} alt="A soft, rounded form" style={{
         position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", objectPosition: `${50 + shift * 100}% 50%`,
         maskImage: "radial-gradient(closest-side, #000 80%, transparent)", WebkitMaskImage: "radial-gradient(closest-side, #000 80%, transparent)",
       }} />}

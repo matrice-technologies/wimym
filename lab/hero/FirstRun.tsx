@@ -70,14 +70,13 @@ const VERT = /* glsl */ `
     gl_PointSize = id < uCount ? aSize * uPx * (1.5 + 1.6 * (1.0 - age)) * (6.0 / -mv.z) : 0.0;
   }`;
 const FRAG = /* glsl */ `
-  uniform vec3 uStar; uniform float uDark;
+  uniform vec3 uStar;
   varying float vA;
   void main() {
     vec2 p = gl_PointCoord * 2.0 - 1.0; float d = dot(p, p);
     if (d > 1.0) discard;
     float a = exp(-d * 8.0) + exp(-d * 2.4) * 0.2;
-    if (uDark > 0.5) gl_FragColor = vec4(uStar * a * vA * 2.6, 1.0);
-    else gl_FragColor = vec4(uStar, a * vA);
+    gl_FragColor = vec4(uStar * a * vA * 2.6, 1.0);
   }`;
 
 /** The stars of the show, in their own small scene. */
@@ -85,10 +84,10 @@ class Show {
   renderer: THREE.WebGLRenderer;
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
-  u = { uCount: { value: 0 }, uTime: { value: 0 }, uPx: { value: 1 }, uFade: { value: 1 }, uStar: { value: new THREE.Color() }, uDark: { value: 1 } };
-  w = 1; h = 1; shift = 0; dark = true;
+  u = { uCount: { value: 0 }, uTime: { value: 0 }, uPx: { value: 1 }, uFade: { value: 1 }, uStar: { value: new THREE.Color("#c7dbff") } };
+  w = 1; h = 1; shift = 0;
   points: THREE.Points;
-  constructor(canvas: HTMLCanvasElement, dark: boolean) {
+  constructor(canvas: HTMLCanvasElement) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
     this.renderer.setClearColor(0, 0);
     // stars in time order, the first days at the core; hours drawn from a working day's shape
@@ -112,18 +111,8 @@ class Show {
     g.setAttribute("aSize", new THREE.BufferAttribute(size, 1));
     g.setAttribute("aSeed", new THREE.BufferAttribute(seed, 1));
     g.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 4);
-    this.points = new THREE.Points(g, new THREE.ShaderMaterial({ vertexShader: VERT, fragmentShader: FRAG, uniforms: this.u, transparent: true, depthWrite: false }));
+    this.points = new THREE.Points(g, new THREE.ShaderMaterial({ vertexShader: VERT, fragmentShader: FRAG, uniforms: this.u, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
     this.scene.add(this.points);
-    this.setDark(dark, true);
-  }
-  setDark(dark: boolean, force = false) {
-    if (dark === this.dark && !force) return;
-    this.dark = dark;
-    this.u.uDark.value = dark ? 1 : 0;
-    this.u.uStar.value.set(dark ? "#c7dbff" : "#2b3550");
-    const m = this.points.material as THREE.ShaderMaterial;
-    m.blending = dark ? THREE.AdditiveBlending : THREE.NormalBlending;
-    m.needsUpdate = true;
   }
   resize(w: number, h: number, dpr: number) {
     this.w = w; this.h = h;
@@ -147,15 +136,15 @@ class Show {
 type Stage = "show" | "handover" | "planet";
 
 export function FirstRun(props: FirstRunProps) {
-  const { state, points, messages, days, minSeconds = 2.6, narrate = true, onLine, onDone, theme, shift = 0, style, className, ...hero } = props;
+  const { state, points, messages, days, minSeconds = 2.6, narrate = true, onLine, onDone, shift = 0, style, className, ...hero } = props;
   // a returning person, whose engine is already up to date, goes straight to the planet
   const [stage, setStage] = useState<Stage>(() => (state?.first === false ? "planet" : "show"));
   const [said, setSaid] = useState(() => { const n = narration(state); return { line: n.line, detail: n.detail }; });
   const [returning] = useState(stage === "planet");
   const box = useRef<HTMLDivElement>(null), holder = useRef<HTMLDivElement>(null);
   const hasData = !!(points?.rows?.length || (messages?.length && days?.length));
-  const live = useRef({ state, hasData, count: points?.rows?.length ?? messages?.length ?? 0, theme, shift, onLine, onDone, minSeconds });
-  live.current = { state, hasData, count: points?.rows?.length ?? messages?.length ?? 0, theme, shift, onLine, onDone, minSeconds };
+  const live = useRef({ state, hasData, count: points?.rows?.length ?? messages?.length ?? 0, shift, onLine, onDone, minSeconds });
+  live.current = { state, hasData, count: points?.rows?.length ?? messages?.length ?? 0, shift, onLine, onDone, minSeconds };
 
   useEffect(() => {
     if (stage !== "show") return;
@@ -169,7 +158,7 @@ export function FirstRun(props: FirstRunProps) {
     hold.append(canvas);
     const reduced = typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
     let show: Show;
-    try { show = new Show(canvas, live.current.theme === "dark"); } catch { canvas.remove(); setStage("planet"); return; }
+    try { show = new Show(canvas); } catch { canvas.remove(); setStage("planet"); return; }
     const size = () => { const r = el.getBoundingClientRect(); if (r.width && r.height) show.resize(r.width, r.height, Math.min(devicePixelRatio || 1, 2)); };
     size();
     const ro = new ResizeObserver(size);
@@ -188,7 +177,6 @@ export function FirstRun(props: FirstRunProps) {
       // ease toward it, never so slow that a quick build looks empty
       shown = reduced ? target : Math.min(target, shown + Math.max((target - shown) * (1 - Math.exp(-dt * 2.2)), dt * 900));
       show.setShift(L.shift);
-      show.setDark(L.theme === "dark");
       show.frame(shown, (now - t0) / 1000);
 
       // the words: a new step holds the floor for at least 0.9 s; the same step updates its numbers in place
@@ -220,13 +208,13 @@ export function FirstRun(props: FirstRunProps) {
     return () => clearTimeout(t);
   }, [stage]);
 
-  const ink = theme === "dark" ? "#b4bccb" : "#3d4559", muted = theme === "dark" ? "#7d8698" : "#6b7386";
+  const ink = "#b4bccb", muted = "#7d8698";
   const heroData = useMemo(() => (hasData ? { points, messages, days } : null), [hasData, points, messages, days]);
   return (
     <div ref={box} className={className} style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden", ...style }}>
       {stage !== "show" && heroData && (
         // read once, when the planet is made: after a show it always makes its entrance
-        <Hero {...hero} points={heroData.points} messages={heroData.messages} days={heroData.days} theme={theme} shift={shift}
+        <Hero {...hero} points={heroData.points} messages={heroData.messages} days={heroData.days} shift={shift}
           entrance={returning ? "auto" : "always"} style={{ position: "absolute", inset: 0 }} />
       )}
       {stage !== "planet" && (

@@ -39,7 +39,7 @@ const VERT = /* glsl */ `
     gl_Position = projectionMatrix * mv;
   }`;
 const FRAG = /* glsl */ `
-  uniform sampler2D uDay, uGlow; uniform vec3 uSun, uNight, uAtmo, uMark; uniform float uDark, uSolid, uHoverLat, uRow;
+  uniform sampler2D uDay, uGlow; uniform vec3 uSun, uNight, uAtmo, uMark; uniform float uSolid, uHoverLat, uRow;
   varying vec3 vN; varying vec3 vObjN; varying vec2 vUv; varying vec3 vView;
   void main() {
     float lit = smoothstep(-0.12, 0.25, dot(vObjN, uSun));
@@ -47,9 +47,9 @@ const FRAG = /* glsl */ `
     float shade = 0.75 + 0.25 * max(dot(normalize(vN), normalize(vec3(0.4, 0.6, 1.0))), 0.0);
     vec3 col = mix(uNight * (0.6 + 0.4 * day.g), day * shade, lit);
     // the glow the lights cast on the ground, only where it is dark
-    col += texture2D(uGlow, vUv).rgb * (1.0 - lit) * (uDark > 0.5 ? 1.1 : 0.9);
+    col += texture2D(uGlow, vUv).rgb * (1.0 - lit) * 1.1;
     float fres = pow(1.0 - max(dot(normalize(vN), normalize(vView)), 0.0), 3.0);
-    col += uAtmo * fres * (0.2 + 0.8 * lit) * (uDark > 0.5 ? 0.8 : 0.5);
+    col += uAtmo * fres * (0.2 + 0.8 * lit) * 0.8;
     // the day under the pointer, as a fine ring
     float lat = asin(clamp(vObjN.y, -1.0, 1.0));
     float ring = 1.0 - smoothstep(uRow * 0.4, uRow * 1.1, abs(lat - uHoverLat));
@@ -76,7 +76,7 @@ const PVERT = /* glsl */ `
     gl_PointSize = aSize * uPx * (0.55 + 1.0 * vNight) * (1.0 + vHov * 0.8 + vFly * 0.9) * (6.0 / -mv.z) * uAppear;
   }`;
 const PFRAG = /* glsl */ `
-  uniform vec3 uAmber, uOrange, uRed, uStar; uniform float uDark;
+  uniform vec3 uAmber, uOrange, uRed, uStar;
   varying float vNight; varying float vHeat; varying float vHov; varying float vFly;
   void main() {
     vec2 p = gl_PointCoord * 2.0 - 1.0; float d = dot(p, p);
@@ -87,12 +87,8 @@ const PFRAG = /* glsl */ `
     // in flight they are the nebula's white stars; they turn to lamps as they land
     c = mix(c, uStar, vFly * 0.8);
     float bright = (0.75 + 0.9 * vHeat) * mix(0.16, 1.0, vNight) * (1.0 + vHov * 0.9 + vFly * 1.2);
-    if (uDark > 0.5) {
-      // light added up, hot enough at the core to bloom
-      gl_FragColor = vec4(c * (core * 1.5 + halo * 0.1) * bright, 1.0);
-    } else {
-      gl_FragColor = vec4(c, (core + halo * 0.18) * min(1.0, bright));
-    }
+    // light added up, hot enough at the core to bloom
+    gl_FragColor = vec4(c * (core * 1.5 + halo * 0.1) * bright, 1.0);
   }`;
 const SVERT = /* glsl */ `
   attribute float aSize; attribute float aSeed; uniform float uTime, uPx;
@@ -143,11 +139,11 @@ export class Globe implements Piece {
   u = {
     uDay: { value: null as THREE.Texture | null }, uGlow: { value: null as THREE.Texture | null }, uSun: { value: this.sun },
     uNight: { value: new THREE.Color() }, uAtmo: { value: new THREE.Color() }, uMark: { value: new THREE.Color() },
-    uDark: { value: 1 }, uSolid: { value: 1 }, uHoverLat: { value: -10 }, uRow: { value: 0.01 },
+    uSolid: { value: 1 }, uHoverLat: { value: -10 }, uRow: { value: 0.01 },
   };
   pu = {
     uSun: { value: this.sun }, uPx: { value: 1 }, uHoverDay: { value: -1 }, uMorph: { value: 1 }, uAppear: { value: 1 },
-    uAmber: { value: new THREE.Color() }, uOrange: { value: new THREE.Color() }, uRed: { value: new THREE.Color() }, uStar: { value: new THREE.Color() }, uDark: { value: 1 },
+    uAmber: { value: new THREE.Color() }, uOrange: { value: new THREE.Color() }, uRed: { value: new THREE.Color() }, uStar: { value: new THREE.Color() },
   };
   su = { uTime: { value: 0 }, uPx: { value: 1 } };
   w = 1; h = 1; theme: Theme; afterDark = 0;
@@ -209,7 +205,7 @@ export class Globe implements Piece {
     g.setAttribute("aDay", new THREE.BufferAttribute(dayA, 1));
     g.setAttribute("aDelay", new THREE.BufferAttribute(delay, 1));
     g.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 3);
-    this.lights = new THREE.Points(g, new THREE.ShaderMaterial({ vertexShader: PVERT, fragmentShader: PFRAG, uniforms: this.pu, transparent: true, depthWrite: false }));
+    this.lights = new THREE.Points(g, new THREE.ShaderMaterial({ vertexShader: PVERT, fragmentShader: PFRAG, uniforms: this.pu, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
     this.lights.renderOrder = 2;
 
     const counts = new Int32Array(D);
@@ -220,13 +216,13 @@ export class Globe implements Piece {
 
     // a thin atmosphere: brightest at the planet's edge, nothing at the shell's own edge
     this.halo = new THREE.Mesh(new THREE.SphereGeometry(1.12, 64, 48), new THREE.ShaderMaterial({
-      uniforms: { uC: this.u.uAtmo, uDark: this.u.uDark, uSolid: this.u.uSolid },
+      uniforms: { uC: this.u.uAtmo, uSolid: this.u.uSolid },
       vertexShader: "varying vec3 vN; void main(){ vN = normalize(normalMatrix*normal); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }",
-      fragmentShader: "uniform vec3 uC; uniform float uDark, uSolid; varying vec3 vN; void main(){ float f = pow(clamp(-vN.z / 0.45, 0.0, 1.0), 4.0); gl_FragColor = vec4(uC, f * uSolid * (uDark > 0.5 ? 0.9 : 0.5)); }",
+      fragmentShader: "uniform vec3 uC; uniform float uSolid; varying vec3 vN; void main(){ float f = pow(clamp(-vN.z / 0.45, 0.0, 1.0), 4.0); gl_FragColor = vec4(uC, f * uSolid * 0.9); }",
       side: THREE.BackSide, transparent: true, depthWrite: false,
     }));
 
-    // a faint field of stars far behind, for the dark theme
+    // a faint field of stars far behind
     const SN = 2600, spos = new Float32Array(SN * 3), ssize = new Float32Array(SN), sseed = new Float32Array(SN);
     for (let i = 0; i < SN; i++) {
       v.set(rnd() * 2 - 1, rnd() * 2 - 1, rnd() * 2 - 1).normalize().multiplyScalar(60);
@@ -246,7 +242,7 @@ export class Globe implements Piece {
     this.scene.add(this.stars, this.halo, this.world);
     this.camera.position.set(0, 0, 5);
     this.paintGlow();
-    this.setTheme(theme);
+    this.colour(theme);
     canvas.addEventListener("pointerdown", this.down);
     addEventListener("pointermove", this.move);
     addEventListener("pointerup", this.up);
@@ -274,10 +270,10 @@ export class Globe implements Piece {
   private yOf(lat: number) { return (0.5 - lat / Math.PI) * TH; }
 
   /** The day map: land where you were at it, sea elsewhere. */
-  paint(theme: Theme) {
+  paint() {
     const g = this.dayCanvas.getContext("2d")!, m = this.mind, D = m.days.length;
-    const sea = theme.dark ? "#1b3a5c" : "#c9d6e6", deep = theme.dark ? "#10243d" : "#b4c4d8";
-    const land = theme.dark ? "#aea38a" : "#f3efe6", shore = theme.dark ? "#788a6c" : "#cfd8bf";
+    const sea = "#1b3a5c", deep = "#10243d";
+    const land = "#aea38a", shore = "#788a6c";
     const grad = g.createLinearGradient(0, 0, 0, TH);
     grad.addColorStop(0, deep); grad.addColorStop(0.5, sea); grad.addColorStop(1, deep);
     g.fillStyle = grad; g.fillRect(0, 0, TW, TH);
@@ -293,7 +289,7 @@ export class Globe implements Piece {
       g.fillStyle = land; span(this.xOf(r.start), this.xOf(r.end), y, row);
     }
     // polar caps beyond the record
-    g.fillStyle = theme.dark ? "#2a3550" : "#e6ebf2";
+    g.fillStyle = "#2a3550";
     g.fillRect(0, 0, TW, this.yOf(LAT) - 2); g.fillRect(0, this.yOf(-LAT) + 2, TW, TH);
     this.dayTex.needsUpdate = true;
   }
@@ -319,31 +315,19 @@ export class Globe implements Piece {
     this.glowTex.needsUpdate = true;
   }
 
-  setTheme(theme: Theme) {
-    this.theme = theme;
-    this.paint(theme);
-    const dark = theme.dark;
-    this.u.uDark.value = this.pu.uDark.value = dark ? 1 : 0;
-    this.u.uNight.value.setRGB(...hex(dark ? "#03050c" : "#1d2438"));
-    this.u.uAtmo.value.setRGB(...hex(dark ? "#5b9cf0" : "#7fa6d9"));
-    this.u.uMark.value.setRGB(...hex(dark ? "#ffffff" : "#121725"));
-    this.pu.uAmber.value.setRGB(...hex(dark ? "#ffb85c" : "#f0a030"));
-    this.pu.uOrange.value.setRGB(...hex(dark ? "#ff7a2e" : "#e8641c"));
-    this.pu.uRed.value.setRGB(...hex(dark ? "#ff3b24" : "#c8321a"));
-    this.pu.uStar.value.setRGB(...hex(dark ? "#c7dbff" : "#2b3550"));
-    this.blend();
-    this.stars.visible = dark;
-    (this.scene.background as THREE.Texture | null)?.dispose();
-    const bg = backdrop(theme, dark ? "#0c1222" : undefined);
-    // through the bloom's render targets nothing converts colour, so in the dark the ground is drawn as written
-    if (dark) bg.colorSpace = THREE.NoColorSpace;
+  private colour(theme: Theme) {
+    this.paint();
+    this.u.uNight.value.setRGB(...hex("#03050c"));
+    this.u.uAtmo.value.setRGB(...hex("#5b9cf0"));
+    this.u.uMark.value.setRGB(...hex("#ffffff"));
+    this.pu.uAmber.value.setRGB(...hex("#ffb85c"));
+    this.pu.uOrange.value.setRGB(...hex("#ff7a2e"));
+    this.pu.uRed.value.setRGB(...hex("#ff3b24"));
+    this.pu.uStar.value.setRGB(...hex("#c7dbff"));
+    const bg = backdrop(theme, "#0c1222");
+    // through the bloom's render targets nothing converts colour, so the ground is drawn as written
+    bg.colorSpace = THREE.NoColorSpace;
     this.scene.background = bg;
-  }
-  /** Lights add up, except on paper while they fly in, where added light would vanish. */
-  private blend() {
-    const mat = this.lights.material as THREE.ShaderMaterial;
-    const want = !this.theme.dark && this.entering ? THREE.NormalBlending : THREE.AdditiveBlending;
-    if (mat.blending !== want) { mat.blending = want; mat.needsUpdate = true; }
   }
   setShare(on: boolean) { this.share = on; }
 
@@ -390,13 +374,13 @@ export class Globe implements Piece {
       this.pu.uAppear.value = Math.min(1, t / 0.6);
       this.u.uSolid.value = Math.min(1, Math.max(0, (m - 0.5) / 0.45)) ** 1.5;
       this.camera.position.z = z * (1 + 0.32 * Math.pow(1 - m, 2));
-      if (m >= 1) { this.entering = false; this.blend(); }
+      if (m >= 1) this.entering = false;
     } else {
       this.pu.uMorph.value = 1; this.pu.uAppear.value = 1; this.u.uSolid.value = 1;
       this.camera.position.z = z;
     }
     this.ball.visible = this.u.uSolid.value > 0.002;
-    if (this.theme.dark) this.composer.render(); else this.renderer.render(this.scene, this.camera);
+    this.composer.render();
   }
 
   // ---------- pointing ----------
