@@ -1,0 +1,46 @@
+#!/bin/sh
+# ship-code: copy Wimym's code to the private repo people are invited to (matrice-technologies/wimym), as one new
+# commit on that repo's own history. The copy leaves out what is only ours: the research notes and the build
+# sprint's notes. Nothing from ~/.wimym or ~/.cache/wimym is ever in git, so nothing of that goes either.
+#
+#   bin/ship-code              # ship main
+#   bin/ship-code HEAD         # ship another ref
+#   bin/ship-code --dry-run    # list what would go, push nothing
+set -eu
+REPO="${WIMYM_SHIP_REPO:-matrice-technologies/wimym}"
+LEAVE_OUT="docs/research docs/sprint.md"
+
+dry=0; ref=main
+for a in "$@"; do
+  case "$a" in
+    --dry-run) dry=1 ;;
+    -h|--help) sed -n '2,9p' "$0"; exit 0 ;;
+    *) ref="$a" ;;
+  esac
+done
+here=$(cd "$(dirname "$0")/.." && pwd)
+sha=$(git -C "$here" rev-parse --short "$ref")
+excludes=""
+for p in $LEAVE_OUT; do excludes="$excludes :(exclude)$p"; done
+
+if [ "$dry" = 1 ]; then
+  # shellcheck disable=SC2086
+  git -C "$here" archive "$ref" -- . $excludes | tar -t | grep -v '/$'
+  exit 0
+fi
+
+work=$(mktemp -d "${TMPDIR:-/tmp}/wimym-ship.XXXXXX")
+case "$work" in */wimym-ship.*) ;; *) echo "Stopped: unexpected work folder $work" >&2; exit 1 ;; esac
+trap 'rm -rf "$work"' EXIT  # only the temporary folder made above
+
+git clone -q "https://github.com/$REPO.git" "$work/repo"
+cd "$work/repo"
+# replace the copy's files with the ref's, so files deleted here are deleted there too
+git ls-files -z | xargs -0 rm -f
+# shellcheck disable=SC2086
+git -C "$here" archive "$ref" -- . $excludes | tar -x -C "$work/repo"
+git add -A
+if git diff --cached --quiet; then echo "Nothing new to ship."; exit 0; fi
+git commit -q -m "Wimym as of $sha"
+git -c http.postBuffer=524288000 push -q origin HEAD:main  # a first push with the images is too big for the default buffer
+echo "Shipped $sha to https://github.com/$REPO"

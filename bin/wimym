@@ -1,0 +1,7 @@
+#!/bin/sh
+# wimym: ask your own record questions (engine/wimym/cli.py). Put this folder on your PATH, or link it:
+#   ln -s ~/mirror/bin/wimym /usr/local/bin/wimym
+# It reads WIMYM_DATA and WIMYM_CACHE when set; otherwise it uses the folders that exist, and never
+# moves the old ~/.mirror ones (only the engine does that).
+here=$(cd "$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")")" && pwd)
+PYTHONPATH="$here/../engine${PYTHONPATH:+:$PYTHONPATH}" exec python3 -m wimym.cli "$@"

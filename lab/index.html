@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wimym lab</title>
+<script type="module">import "@fontsource-variable/bricolage-grotesque/standard.css"; import "@fontsource-variable/instrument-sans/index.css";</script>
+<style>
+  :root { color-scheme: dark light; --ground: #080b14; --ink: #e9edf5; --muted: #7d8698; --line: #242c3d; }
+  @media (prefers-color-scheme: light) { :root { --ground: #eef0f4; --ink: #121725; --muted: #6b7386; --line: #dce0e8; } }
+  body { margin: 0; background: var(--ground); color: var(--ink); font: 400 16px/1.5 "Instrument Sans Variable", system-ui; }
+  main { max-width: 760px; margin: 0 auto; padding: 72px 20px; }
+  h1 { font: 650 44px/1.05 "Bricolage Grotesque Variable", system-ui; letter-spacing: -.03em; margin: 0 0 12px; }
+  p { color: var(--muted); margin: 0 0 36px; max-width: 60ch; }
+  a.card { display: block; padding: 18px 0; border-top: 1px solid var(--line); text-decoration: none; color: inherit; }
+  a.card b { font: 600 21px/1.2 "Bricolage Grotesque Variable", system-ui; letter-spacing: -.01em; }
+  a.card span { display: block; color: var(--muted); margin-top: 4px; }
+  a.card:hover b { text-decoration: underline; text-underline-offset: 4px; }
+</style>
+</head>
+<body><main>
+  <h1>Wimym lab</h1>
+  <p>Four pictures of the same months, for the front page. Each reads your own engine; add <code>?demo</code> for synthetic data, <code>?share</code> for shapes only. Keys on every page: S still, L loop, P share, D demo, T theme.</p>
+  <a class="card" href="hero/demo.html"><b>The hero, as the app would use it</b><span>The pick, the planet, inside a mock of the first screen, with the others one click away.</span></a>
+  <a class="card" href="hero/first-run.html"><b>The first run</b><span>What a new person sees while their transcripts are read: a star for each message found, then the planet. Add ?seconds=2 for a quick build.</span></a>
+  <a class="card" href="hero/week.html"><b>The week's form</b><span>The week page's header: one living form moved by the week's vital signs against your own range. Arrow keys walk the weeks.</span></a>
+  <a class="card" href="globe/"><b>Planet</b><span>Each day a line of latitude, the hour its longitude, every message a light. The lights on the night side are the hours you worked after dark.</span></a>
+  <a class="card" href="nebula/"><b>Nebula</b><span>Every message a star on a spiral of time, one turn a day. Your nights leave a dark lane through the galaxy.</span></a>
+  <a class="card" href="core/"><b>Core sample</b><span>The days stacked into a column you can turn. Nights run up it as a groove, late hours burn at its edge, days off pinch it thin.</span></a>
+  <a class="card" href="organism/"><b>Organism</b><span>One week as a living form, moved by its vital signs against your own range. Arrow keys walk through the weeks.</span></a>
+</main></body>
+</html>

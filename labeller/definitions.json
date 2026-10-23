@@ -1,0 +1,440 @@
+{
+  "about": "What each Haiku label means. labeller/label.py builds the instruction it sends to Haiku from this file, word for word, and engine/wimym/labels.py serves it (definitions()) so the app can show the same words. Change a meaning here and bump that set's version: every message is labelled again.",
+  "sets": {
+    "categories": {
+      "version": 3,
+      "checked": ["in"],
+      "file": "categories.json",
+      "name": "What you ask for",
+      "intro": "You label messages a software founder (Alex) typed to Claude Code, his coding agent.\nMessages are in English or French, often short, sometimes dictated. For each message you get\nAlex's words and, for context, the start and end of Claude's previous message in that session.\n\nFor each message give:",
+      "outro": "Answer with JSON only, no prose and no code fence: one array with one object per message,\nin order, like [{\"i\":1,\"in\":\"build\",\"to\":\"neutral\",\"sp\":true,\"ag\":false}].",
+      "fields": [
+        {
+          "key": "in",
+          "name": "Intent",
+          "label": "intent",
+          "type": "enum",
+          "lead": "exactly one of:",
+          "list": true,
+          "values": [
+            {"key": "build", "name": "Build", "meaning": "make something new or extend it: a feature, a file, a page, a script, a document, content"},
+            {"key": "fix", "name": "Fix", "meaning": "a bug or problem Alex found that isn't about Claude's last turn: an error, a crash, something broken in production"},
+            {"key": "question", "name": "Question", "meaning": "asks to explain, find out, look up or compare, without asking for a change"},
+            {"key": "review", "name": "Review", "meaning": "review, check, test, verify or audit work that exists, Claude's or anyone's"},
+            {"key": "ship", "name": "Ship", "meaning": "git and delivery: commit, push, merge, open or update a PR, publish, release, deploy, and closing a piece of work (\"can we consider this closed?\")"},
+            {"key": "design", "name": "Design feedback", "meaning": "feedback on how something looks, reads or feels: layout, wording, colors, UX, including how something Claude just made looks or reads"},
+            {"key": "plan", "name": "Plan", "meaning": "plan, brainstorm, think through options or an approach, write a spec, before building"},
+            {"key": "go-ahead", "name": "Go-ahead", "meaning": "only approves or picks from what Claude proposed, adding nothing else: yes, ok, continue, do it, option 2, do both"},
+            {"key": "answer", "name": "Answer", "meaning": "gives information Claude asked for or needs: a fact, a number, a date, a credential, context, what Alex saw or did"},
+            {"key": "correct", "name": "Correction", "meaning": "Claude's last turn was wrong, went the wrong way, or what it just made doesn't work or isn't good enough, including when Claude said it works, is up, is fixed or is deployed and it doesn't"},
+            {"key": "ops", "name": "Ops", "meaning": "run or operate things: start a server, install, check out a repo, move files, back up data, accounts, email, calendar"},
+            {"key": "setup", "name": "Claude setup", "meaning": "about Claude itself: CLAUDE.md, memory, skills, hooks, settings, MCP, agents, sessions, permissions"}
+          ],
+          "after": "Pick what the message mainly asks for. Rules:",
+          "rules": [
+            "go-ahead is only bare approval or a bare pick. A yes that names a git or release step (\"yes commit\", \"ok push\", \"merge for me\") is ship, and so is asking whether the work can be closed (\"can we consider this closed?\"); a yes that adds new work is that work.",
+            "correct wins when the main point is that Claude's last attempt failed or missed: \"it didn't work\", \"still not good\", \"no, I meant…\", \"actually, don't…\", \"that's not what I asked\", and a redirect right after Alex stopped Claude. When Claude has just said something works, is up, is live or is fixed and Alex says it isn't (an error on the address Claude gave, the live page missing what Claude showed), that is correct, not fix. A bug Claude didn't just cause is fix.",
+            "design, not correct, for feedback on how something Claude made looks or reads (\"a bit intrusive\", \"too dense\", \"the title should be bigger\"), unless the words say it is wrong, broken, bad or not what he asked (\"terrible\", \"still not good\", \"that's not what I meant\").",
+            "answer is supplying facts or context (\"it's for shade\", \"I ran it\", \"we swapped the key\", a phone number, dates); picking among Claude's options is go-ahead."
+          ]
+        },
+        {
+          "key": "to",
+          "name": "Tone",
+          "label": "tone",
+          "type": "enum",
+          "lead": "neutral unless the words show otherwise.",
+          "values": [
+            {"key": "neutral", "name": "Neutral", "meaning": "the default. Agreement, acceptance or a go-ahead (\"ok\", \"yes\", \"let's go\", \"I agree\", \"I'm good with your verdicts\", \"yep do it\") is neutral, and so is a smiley or wink on an ordinary message, a problem reported plainly (\"he is not receiving the email\", \"why is it not working?\") and puzzlement (\"that's strange?\")."},
+            {"key": "pleased", "name": "Pleased", "meaning": "explicit praise, thanks or satisfaction in the words (great, perfect, thanks, works now, love it, nice). Agreeing or approving is not praise."},
+            {"key": "frustrated", "name": "Frustrated", "meaning": "annoyance or impatience shown in the words (horrible, \"still broken!?\", \"again??\", \"why do you keep…\", sad emoji, swearing). \"still\" or \"again\" in a plain report (\"still in the sidebar\") is not frustration."}
+          ]
+        },
+        {
+          "key": "sp",
+          "name": "Says what done looks like",
+          "label": "specific",
+          "type": "bool",
+          "values": [
+            {"key": true, "name": "Specific", "meaning": "true if someone could tell the request is done without guessing what Alex wants: it names the concrete result, exact change, file, behaviour or check."},
+            {"key": false, "name": "Open", "meaning": "False when it leaves the what or the how to Claude (\"make it great\", \"any cleanup opportunity?\", \"can you check?\", \"guide me\", \"what's next?\"), and for a bare yes, ok, continue or option pick."}
+          ],
+          "rules": [
+            "\"commit and push\" and \"rename greybox to graybox\" are true.",
+            "A question is true only when it asks for one precise fact: a yes or no, a where, a when, a number, a name (\"is agent team open source?\", \"which port is it on?\"). A question that asks for an explanation, a status or a look around is false (\"how does X work?\", \"explain this article\", \"what happened?\", \"check where things stand and tell me what you need\")."
+          ]
+        },
+        {
+          "key": "ag",
+          "name": "Not typed by you",
+          "label": "not typed by Alex",
+          "type": "bool",
+          "values": [
+            {"key": true, "name": "Not typed by you", "meaning": "true if the text was evidently written by an agent, a script or someone else and passed on whole: a structured work order or brief for an agent (sections like \"## Why\", \"read CLAUDE.md first\", Alex in the third person), an automated check (\"Reply with exactly: OK\"), or vendor instructions pasted with nothing of Alex's own."},
+            {"key": false, "name": "Typed by you", "meaning": "Otherwise false."}
+          ],
+          "notes": [
+            "Wimym also leaves out any message its own text rule (not_typed in engine/wimym/text.py) finds was written by an agent, whatever Haiku says, and never counts these messages."
+          ]
+        }
+      ],
+      "changes": {
+        "1": "First taxonomy, on a 200-message sample.",
+        "2": "Added the answer intent and the not-typed flag; go-ahead is a bare approval only; a yes naming a git step is ship; pleased needs praise.",
+        "3": "After the Opus audit: pleased needs praise (not agreement or a smiley); a problem reported plainly is neutral; a question is specific only when it asks for one precise fact; \"Claude said it works and it doesn't\" is correct; feedback on how something Claude made looks is design unless it says it's wrong; \"can we consider this closed?\" is ship."
+      }
+    },
+    "signals": {
+      "version": 3,
+      "file": "signals.json",
+      "name": "How you steer and how you sound",
+      "intro": "You read messages a software founder (Alex) typed to Claude Code, his coding agent,\nand note observable features of how each is written. Messages are in English or French, often\nshort, sometimes dictated. For each message you get Alex's words and, for context, the start and\nend of Claude's previous message in that session. Judge only what the words show; when unsure,\nuse the plain default (false, \"none\").\n\nFor each message give:",
+      "outro": "Answer with JSON only, no prose and no code fence: one array with one object per message, in\norder, like [{\"i\":1,\"own\":false,\"who\":\"alex\",\"sc\":\"task\",\"pr\":false,\"irk\":\"none\",\"pl\":false}].",
+      "fields": [
+        {
+          "key": "own",
+          "name": "Own idea",
+          "type": "bool",
+          "values": [
+            {"key": true, "name": "Own idea", "meaning": "true if Alex brings an idea, opinion, reasoning or alternative of his own beyond what he asks for or what Claude proposed (\"why not create a small markup…\", \"I think the three.js approach made it much better\", \"the heading is too long, it should say…\")."},
+            {"key": false, "name": "No idea of his own", "meaning": "False for bare instructions, plain questions, approvals, facts Claude asked for."}
+          ]
+        },
+        {
+          "key": "who",
+          "name": "Who makes the call",
+          "type": "enum",
+          "lead": "who makes the call the message is about.",
+          "values": [
+            {"key": "alex", "name": "You", "meaning": "he decides or instructs: an instruction is alex even when it leaves the how to Claude (\"can you clone the repo\", \"can you refine the architecture?\"), a pick among options, a firm no."},
+            {"key": "claude", "name": "Claude", "meaning": "he hands the decision itself to Claude (\"what do you think is best?\", \"as you wish\", \"you decide\", \"what do you recommend?\"). When a message decides some points and leaves others, pick what it mainly does."},
+            {"key": "open", "name": "Open", "meaning": "he is thinking aloud, unsure, or weighing options without settling (\"not sure if…\", \"maybe we could…?\", \"I wonder whether…\")."},
+            {"key": "none", "name": "Nothing to decide", "meaning": "nothing to decide: a plain question asking for information or an explanation (\"do we have a smaller programme?\", \"how does X work?\", \"didn't we build a cli for this?\", \"can I see the flow?\"), thanks, a fact, a status, a test. Only a question that hands Claude a choice (\"what should we do?\", \"which is best?\") is claude."}
+          ]
+        },
+        {
+          "key": "sc",
+          "name": "Scope",
+          "label": "scope of what is asked",
+          "type": "enum",
+          "lead": "",
+          "values": [
+            {"key": "tweak", "name": "Tweak", "meaning": "a small change to something that exists (rename, a color, a wording, one fix, one command)."},
+            {"key": "task", "name": "Task", "meaning": "a contained piece of work (a feature, a script, a page, a document, a review, a deploy)."},
+            {"key": "project", "name": "Project", "meaning": "a multi-part effort or a new system (many pieces, several sessions, a new product area)."},
+            {"key": "strategy", "name": "Strategy", "meaning": "what the business or product should do: markets, pricing, clients, priorities across projects, people, what to build next and why. Choosing or comparing a tool, a method or an architecture for the work is task or project, not strategy."},
+            {"key": "none", "name": "No work asked", "meaning": "no work asked: a bare approval or pick (even when what it approves is large: \"ok do it\", \"yes continue\"), an answer, thanks, a question about how something works."}
+          ]
+        },
+        {
+          "key": "pr",
+          "name": "Pressure",
+          "label": "pressure",
+          "type": "bool",
+          "values": [
+            {"key": true, "name": "Under pressure", "meaning": "true if the words show time or stakes pressure: a deadline, an imminent meeting, demo, client or launch, production broken, \"asap\", \"quickly\", \"before tonight\", \"they're waiting\"."},
+            {"key": false, "name": "No pressure", "meaning": "False otherwise: a plain request, a \"wait\", an interruption, or a bug or failed deploy is not pressure unless the words say it is urgent or live users are hit."}
+          ]
+        },
+        {
+          "key": "irk",
+          "name": "Annoyed at",
+          "type": "enum",
+          "lead": "annoyance and where it points. It needs words that show annoyance (\"terrible\", \"so bland\", \"what a shame\", \"you are confused\", \"again\", \"still not…?\", impatience). A problem described or a \"why isn't X working?\" asked plainly is none, whoever caused it.",
+          "values": [
+            {"key": "none", "name": "Not annoyed", "meaning": "no annoyance."},
+            {"key": "claude", "name": "At Claude", "meaning": "at Claude's work or behaviour, including anything Claude made or changed in this project (a wrong result, a bad layout or wording it produced, ignoring an instruction, \"again\", \"that's not what I asked\", \"why truncate it so much?\")."},
+            {"key": "other", "name": "At something else", "meaning": "at something Claude didn't make (a third-party tool, a vendor, a website, someone else's code, the situation)."}
+          ]
+        },
+        {
+          "key": "pl",
+          "name": "Playful",
+          "label": "play",
+          "type": "bool",
+          "values": [
+            {"key": true, "name": "Playful", "meaning": "true if the message jokes, teases, banters or uses irony, or is fun off-topic chatter."},
+            {"key": false, "name": "Not playful", "meaning": "False for plain politeness or thanks, a friendly smiley or wink on an ordinary message, and tests."}
+          ]
+        }
+      ],
+      "notes": [
+        "Only messages you typed: none that Haiku's first set or Wimym's text rule finds were written by an agent."
+      ],
+      "changes": {
+        "1": "First version, on a 200-message sample.",
+        "2": "Plain questions are who=none; annoyance at what Claude made is irk=claude.",
+        "3": "After the Opus audit: irk needs annoyed words, strategy is the business, approvals have no scope, instructions are alex, play needs a joke, pressure needs urgency."
+      }
+    },
+    "acts": {
+      "version": 3,
+      "checked": ["dfr", "dom", "off", "ppl"],
+      "file": "acts.json",
+      "name": "What you decide, put off and hand over",
+      "level": "message",
+      "model": "haiku",
+      "per_call": 30,
+      "before": 600,
+      "intro": "You read messages a software founder (Alex) typed to Claude Code, his coding agent, and note what each one does.\nMessages are in English or French, often short, sometimes dictated. For each message you get the project it was\ntyped in, Alex's words and, for context, the start and end of Claude's previous message in that session. Judge only\nwhat Alex's words show; when unsure, use the plain default (false, \"none\", \"\" or []).\n\nFor each message give:",
+      "outro": "Answer with JSON only, no prose and no code fence: one array with one object per message, in order, like\n[{\"i\":1,\"dec\":false,\"dw\":\"\",\"dfr\":false,\"fw\":\"\",\"ppl\":\"none\",\"names\":[],\"st\":\"none\",\"off\":\"do\",\"rule\":\"\",\"dom\":\"work\",\"nd\":false}].",
+      "fields": [
+        {
+          "key": "dec",
+          "name": "Decides",
+          "type": "bool",
+          "values": [
+            {"key": true, "name": "Decides", "meaning": "true only if Alex's own words close a choice between alternatives you can name: options Claude listed or asked about, or his own (\"option 2\", \"do both\", \"the easy ones first\", \"I prefer the byte style\", \"merge locally, then push\" when Claude asked which way), or he rejects, rules out, drops, parks or pauses something (\"no, keep Postgres\", \"we drop the PDF export\", \"I don't want to do switches\", \"I don't want to overload the model section\", \"remove the transcript feature for now\", \"let's park this session\", \"I'll ship it Friday, not today\"). Test: if you can't say what it was chosen over or what it rules out, from his words or Claude's previous message, dec is false."},
+            {"key": false, "name": "Not decides", "meaning": "False for any instruction to do one thing, however specific or firm (\"let's…\", \"we need to…\", \"I want X\", \"please publish\", \"push\", \"commit & push\", \"merge & push\", \"add this admin\", \"implement these improvements\", a brief for new work), even when it answers Claude's question with the word Claude asked for (\"say push\" → \"push\"). False for a bare yes, ok, go or continue, a permission or carte blanche, confirming a value Claude asked about, a question (including one asking Claude to confirm: \"we don't need any change, right?\"), an \"if…\" condition, a hedged opinion or worry, clarifying what he meant, asking Claude to redo or improve something, and facts he supplies. Never take the decision from Claude's message: only Alex's words count."}
+          ],
+          "label": "decides"
+        },
+        {"key": "dw", "name": "What was decided", "type": "text", "lead": "when dec is true, what was chosen and over what, in at most 12 words, in English, readable without the conversation, in Alex's own terms: \"Postgres, not SQLite\", \"drop the PDF export\", \"no login tests\", \"byte style over the loop style\". One decision, the main one. Otherwise \"\".", "label": "what was decided"},
+        {
+          "key": "dfr",
+          "name": "Defers",
+          "type": "bool",
+          "values": [
+            {"key": true, "name": "Defers", "meaning": "true if Alex puts something off or parks it on purpose: \"later\", \"not now\", \"next week\", \"let's park this\", \"after the demo\", \"for tomorrow\", \"we'll see\", \"keep it as a TODO\", \"note it as open\", and \"X for now\" when the rest waits (\"no code for now\", \"stay at vision level for now\", \"out of scope for now\", \"remove X for now\", \"let's pause after the next test\", \"not X yet\"), also inside a longer request or a numbered answer. dec and dfr can both be true."},
+            {"key": false, "name": "Not defers", "meaning": "False for a short pause inside the same work (\"wait\", \"hold on\", \"one second\"), for restarting or redoing work, for moving the work to a new session, and for something simply not mentioned."}
+          ],
+          "label": "defers"
+        },
+        {"key": "fw", "name": "What was put off", "type": "text", "lead": "when dfr is true, what is put off, in at most 12 words, in English, naming its subject (not \"the session\" or \"this\"); otherwise \"\".", "label": "what was put off"},
+        {
+          "key": "ppl",
+          "name": "People",
+          "type": "enum",
+          "lead": "whether another person is in Alex's words (not Alex, not Claude; never from Claude's message):",
+          "list": true,
+          "values": [
+            {"key": "none", "name": "No one", "meaning": "no other person named or meant. Not people: a product, a tool, a vendor or its authors as such; Claude sessions and agents (\"another session\"); personas, roleplay or training characters and other fictional people in the content (\"Rajendra Bedi\" in a course). A pronoun (\"il\", \"he\") with no person shown is none."},
+            {"key": "mention", "name": "Mentioned", "meaning": "a real person or group is named or meant (a named person, the team, his cofounder, a client company's people: \"the Truva team\", \"they want\"; customers, users, buyers or the people a product is for, in general), but the work here isn't with or for them. A company as such, with no people meant, is none."},
+            {"key": "with", "name": "With or for someone", "meaning": "the work is with or for that person or group: a message, email, reply or terms he will send to someone; giving someone access or an account; something a person asked for, will receive, review or be shown (investors, family, a client), even unnamed; a meeting, call, deal or negotiation with someone; someone reporting something to him (\"akhil tells me he isn't receiving the email\", \"the team tells me they whitelisted our IP\"). Also: a reply or draft in someone's email thread, reviewing or checking a named person's work. Terms, a deal, an email or a debrief with or for a person are with even when the person is only \"him\" or implied."}
+          ],
+          "label": "people"
+        },
+        {"key": "names", "name": "Who", "type": "list", "lead": "the names (or emails) of the real people meant, exactly as written (same case), at most 5: people only, never a company or team name, never Alex, Claude, agents or fictional characters; [] when none.", "label": "names"},
+        {
+          "key": "st",
+          "name": "Self-state",
+          "type": "enum",
+          "lead": "what Alex says about how he himself feels, only when the words say it about himself (agreeing when Claude names his state counts):",
+          "list": true,
+          "values": [
+            {"key": "none", "name": "None", "meaning": "the default: nothing about how he feels. Not a state: annoyance at Claude or a tool (another label covers it), a smiley or emoticon (\":)\", \"^^\"), politeness, a cheerful or urgent tone, exclamation marks, ambition or a big plan, being confused or lost, a standing condition he names (ADHD), or being unhappy with a choice or a result. Never infer a state from the topic (a problem, a workload); concern about a design or plan (\"I'm worried that…\", \"not sure about\") is none."},
+            {"key": "tired", "name": "Tired", "meaning": "tired, sleepy, exhausted, \"long day\", \"my brain is fried\", \"going to bed\" said as tiredness."},
+            {"key": "stressed", "name": "Stressed", "meaning": "worried, anxious, overwhelmed, panicking, \"I'm stressed\", \"too much on my plate\"."},
+            {"key": "low", "name": "Low", "meaning": "discouraged, sad, demotivated, lonely, doubting himself."},
+            {"key": "energised", "name": "Energised", "meaning": "he says he feels excited or motivated: \"I'm so excited\", \"I love this\", \"I'm pumped\", \"this makes my day\". Enthusiasm about the work with no words about himself is none."},
+            {"key": "unwell", "name": "Unwell", "meaning": "ill, in pain, a headache, a medical issue of his own."}
+          ],
+          "label": "self-state"
+        },
+        {
+          "key": "off",
+          "name": "Hands over",
+          "type": "enum",
+          "lead": "what the message mainly hands to Claude. Apply the rules below first, then the values:",
+          "list": true,
+          "values": [
+            {"key": "do", "name": "Do", "meaning": "carry out work whose result Alex has set: build, fix, change, run, ship, clean up, look up something he named. A bug report with no other request hands over the fix: do."},
+            {"key": "think", "name": "Think", "meaning": "work out or judge something in his place: why something happens or misbehaves, what to do next, how to approach it, which option is best on the merits, whether something is worth it or how hard it is, what is good or bad (\"any issue?\"), ideas and names, a plan or a review he hasn't framed, or words he will send as his own (a message, a reply, a post, a pitch)."},
+            {"key": "decide", "name": "Decide", "meaning": "make a choice for him: \"you decide\", \"what do you recommend?\", \"do what's best\", \"as you wish\"."},
+            {"key": "ask", "name": "Ask", "meaning": "a question asking for a fact, a status, a summary of what was done, or an explanation of how something works. Not what to do, why something misbehaves, or how hard it would be (those are think)."},
+            {"key": "none", "name": "Nothing", "meaning": "hands nothing over: an answer Claude asked for, a fact, a bare go-ahead, thanks, a status."}
+          ],
+          "label": "hands over",
+          "rules": [
+            "A bare go-ahead or permission is none, even when it starts work and even with a fact attached: \"ok\", \"yes\", \"yes do it\", \"go for it\", \"try again\", \"retry\", \"I'm under my limit, try again\", \"continue\", \"you can push\", and the one word Claude asked for (\"push\" after \"say push to ship\").",
+            "A request to make, change, fix, save, write, move, push or run something is do, also as a question or a suggestion (\"can you push?\", \"can you…?\", \"maybe we can…?\", \"can't we…?\", \"let's make sure we can…?\", \"put this in the CLAUDE.md\", \"save this thought\", \"do both\"). A bug report or a complaint about a result is do, even ending in a question (\"still not working\", \"it's a bit sad no?\"). A decision that implies a change Claude must make is do (\"keep JB at 15%\").",
+            "Asking Claude to judge is think, even as \"can you…\": what to do or which is better (\"should we…?\", \"is it better to…?\", \"shouldn't we use X?\"), why something misbehaves or what would cause it (\"would X cause Y?\"), how hard it would be, an audit (\"is it useful? what is missing?\", \"any issue?\"), proposals, ideas or names (\"give me a few proposals\").",
+            "A question for a fact, a status, a summary or how something works is ask (\"how does it work?\", \"can I…?\", \"which org is this key in?\", \"have you pushed?\", \"can you check if I have access?\")."
+          ]
+        },
+        {"key": "rule", "name": "Standing rule", "type": "text", "lead": "a rule Alex states about how Claude should work, write or behave in general, beyond this task (\"no em dashes\", \"always run the tests before saying it's done\", \"never work on main, use a branch\", \"don't push without asking\", \"write in plain words\", \"treat the old docs as unreliable\"), as a short imperative in English, at most 15 words, keeping his own terms (\"software terms in English\" stays that); \"\" when there is none. A general writing or working preference counts even inside a one-off brief (\"avoid em dashes\", \"work in a worktree, never on main\"). \"\" for: what the product should be or a goal for the thing being built (\"the aesthetic must be world-class\", \"keep it auditable\"); a constraint on this build (\"for now\", \"keep this simple\", a spec); a permission or waiver tied to the current task (\"push this without asking me\"); a description of what Claude did. A correction that implies a general rule (\"you did it again, never X\") gives that rule.", "label": "standing rule"},
+        {
+          "key": "dom",
+          "name": "Life domain",
+          "type": "enum",
+          "lead": "the part of Alex's life the message is about:",
+          "list": true,
+          "values": [
+            {"key": "work", "name": "Work", "meaning": "his companies, clients, consulting work and income, products, colleagues, and the code and tools he builds for them."},
+            {"key": "personal", "name": "Personal", "meaning": "his own projects and interests outside his companies: learning, reading, writing for himself, hobbies (his camper), and the tools he builds only for his own use. Not his mood (health) or home life (family). Wimym (also called mirror), his tool for his own mind, is personal."},
+            {"key": "health", "name": "Health", "meaning": "sleep, sport, food, medical matters, mental health, his morale and mood: a message only about how he feels is health, whatever the project."},
+            {"key": "family", "name": "Family and friends", "meaning": "partner, children, parents, friends, home life, social plans."},
+            {"key": "admin", "name": "Admin", "meaning": "personal paperwork, money, taxes, bills, travel, the house, and his machines and accounts (his Mac's setup, disk space, logins, API keys and the accounts they belong to) even when he uses them for work."}
+          ],
+          "label": "life domain",
+          "after": "The project name is a hint: label one project the same way across messages unless the message is clearly about something else, and follow the project when the message shows no subject. work is the products and code of his companies."
+        },
+        {
+          "key": "nd",
+          "name": "Not done after all",
+          "type": "bool",
+          "values": [
+            {"key": true, "name": "Not done after all", "meaning": "true if Claude's previous message said something was done, fixed, working, deployed, live or ready, and Alex's message says it isn't: it fails, errors, is missing something, is still broken, or lacks what the claim implied (a \"branded\" PDF with no logo). \"again\" or \"still\" after Claude said done counts."},
+            {"key": false, "name": "Not not done after all", "meaning": "False otherwise: when Claude's previous message made no such claim (it said a redeploy is still needed) or isn't shown, when Alex changes or sharpens the goal, and when he only criticises quality (\"it's a bit clumsy\") without saying something is missing or broken."}
+          ],
+          "label": "not done after all"
+        }
+      ],
+      "notes": [
+        "Only messages you typed: none that Haiku's first set or Wimym's text rule finds were written by an agent.",
+        "dw and fw are empty unless dec or dfr is true; names is empty when ppl is none."
+      ],
+      "changes": {
+        "1": "First version, on a 200-message sample.",
+        "2": "After the Opus judge (303 messages, 6 judges): decides needs his words to close an open choice (requests, briefs, questions and added detail are not decisions); \"X for now\" defers; personas and agents are not people, and work shown or sent to someone is with; self-state needs words about how he feels (a smiley or a big plan is none); a bare go-ahead hands over nothing and \"should we…?\" is think; a rule must reach beyond this task; machines and accounts are admin, his own tools personal; not done covers a claim that misses what it implied.",
+        "3": "After the second Opus judge (303 messages): a decision must name what it was chosen over or rules out, and dw says so (\"Postgres, not SQLite\"); an instruction to do one thing is never a decision, even the word Claude asked for; hands over applies its rules first (go-aheads with a fact are none, requests and complaints are do, judgement is think, facts are ask); customers and users in general are mention; a message only about his mood is health; a complaint about quality is not \"not done\"."
+      }
+    },
+    "sessions": {
+      "version": 5,
+      "checked": ["goal", "outcome", "decisions", "rework", "people", "account"],
+      "file": "sessions.json",
+      "name": "What each session did",
+      "level": "session",
+      "model": "opus",
+      "intro": "You read Claude Code sessions: the messages a software founder (Alex) typed to Claude Code, his coding agent, and\nClaude's replies, shortened. Messages are in English or French. Each of Alex's messages starts with its id and\ntime, like [a7176289 09:00]. Long sessions are cut in the middle, and \"[…]\" marks cut text. Write in plain\nEnglish, short sentences, no jargon, no em dashes. Say only what the transcript shows; when it doesn't show\nsomething, say so (\"unknown\", [] or \"\"). Everything you write is read by Alex himself, so write to him in the second person (\"you asked\", \"you decided\",\n\"you said it worked\"), never \"Alex\", \"he\", \"his\" or \"the user\": in every field, not only the account.\n\nFor each session give:",
+      "outro": "Answer with JSON only, no prose and no code fence: one array with one object per session, in order, scan first, like\n[{\"i\":1,\"scan\":\"a7176289 decides; 5d1c905c yes\",\"goal\":\"…\",\"outcome\":\"landed\",\"decisions\":[{\"t\":\"…\",\"m\":\"a7176289\"}],\"open\":[\"…\"],\"rework\":false,\"rw\":\"\",\"people\":[],\"account\":\"…\"}].",
+      "fields": [
+        {"key": "scan", "name": "Scan", "type": "text", "max": 1500, "lead": "write this first, before the other fields: go through Alex's messages in order and, for each one, write its id and one word for what it does: decides (his words close an open choice, set the goal, scope or a constraint), asks (a request for work, however detailed), yes (a bare yes, ok, go, ship or permission to Claude's plan, even naming which of Claude's recommendations), answers (facts Claude asked for), rejects (says a result is wrong), or other. Like \"5738368c yes; bb2530ba decides; 49ba174c asks\". The decisions field lists only the ones marked decides."},
+        {"key": "goal", "name": "Goal", "type": "text", "lead": "what Alex set out to do in this session, in one sentence of at most 20 words (count them), covering every request he typed and the largest piece of work, and nothing he didn't ask for. When the goal changed on the way, the main one.", "max": 240},
+        {
+          "key": "outcome",
+          "name": "Outcome",
+          "type": "enum",
+          "lead": "how it ended against the goal you wrote, exactly one of:",
+          "list": true,
+          "values": [
+            {"key": "landed", "name": "Landed", "meaning": "what Alex asked for was done and reached where he asked: if he asked to push, pushed is landed; if he asked to merge or deploy, it must be merged or deployed; installed for his own use, sent, published, or accepted by him. A plan or prompt for later work, when a plan is what he asked for, is landed. A result Claude handed back (a draft, a file, a video, a message for him to send) with no reply from Alex is partial. When the request is itself local (a backup, a local file), finishing and checking it is enough. Steps only Alex can do (placing an order, logging in, approving, paying) never make it partial."},
+            {"key": "partial", "name": "Partial", "meaning": "a step Alex asked for is missing: some of it was done and some was left, or it was done but not delivered where he asked. When the last request shipped but earlier parts of the goal were left, it is partial."},
+            {"key": "abandoned", "name": "Abandoned", "meaning": "dropped, stopped or left without a result: Alex gave up, changed his mind, or the session ends with the work broken or unstarted."},
+            {"key": "answered", "name": "Answered", "meaning": "a question was answered or something was found out or reviewed, with nothing to make."},
+            {"key": "unknown", "name": "Unknown", "meaning": "the transcript doesn't show how it ended."}
+          ]
+        },
+        {"key": "decisions", "name": "Decisions", "type": "refs", "lead": "the messages your scan marked decides, and only those: each as {\"t\": the decision in Alex's words, at most 15 words, \"m\": its id}. Every message the scan marks asks, yes or answers is left out. Re-read the first message: each constraint or direction in it counts, cited there (the goal or mission he sets, \"don't publish without asking\", \"no other visible change\", \"use the Penelope voice\"). Re-read each go-ahead for a choice Alex added (\"yes, but keep it general\", \"do all at once with subagents\", \"stop, commit and merge\"): the choice counts, the yes doesn't. A pick between Claude's options counts. An idea Alex raises (even as a question or a complaint) that Claude then builds counts, cited at that message. Never \"yes to all three recommendations\", a request for work however detailed, facts he supplies, or Claude's proposal written as his. [] when none. At most 8."},
+        {"key": "open", "name": "Loops left open", "type": "list", "lead": "this session's own loose ends at the end. Before adding an item, name what Alex asked for that it leaves unfinished, or the question he left unanswered, or what he said he would come back to (\"later\", \"we'll talk about it\"), or a check Claude says it couldn't run on what he asked. If you can't, leave it out. Never open: Claude's offers (\"want me to…\", \"say the word\", \"if you want…\"), advice, warnings and tidy-ups (\"nothing pushed yet\", \"revoke the token\", \"you may want to…\"), issues Claude flags on its own, steps only Alex can do (ordering, logging in, sharing a link), something Alex already settled, another session's work. Each item once, in at most 15 words. [] when none.", "max": 200},
+        {
+          "key": "rework",
+          "name": "Rework",
+          "type": "bool",
+          "values": [
+            {"key": true, "name": "Rework", "meaning": "true if effort went into the same thing twice because a first result was wrong: Alex rejected or questioned a result or proposal (all of it or one part: \"works, but why truncate it so much?\") and it was redone (including where or how finished work was deployed); a review, test or reviewer agent found defects in what was made this session and they were fixed, even if Alex never complained; Claude took back a wrong answer and redid it; or Alex had to ask again for something already asked."},
+            {"key": false, "name": "No rework", "meaning": "False when each piece was done once, even in several steps. Re-sending after an API error, restarting a crashed session, and Claude's own trial and error inside one turn are not rework."}
+          ]
+        },
+        {"key": "rw", "name": "What was redone", "type": "text", "lead": "when rework is true, the redo that came from a wrong result, and why, in at most 20 words; otherwise \"\". A failure from an outside cause that Claude worked around is not the rework.", "max": 240},
+        {"key": "people", "name": "People", "type": "list", "lead": "the real people other than Alex and Claude the work is with, for or about, as written: colleagues, clients, friends, family, the recipient of a message Alex writes or replies to, even unnamed (\"the client he replies to\"), the author of an article or link Alex shared, the people an investigation or the work's data is about. A group counts as written when he works with them (\"the team\", \"his reps\", \"investors\", \"family\"). Not people: a market or audience for a product (\"coaches\", \"users\"), companies, products, AI agents, personas or voices, characters in briefs, content or roleplays, authors Claude merely cites. [] when none."},
+        {"key": "account", "name": "Account", "type": "text", "lead": "one or two plain sentences, at most 40 words, saying what happened, as a friend who read it would: what Alex wanted (every part), the largest piece of work done, how it ended. Check who did each step: commands Alex ran himself (shown as \"!\" lines or his messages) are his, and what Claude or its agents did is theirs. Say who merged, deployed or removed something only when the transcript shows it, and never guess that Alex accepted, sent or shipped something the transcript doesn't show. Agents and sessions are agents, never engineers or people.", "max": 400}
+      ],
+      "notes": [
+        "Main sessions only (not subagents), and only those with at least one message Alex typed.",
+        "Each message cited (m) is the full message id in the file; Sonnet sees its first 8 characters."
+      ],
+      "changes": {
+        "1": "First version, on a 40-session sample.",
+        "2": "After the Opus judge (40 sessions, 4 judges): requests, go-aheads and Claude's own choices are not decisions, which are cited where Alex's words make them; landed needs the work to reach where Alex wanted it (a draft he never used is partial); rework includes defects a review found and answers taken back, not retries after errors; people are real people (no companies, personas, voices or cited authors); open is this session's loose ends, each once.",
+        "3": "After the second Opus judge (40 sessions): Sonnet writes a scan of Alex's messages first (decides, asks, yes, answers, rejects) and lists only the decides; the first message's goal or scope and choices added inside a go-ahead count; Claude's offers are not open loops; landed is judged against what Alex asked (pushed is landed when he asked to push; a draft with no reply is partial); review-found fixes are rework even without a complaint; the account checks who did each step.",
+        "4": "After the third Opus judge: decisions keep only what the scan marks decides, with every constraint in the first message and every choice added inside a go-ahead; an open loop must name what Alex asked for that it leaves unfinished (Claude's offers, warnings, flagged issues and Alex-only steps are never open); people include unnamed recipients and the authors of links he shared. Written by Opus from v4 on: on the same 40 sessions and wording, a blind Opus judge found Opus's decisions right 35/36 and Sonnet's 23/36, open loops 33/37 against 21/37.",
+        "5": "Written to Alex in the second person (\"you decided…\"), never \"Alex\" or \"he\": goal, decisions, open loops, rework and the account. The rules and guards are unchanged."
+      }
+    },
+    "days": {
+      "version": 5,
+      "checked": ["decided", "dropped", "postponed"],
+      "file": "days.json",
+      "name": "What each day held",
+      "level": "day",
+      "model": "opus",
+      "intro": "You write a short, honest account of one working day of a software founder (Alex) who works mostly through Claude\nCode, his coding agent, often in several sessions at once. A day runs from 5:00 to 5:00 the next morning. You get\nthe day's figures, an account of each session he worked in that day, and his own messages that day, each with its\nid and time, like [a7176289 09:00], and sometimes tags another model gave it ({decides: …}, {puts off: …},\n{state: tired}, {frustrated}). Messages are in English or French, shortened, and \"[…]\" marks cut text.\n\nThe accounts feed a weekly retro and a growth log that Alex reads, so write kindly and precisely: plain English,\nshort sentences, no jargon, no em dashes, no praise or blame, no advice. Say only what the input shows: nothing from outside it, and every id you cite must appear in it.\nCite the messages it comes from by their 8-character id. Everything you write is read by Alex himself, so write to him in the second person (\"you asked\", \"you decided\",\n\"you said it worked\"), never \"Alex\", \"he\", \"his\" or \"the user\": in every field, not only the account.\n\nGive:",
+      "outro": "Answer with JSON only, no prose and no code fence: one object, like\n{\"decided\":[{\"t\":\"…\",\"m\":\"a7176289\"}],\"dropped\":[],\"postponed\":[],\"high\":[],\"low\":[],\"strain\":\"\",\"account\":\"…\"}.",
+      "fields": [
+        {"key": "decided", "name": "Decided", "type": "refs", "lead": "Alex's own rulings that day, the ones that matter most, at most 6: each {\"t\": at most 15 words, \"m\": the id of the message whose own words make the choice}. A ruling picks between options, rules something out, sets or changes a direction (a reframe of a project counts). Never a bare yes, ok, go or option number, a plain request (\"let's build this\"), or a workflow note (\"stay on main\", \"new session\", \"implement, don't brainstorm\"); never add detail his words don't give. [] when none."},
+        {"key": "dropped", "name": "Dropped", "type": "refs", "lead": "what he gave up for good that day (an approach, a feature, a project): each {\"t\", \"m\": the message where he gives it up}. Never something put off (that is postponed), triage, a cleanup, or an ordinary edit. [] when none."},
+        {"key": "postponed", "name": "Postponed", "type": "refs", "lead": "what he put off to a later time on purpose (\"later\", \"next week\", \"for now\", \"not yet\"): each {\"t\", \"m\"}. Moving work to a new session is not postponing. [] when none."},
+        {"key": "high", "name": "High points", "type": "refs", "lead": "at most 3 moments that went well for him: something landed, praise or relief in his words, a good idea of his: each {\"t\", \"m\"}. Each must be visible in the one message cited. Never a request, a go-ahead (\"looks good\", \"all good\", \"yes yes yes\", \"perfect let's go\") or a frustrated message."},
+        {"key": "low", "name": "Low points", "type": "refs", "lead": "at most 3 moments that went badly: something broke, a correction, frustration in his words, a lost hour: each {\"t\", \"m\"}. Each must be visible in the one message cited; routine review fixes and status questions are not low points."},
+        {"key": "strain", "name": "Signs of strain", "type": "text", "lead": "signs of strain in the record, plainly, with the ids in brackets: a night under 7 hours before the day, an end after midnight, tiredness or stress he says himself, irritation in his words, many corrections, replies that turn short late in the day unlike the rest of it. Not strain: his usual short replies, a gap in the day, resends, a slow machine, his own choices. No guesses about why. \"\" when there are none. Never diagnose.", "max": 600},
+        {"key": "account", "name": "Account", "type": "text", "lead": "three to five plain sentences (never more) on the day: what it was mostly about, covering every project he worked on, what got done, what was decided, what was left open, and when it ended. Copy figures and times exactly from the input. Say merged, sent or done only when the input shows it. Cite the key messages by id in brackets, like [a7176289]. No jargon. When a later message or session changes how something stood (a status check, then a commit), report how it stood at the end of the day. When the input says only his own messages were kept, never say something was built, committed, merged, pushed or worked unless his own words say so: say what he asked for.", "max": 1400}
+      ],
+      "notes": [
+        "Days since 29 Jun with at least one message Alex typed, 5:00 to 5:00 local time, as in the app.",
+        "Message ids (m, and the ids in brackets) are the 8-character starts of the full ids."
+      ],
+      "changes": {
+        "1": "First version, on a sample of days.",
+        "2": "After the Opus judge (12 days): decided holds only his rulings, never go-aheads or requests; dropped is for good and postponed is to a later time (a new session is neither); each high or low point must show in the message cited; strain lists only grounded signs (a night under 7 hours, after midnight, his own words), never resends or short replies that are his usual; the account covers every project in at most five sentences with exact figures. Written by Opus.",
+        "3": "After the second Opus judge (12 days, accounts 9/12 right): only what the input shows, every cited id in it; the account reports how things stood at the end of the day; enthusiastic go-aheads are not high points.",
+        "4": "After the Opus judge of 8 March to June days (accounts 2/8): with only his messages kept, the account says what he asked, never that something was built or pushed unless he says so; cleanups are not drops; \"all good\" is not a high point; decided adds no detail his words don't give.",
+        "5": "Written to Alex in the second person (\"you decided…\"), never \"Alex\" or \"he\": every item, strain and the account. The rules and guards are unchanged."
+      }
+    },
+    "rules": {
+      "version": 2,
+      "file": "rules.json",
+      "name": "Rules you gave more than once",
+      "level": "rules",
+      "model": "opus",
+      "intro": "You get standing rules and preferences that a software founder (Alex) stated to Claude Code, his coding agent, one\nper line, each with the id of his message, its date and project, as another model extracted them, and the start\nof his own words in «». Many say the same\nthing in other words. You also get the feedback notes already saved in the agents' memory.\n\nGroup the rules that ask for the same behaviour. Give:",
+      "outro": "Answer with JSON only, no prose and no code fence: one array, the groups with the most messages first, like\n[{\"rule\":\"…\",\"kind\":\"writing\",\"ids\":[\"a7176289\",\"5d1c905c\"],\"known\":\"\"}].",
+      "fields": [
+        {"key": "rule", "name": "Rule", "type": "text", "lead": "the rule as one short imperative for an agent, in plain English, at most 20 words.", "max": 240},
+        {
+          "key": "kind",
+          "name": "Kind",
+          "type": "enum",
+          "lead": "what it is about:",
+          "list": true,
+          "values": [
+            {"key": "writing", "name": "Writing", "meaning": "how to write: words, tone, length, format, language."},
+            {"key": "process", "name": "Process", "meaning": "how to work: asking, checking, testing, reporting, git, when to stop."},
+            {"key": "code", "name": "Code", "meaning": "how to write or structure code, tools and libraries to use or avoid."},
+            {"key": "design", "name": "Design", "meaning": "how things should look or behave for users."},
+            {"key": "other", "name": "Other", "meaning": "anything else."}
+          ]
+        },
+        {"key": "ids", "name": "Messages", "type": "list", "lead": "the ids of every message whose own words state the group's rule as a standing instruction. Leave out a message whose words are only a permission or waiver for the task at hand (\"you can use Opus sessions\", \"don't ask permission, push it\"), a constraint on one piece of work, a bare \"ok\", or something else than the rule.", "max": 12},
+        {"key": "known", "name": "Already in memory", "type": "text", "lead": "the name of the memory note that already says it, or \"\" when none does.", "max": 120}
+      ],
+      "notes": [
+        "Only groups with messages in at least two sessions are kept: those are the repeated instructions.",
+        "Built from acts' \"rule\" field over every message."
+      ],
+      "changes": {
+        "1": "First version.",
+        "2": "After the Opus judge (36 groups, 33 of 178 members wrong, mostly one-task permissions): the grouping sees the start of each message's words and leaves out permissions for the task at hand, one-off constraints and bare oks."
+      }
+    },
+    "weeks": {
+      "version": 3,
+      "file": "weeks.json",
+      "name": "What each week held",
+      "level": "week",
+      "model": "opus",
+      "intro": "You write a short, honest account of one week of a software founder (Alex) who works mostly through Claude Code,\nhis coding agent, often in several sessions at once. You get the week's figures and the account of each day another\nmodel wrote from his messages, with what he decided, dropped and postponed, high and low points and signs of strain,\neach citing a message by its 8-character id.\n\nThe account opens his weekly retro and goes into a growth log he reads, so write kindly and precisely: plain English,\nshort sentences, no jargon, no em dashes, no praise or blame, no advice. Say only what the input shows, and cite\nonly ids that appear in it. Everything you write is read by Alex himself, so write to him in the second person (\"you asked\", \"you decided\",\n\"you said it worked\"), never \"Alex\", \"he\", \"his\" or \"the user\": in every field, not only the account.\n\nGive:",
+      "outro": "Answer with JSON only, no prose and no code fence: one object, like\n{\"account\":\"…\",\"decided\":[{\"t\":\"…\",\"m\":\"a7176289\"}],\"dropped\":[],\"postponed\":[],\"open\":[\"…\"],\"strain\":\"\",\"moments\":[{\"t\":\"…\",\"m\":\"a7176289\"}]}.",
+      "fields": [
+        {"key": "account", "name": "Account", "type": "text", "lead": "four to six plain sentences on the week (count them; never more than six): what it was mostly about and how the time was split across projects, what landed, the main decisions, what was left open, and how the days ran (starts, ends, days off). Copy figures exactly. Cite key messages by id in brackets.", "max": 1600},
+        {"key": "decided", "name": "Decided", "type": "refs", "lead": "the week's most important rulings, at most 6, from the days' decided lists: each {\"t\": at most 15 words, \"m\": id}."},
+        {"key": "dropped", "name": "Dropped", "type": "refs", "lead": "what he gave up for good that week: each {\"t\", \"m\"}. [] when none."},
+        {"key": "postponed", "name": "Postponed", "type": "refs", "lead": "what he put off to later that week and had not come back to by its end, as far as the input shows: each {\"t\", \"m\"}. [] when none."},
+        {"key": "open", "name": "Open", "type": "list", "lead": "what the week leaves open: work started and not landed, questions left, at most 6, each in at most 15 words.", "max": 200},
+        {"key": "strain", "name": "Strain", "type": "text", "lead": "the signs of strain across the week, grounded in the days' strain notes and figures (late ends, short nights, no day off), with ids in brackets; \"\" when there are none. Never diagnose.", "max": 800},
+        {"key": "moments", "name": "Moments", "type": "refs", "lead": "up to three moments worth looking at together in the retro: a turning point, a pattern seen on several days, a sign of strain, a decision deferred again. Never a leftover chore or to-do. Each {\"t\": what happened and why it is worth a look, at most 30 words, \"m\": the id of the message that shows it}. Don't add an order (\"then\") or a cause (\"which blocked\") the input doesn't show."}
+      ],
+      "notes": [
+        "ISO weeks, Monday to Sunday, of days as the app counts them (5:00 to 5:00).",
+        "Built from days.json (and days-history.json for March to June); no new reading of the messages."
+      ],
+      "changes": {
+        "1": "First version.",
+        "2": "After the Opus judge (5 weeks): moments are turning points or patterns, never chores, and add no order or cause the input doesn't show; the account counts its sentences (six at most).",
+        "3": "Written to Alex in the second person (\"you decided…\"), never \"Alex\" or \"he\": every item, strain, moments and the account. The rules and guards are unchanged."
+      }
+    }
+  }
+}

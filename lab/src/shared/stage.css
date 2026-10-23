@@ -1,0 +1,35 @@
+:root {
+  color-scheme: light;
+  --ground: #eef0f4; --ink: #121725; --ink-2: #3d4559; --muted: #6b7386; --line: #dce0e8; --surface: #ffffff;
+  --display: "Bricolage Grotesque Variable", "Avenir Next", system-ui, sans-serif;
+  --text: "Instrument Sans Variable", -apple-system, system-ui, sans-serif;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground: #080b14; --ink: #e9edf5; --ink-2: #b4bccb; --muted: #7d8698; --line: #242c3d; --surface: #141925;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--ground); color: var(--ink); font: 400 15px/1.5 var(--text); -webkit-font-smoothing: antialiased; }
+.stage { position: fixed; inset: 0; overflow: hidden; }
+.stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.cap { position: absolute; left: clamp(16px, 4vw, 48px); bottom: clamp(20px, 5vh, 48px); max-width: min(44ch, calc(100vw - 32px)); pointer-events: none; }
+.cap .line { margin: 0 0 6px; font: 600 clamp(20px, 2.4vw, 28px)/1.15 var(--display); letter-spacing: -.02em; text-wrap: balance; }
+.cap .sub { margin: 0; color: var(--muted); font-size: 15px; text-wrap: pretty; }
+.keys { position: absolute; top: 16px; right: 16px; display: flex; gap: 14px; font-size: 12px; color: var(--muted); }
+.keys a { color: var(--ink-2); text-decoration: none; margin-right: 6px; }
+.keys a:hover { color: var(--ink); }
+kbd { font: 600 11px var(--text); padding: 1px 5px; border: 1px solid var(--line); border-radius: 4px; color: var(--ink-2); }
+.badge { position: absolute; top: 16px; left: clamp(16px, 4vw, 48px); font-size: 12px; color: var(--muted); }
+.badge:empty { display: none; }
+.tip {
+  position: fixed; z-index: 5; max-width: 320px; padding: 9px 11px; border-radius: 8px; pointer-events: none;
+  background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid var(--line); backdrop-filter: blur(6px);
+  font-size: 13px; line-height: 1.4; box-shadow: 0 8px 30px rgba(0, 0, 0, .18);
+}
+.tip .m { color: var(--muted); }
+.tip .q { margin-top: 5px; color: var(--ink-2); }
+.wait { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); }
+body.recording .keys::after { content: "Recording"; color: #e66767; font-weight: 600; }
+@media (max-width: 720px) { .keys span { display: none; } }
+.labels { position: absolute; inset: 0; pointer-events: none; }
+.labels span { position: absolute; left: 0; top: 0; font-size: 12px; font-weight: 500; color: var(--muted); white-space: nowrap; }
