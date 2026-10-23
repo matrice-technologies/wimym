@@ -706,7 +706,7 @@ export class Loom implements Piece {
   dispose() { this.canvas.removeEventListener("wheel", this.wheel); }
 }
 
-function lowerBound(a: Float32Array, v: number) { let lo = 0, hi = a.length; while (lo < hi) { const mid = (lo + hi) >> 1; if (a[mid] < v) lo = mid + 1; else hi = mid; } return lo; }
+export function lowerBound(a: Float32Array, v: number) { let lo = 0, hi = a.length; while (lo < hi) { const mid = (lo + hi) >> 1; if (a[mid] < v) lo = mid + 1; else hi = mid; } return lo; }
 function line(g: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y1: number) { g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke(); }
 function boat(g: CanvasRenderingContext2D, x: number, y: number, L: number) {
   g.moveTo(x - L / 2, y); g.bezierCurveTo(x - L / 4, y - 6, x + L / 4, y - 6, x + L / 2, y); g.bezierCurveTo(x + L / 4, y + 6, x - L / 4, y + 6, x - L / 2, y);

@@ -8,8 +8,8 @@
 // from there.
 import type { Mind } from "../shared/data";
 import { FAM_NAMES, hex, type Theme } from "../shared/palette";
-import type { PieceFactory } from "../shared/piece";
-import { EDGE, GAP, Loom, SHED, type LoomOptions, type Session, type Stage } from "./loom";
+import { fmtDay, fmtHour, type PieceFactory } from "../shared/piece";
+import { EDGE, GAP, Loom, lowerBound, SHED, type LoomOptions, type Session, type Stage } from "./loom";
 import { Mass } from "./loom-mass";
 
 const SPEED = 640;            // px a second the light runs up the thread
@@ -25,6 +25,8 @@ const FIT = 1.6;              // how quickly the spacing follows (per second)
 const RUN = 1100;             // px a second a change in the loom runs up its strings, from the fell
 const CAP_CLEAR = 76;         // px from the fell to the caption's top, on a narrow screen: the names fit between
 const NAME_PAD = 18;          // px at least between two columns' names
+const DAY_EASE = 7;           // how quickly the days follow the cloth (per second): it moves on a pick at a time, they glide
+const DAY_IN = 24;            // px above the fell over which a day comes in
 const BIRTH = 0.9, BORN = 1.3;   // seconds a new session's spark lasts, and how hard its first strike rings
 // the types' colours, as lights in a dark room (and their light-theme twins): ask ice blue, steer ember, make gold,
 // approve a champagne white (the commonest type, kept quiet), run aqua, ship mint, think lavender; unlabelled slate.
@@ -72,6 +74,8 @@ export class Strum extends Loom {
   sp = 0;                       // px between strings now, easing to fit
   reach: Float32Array;          // per column: how many lanes out from its middle its strings on screen reach, easing
   names: { x: number; y: number; text: string; alpha: number }[] = [];   // the columns' names, laid out
+  days: { x: number; y: number; text: string; alpha: number; align: "left" | "right" }[] = [];   // the days beside the loom, laid out
+  dayY = NaN;                   // the fell, along the cloth, as the days follow it
   nowY = 0;                     // the fell, along the cloth, this frame
   onLoom: number[] = [];        // the sessions whose strings are on the loom now
   hist: { t: number; x: Float32Array }[] = [];   // where each string on the loom crossed the fell, lately
@@ -127,6 +131,7 @@ export class Strum extends Loom {
     this.strum(t);
     super.frame(t, 0);
     this.name();
+    this.date(dt);
   }
 
   /** The spacing of the strings, from how many are on the loom: each column as wide as the lanes its strings reach,
@@ -217,6 +222,37 @@ export class Strum extends Loom {
       const tw = this.widths.get(it.text)!;
       g.globalAlpha = 0.88 * it.alpha;
       g.beginPath(); g.roundRect(it.at - tw / 2 - 7, it.y - 9, tw + 14, 18, 9); g.fill();
+    }
+    g.restore();
+  }
+
+  /** The days beside the loom, each where its first message lies in the cloth, on a patch of the room's dark as the
+   * names are. The cloth moves on a pick at a time; the days follow it eased, so they glide up rather than tick, and
+   * come in at the fell and go near the top gently. On a narrow screen they keep to the left margin; on a wide one,
+   * at the loom's left edge when a caption is at the bottom, and at its right when the page's words fill the left. */
+  private date(dt: number) {
+    const m = this.mind, now = this.nowY;
+    this.days = [];
+    if (!m.n) return;
+    this.dayY = dt && Math.abs(now - this.dayY) < 300 ? this.dayY + (now - this.dayY) * (1 - Math.exp(-dt * DAY_EASE)) : now;
+    const at = Math.min(this.dayY, now), top = this.h * 0.18, drawn = this.drawn(now);
+    this.place(now);
+    const [l0, r0] = this.edges(), narrow = this.w / this.h <= 1.25;
+    const align = narrow || !this.overCaption ? "left" : "right", x = narrow ? 16 : this.overCaption ? l0 - 14 : r0 + 14;
+    for (let k = Math.max(0, lowerBound(this.Y, at - this.fell)); k < drawn && this.Y[k] <= at; k++) {
+      if (k && m.day[this.order[k]] === m.day[this.order[k - 1]]) continue;
+      const y = this.fell - (at - this.Y[k]);
+      if (y < top) continue;
+      const alpha = Math.max(0, Math.min(1, (y - top) / (this.h * 0.08), 0.2 + (this.fell - y) / DAY_IN));
+      this.days.push({ x, y, text: `${fmtDay(m.days[m.day[this.order[k]]])}, ${fmtHour(m.hour[this.order[k]])}`, alpha, align });
+    }
+    const g = this.g, C = this.colours();
+    g.save(); g.font = this.font; g.fillStyle = C.ground; g.shadowColor = C.ground; g.shadowBlur = 10;
+    for (const d of this.days) {
+      let tw = this.widths.get(d.text);
+      if (tw == null) { tw = g.measureText(d.text).width; this.widths.set(d.text, tw); }
+      g.globalAlpha = 0.88 * d.alpha;
+      g.beginPath(); g.roundRect(d.align === "left" ? d.x - 7 : d.x - tw - 7, d.y - 9, tw + 14, 18, 9); g.fill();
     }
     g.restore();
   }
@@ -488,16 +524,9 @@ export class Strum extends Loom {
   }
 
   labels() {
-    // the days at the loom's left edge as it is now, the strings being straight; the columns' names as name() laid
-    // them out; the legend; and what was changed, a moment
-    this.place(this.nowY);
-    const [l0, r0] = this.edges(), shown = this.t - this.noticeAt;
-    // on a narrow screen, where the loom may reach the edge, the days keep to the left margin; on a wide one without
-    // a caption at the bottom, the page's words fill the left, and the days go to the loom's right
-    const out = super.labels().filter(l => l.align === "right")
-      .map(l => this.w / this.h <= 1.25 ? { ...l, x: 16, align: "left" as const }
-        : this.overCaption ? { ...l, x: l0 - 14 } : { ...l, x: r0 + 14, align: "left" as const });
-    out.push(...this.names, ...this.legend);
+    // the days and the columns' names as date() and name() laid them out; the legend; and what was changed, a moment
+    const shown = this.t - this.noticeAt;
+    const out: ReturnType<Loom["labels"]> = [...this.days, ...this.names, ...this.legend];
     // under the names; on a narrow screen, where the caption is, under the legend at the top
     const ny = this.w / this.h > 1.25 ? this.fell + SHED + 70 : (this.legend.length ? Math.max(...this.legend.map(l => l.y)) : 52) + 22;
     if (shown < 3) out.push({ x: this.centre, y: ny, text: this.notice, alpha: Math.min(1, (3 - shown) * 1.5) });
