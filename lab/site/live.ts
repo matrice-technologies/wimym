@@ -19,7 +19,7 @@ function mountLoom(hero: HTMLElement, box: HTMLElement, r: RobinFile) {
   const labels = document.createElement("div"), tip = document.createElement("div");
   labels.className = "lm-labels"; labels.setAttribute("aria-hidden", "true"); tip.className = "lm-tip"; tip.hidden = true;
   box.append(canvas, labels, tip);
-  const p = loomHero(canvas, mindFrom(messages, days, () => false), DARK, { share: false, still });
+  const p = loomHero(canvas, mindFrom(messages, days, () => false), DARK, { share: false, still, intro: true });
 
   const size = () => { const b = box.getBoundingClientRect(); if (b.width && b.height) p.resize(b.width, b.height, Math.min(devicePixelRatio || 1, 2)); };
   size();

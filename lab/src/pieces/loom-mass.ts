@@ -28,6 +28,7 @@ const E0 = 260;               // messages of fresh weight that give it two third
 const SPIN = 7;               // seconds the current takes to follow its momentum, to a third: a heavy flywheel
 const FAR_SPEED = 0.62;       // how much slower the far turns than the near: the parallax
 const REFRESH = 10;           // pictures a second
+const FIRST = 1.4;            // seconds the first picture takes to come out of the dark
 const OTHER = 1e6;            // the order of projects that never had a column: at the right, as in the loom
 
 /** What the aurora reads from the loom in front of it. */
@@ -71,14 +72,14 @@ export class Mass {
   dispose() { this.worker?.terminate(); }
 
   /** Lay the aurora behind the loom: weighed, its stretches moved and a picture asked for now and then, the last two
-   * faded one into the other. */
-  draw(g: CanvasRenderingContext2D, L: Front, still: boolean) {
+   * faded one into the other. fade: how far the whole sky has come out of the dark, 0 to 1. */
+  draw(g: CanvasRenderingContext2D, L: Front, still: boolean, fade = 1) {
     const dt = this.then < 0 || L.t < this.then ? 0 : Math.min(0.25, L.t - this.then);
     this.then = L.t; this.since += dt;
     if (L.t - this.asked >= 1 / REFRESH || L.t < this.asked || !this.latest) {
       if (!this.busy || still) { this.step(L, still ? 0 : this.since); this.since = 0; this.asked = L.t; this.ask(L, still); }
     }
-    const k = still || !this.before ? 1 : Math.min(1, (L.t - this.came) * REFRESH);
+    const k = still ? 1 : Math.min(1, (L.t - this.came) * (this.before ? REFRESH : 1 / FIRST));
     g.save();
     g.globalCompositeOperation = "screen";
     // smoothed plainly: the sky is soft enough that "high" changes it by at most 3 levels in 255, and it costs about
@@ -86,7 +87,7 @@ export class Mass {
     g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "low";
     for (const [s, a] of [[this.before, 1 - k], [this.latest, k]] as const) {
       if (!s || a <= 0) continue;
-      g.globalAlpha = a;
+      g.globalAlpha = a * fade;
       g.drawImage(s.cv, 0, 0, s.pic.gw, s.pic.gh, 0, s.pic.y0, s.pic.gw * CELL, s.pic.gh * CELL);
     }
     g.restore();

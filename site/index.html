@@ -5,9 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Wimym: Where is your mind?</title>
 <meta name="description" content="Wimym reads your Claude Code transcripts on your own Mac and shows, against your own usual, how your weeks with agents are going for your health and your work. A weekly retro, practices, and nothing sent anywhere.">
-<meta name="theme-color" content="#eef0f4" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0d1017" media="(prefers-color-scheme: dark)">
-<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#0d1017">
+<meta name="color-scheme" content="dark">
 <link rel="canonical" href="https://wimym.matricetechnologies.com/">
 <link rel="icon" type="image/svg+xml" href="/wimym.svg">
 <meta property="og:type" content="website">
@@ -38,30 +37,18 @@
 }
 /* The app's tokens (app/src/styles.css), so this reads as the same product. */
 :root {
-  color-scheme: light;
-  --ground: #eef0f4; --surface: #ffffff; --raised: #f6f7fa; --sunk: #e4e7ee;
-  --line: #dce0e8; --line-2: #c9cfdb;
-  --ink: #121725; --ink-2: #3d4559; --muted: #6b7386; --faint: #9aa1b1;
-  --focus: #2a78d6; --glow: rgba(42, 120, 214, .14);
-  --shadow: 0 1px 2px rgba(18, 23, 37, .05), 0 8px 24px rgba(18, 23, 37, .06);
-  --night: #6366d1; --late: #d4791f; --flag: #c4691a; --up: #006300;
-  --warn-bg: #fbf1e6; --warn-line: #ecc9a3;
+  color-scheme: dark;
+  --ground: #0d1017; --surface: #141925; --raised: #1a2030; --sunk: #0a0d13;
+  --line: #242c3d; --line-2: #313b50;
+  --ink: #e9edf5; --ink-2: #b4bccb; --muted: #7d8698; --faint: #525b6e;
+  --focus: #6aa7f0; --glow: rgba(106, 167, 240, .16);
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 30px rgba(0, 0, 0, .35);
+  --night: #8d8ff5; --late: #f0a050; --flag: #eba05a; --up: #0ca30c;
+  --warn-bg: #241a10; --warn-line: #5a3d1f;
   --display: "Bricolage Grotesque Variable", "Avenir Next", system-ui, sans-serif;
   --text: "Instrument Sans Variable", -apple-system, "Segoe UI", system-ui, sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, monospace;
   --r-s: 6px; --r-m: 10px; --r-l: 16px;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-    --ground: #0d1017; --surface: #141925; --raised: #1a2030; --sunk: #0a0d13;
-    --line: #242c3d; --line-2: #313b50;
-    --ink: #e9edf5; --ink-2: #b4bccb; --muted: #7d8698; --faint: #525b6e;
-    --focus: #6aa7f0; --glow: rgba(106, 167, 240, .16);
-    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 30px rgba(0, 0, 0, .35);
-    --night: #8d8ff5; --late: #f0a050; --flag: #eba05a; --up: #0ca30c;
-    --warn-bg: #241a10; --warn-line: #5a3d1f;
-  }
 }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
@@ -311,10 +298,7 @@ footer p { margin: 0; max-width: 70ch; }
         </div>
         <figure class="shot">
           <a href="/media/front-dark-1440.webp">
-            <picture>
-              <source media="(prefers-color-scheme: dark)" srcset="/media/front-dark-800.webp 800w, /media/front-dark-1440.webp 1440w" sizes="(min-width: 960px) 640px, 100vw">
-              <img src="/media/front-light-1440.webp" srcset="/media/front-light-800.webp 800w, /media/front-light-1440.webp 1440w" sizes="(min-width: 960px) 640px, 100vw" width="1440" height="900" loading="lazy" decoding="async" alt="Wimym's front page in share mode: Where is your mind? beside the loom, its strings lit under a golden aurora, the projects named Project 1 and Project 3, and a line saying the person has worked 44 days in a row.">
-            </picture>
+            <img src="/media/front-dark-1440.webp" srcset="/media/front-dark-800.webp 800w, /media/front-dark-1440.webp 1440w" sizes="(min-width: 960px) 640px, 100vw" width="1440" height="900" loading="lazy" decoding="async" alt="Wimym's front page in share mode: Where is your mind? beside the loom, its strings lit under a golden aurora, the projects named Project 1 and Project 3, and a line saying the person has worked 44 days in a row.">
           </a>
           <figcaption>The front page, with share mode on: the projects go by Project 1, 2 and 3.</figcaption>
         </figure>
@@ -336,10 +320,7 @@ footer p { margin: 0; max-width: 70ch; }
         </div>
         <figure class="shot">
           <a href="/media/vitals-dark-1440.webp">
-            <picture>
-              <source media="(prefers-color-scheme: dark)" srcset="/media/vitals-dark-800.webp 800w, /media/vitals-dark-1440.webp 1440w" sizes="(min-width: 960px) 640px, 100vw">
-              <img src="/media/vitals-light-1440.webp" srcset="/media/vitals-light-800.webp 800w, /media/vitals-light-1440.webp 1440w" sizes="(min-width: 960px) 640px, 100vw" width="1440" height="622" loading="lazy" decoding="async" alt="Eight vital signs, each a twelve-week line with a shaded band for the person's usual range, such as days in a row, active hours, longest stretch, switches and strain.">
-            </picture>
+            <img src="/media/vitals-dark-1440.webp" srcset="/media/vitals-dark-800.webp 800w, /media/vitals-dark-1440.webp 1440w" sizes="(min-width: 960px) 640px, 100vw" width="1440" height="622" loading="lazy" decoding="async" alt="Eight vital signs, each a twelve-week line with a shaded band for the person's usual range, such as days in a row, active hours, longest stretch, switches and strain.">
           </a>
           <figcaption>Health signs for Robin: 44 days in a row, the longest run on record.</figcaption>
         </figure>
@@ -354,10 +335,7 @@ footer p { margin: 0; max-width: 70ch; }
         </div>
         <figure class="shot">
           <a href="/media/week-dark-1440.webp">
-            <picture>
-              <source media="(prefers-color-scheme: dark)" srcset="/media/week-dark-800.webp 800w, /media/week-dark-1440.webp 1440w" sizes="(min-width: 960px) 640px, 100vw">
-              <img src="/media/week-light-1440.webp" srcset="/media/week-light-800.webp 800w, /media/week-light-1440.webp 1440w" sizes="(min-width: 960px) 640px, 100vw" width="1440" height="900" loading="lazy" decoding="async" alt="The week page: the week of 19 October, an orange organic form, and the signs outside the usual range listed as chips.">
-            </picture>
+            <img src="/media/week-dark-1440.webp" srcset="/media/week-dark-800.webp 800w, /media/week-dark-1440.webp 1440w" sizes="(min-width: 960px) 640px, 100vw" width="1440" height="900" loading="lazy" decoding="async" alt="The week page: the week of 19 October, an orange organic form, and the signs outside the usual range listed as chips.">
           </a>
           <figcaption>The week of 19 October, for Robin: frayed, restless, a slow heavy pulse.</figcaption>
         </figure>
@@ -373,10 +351,7 @@ footer p { margin: 0; max-width: 70ch; }
         </div>
         <figure class="shot">
           <a href="/media/spiral-dark-1440.webp">
-            <picture>
-              <source media="(prefers-color-scheme: dark)" srcset="/media/spiral-dark-800.webp 800w, /media/spiral-dark-1440.webp 1440w" sizes="(min-width: 960px) 640px, 100vw">
-              <img src="/media/spiral-light-1440.webp" srcset="/media/spiral-light-800.webp 800w, /media/spiral-light-1440.webp 1440w" sizes="(min-width: 960px) 640px, 100vw" width="1440" height="909" loading="lazy" decoding="async" alt="A spiral with one turn per day of the week: dark arcs for working time, blue for nights, an orange mark where work ran past the stopping hour.">
-            </picture>
+            <img src="/media/spiral-dark-1440.webp" srcset="/media/spiral-dark-800.webp 800w, /media/spiral-dark-1440.webp 1440w" sizes="(min-width: 960px) 640px, 100vw" width="1440" height="909" loading="lazy" decoding="async" alt="A spiral with one turn per day of the week: dark arcs for working time, blue for nights, an orange mark where work ran past the stopping hour.">
           </a>
           <figcaption>The week turn by turn, with the stopping hour Robin set.</figcaption>
         </figure>
@@ -390,10 +365,7 @@ footer p { margin: 0; max-width: 70ch; }
         </div>
         <figure class="shot">
           <a href="/media/day-dark-1440.webp">
-            <picture>
-              <source media="(prefers-color-scheme: dark)" srcset="/media/day-dark-800.webp 800w, /media/day-dark-1440.webp 1440w" sizes="(min-width: 960px) 640px, 100vw">
-              <img src="/media/day-light-1440.webp" srcset="/media/day-light-800.webp 800w, /media/day-light-1440.webp 1440w" sizes="(min-width: 960px) 640px, 100vw" width="1440" height="900" loading="lazy" decoding="async" alt="A day page: Tuesday 20 October, 86 messages from 09:28 to 22:09, figures against the usual, and the day as a score of sessions grouped by project.">
-            </picture>
+            <img src="/media/day-dark-1440.webp" srcset="/media/day-dark-800.webp 800w, /media/day-dark-1440.webp 1440w" sizes="(min-width: 960px) 640px, 100vw" width="1440" height="900" loading="lazy" decoding="async" alt="A day page: Tuesday 20 October, 86 messages from 09:28 to 22:09, figures against the usual, and the day as a score of sessions grouped by project.">
           </a>
           <figcaption>One of Robin's days, as a score.</figcaption>
         </figure>
