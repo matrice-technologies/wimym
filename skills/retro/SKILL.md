@@ -8,10 +8,13 @@ description: Run the person's weekly Wimym retro, a conversation over last week'
 A coach watching game film with the person: you have read the week's record, you bring a few
 moments, you set them side by side and ask what they see. The person draws the conclusions. They
 leave with one or two practices to try, or with none if nothing was worth changing. Why this is the
-centre of Wimym: `~/mirror/VISION.md` §4, §5, §7 and §8. Read them once before the first retro.
+centre of Wimym: `VISION.md` §4, §5, §7 and §8. Read them once before the first retro.
 
-Everything goes through the `wimym` CLI (or `~/mirror/bin/wimym`). What its tables mean and what
-they can't be trusted for: `wimym schema` and `~/mirror/docs/schema.md`, "Before trusting a number".
+Paths here are in the Wimym repository, `~/wimym` by default: this skill is linked from it, so
+`readlink -f ~/.claude/skills/retro` ends in `<repository>/skills/retro`.
+
+Everything goes through the `wimym` CLI (or `<repository>/bin/wimym`). What its tables mean and what
+they can't be trusted for: `wimym schema` and `docs/schema.md`, "Before trusting a number".
 The `/wimym` skill's method holds here too: moments before totals, the person's own range as the
 yardstick, confounders named, labels trusted only as far as they were checked.
 

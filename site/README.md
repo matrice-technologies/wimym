@@ -10,4 +10,7 @@ Hosted on Vercel, project `wimym` (shanoirs-projects). To publish a change, from
 vercel deploy --prod
 ```
 
-Setup step 1 points at the private repo matrice-technologies/wimym (by invitation). `bin/ship-code` updates that repo from main.
+The setup starts with one prompt people paste into Claude Code; it has Claude read `setup.md`, the guide
+written for Claude, and follow it step by step. Change the steps there and in the page's "by hand"
+list together. Both point at the private repo matrice-technologies/wimym (by invitation).
+`bin/ship-code` updates that repo from main.

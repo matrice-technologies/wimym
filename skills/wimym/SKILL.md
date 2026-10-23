@@ -11,21 +11,24 @@ messages, and what the person wrote down (check-ins, practices, the growth log).
 the way in. You answer the question from it, the way a good coach would: with the moments first, the
 person's own past as the yardstick, and plain words about what the data can't say.
 
-Why this exists and what it must never become: `VISION.md` in the Wimym repository (`~/mirror`).
+Why this exists and what it must never become: `VISION.md` in the Wimym repository
+(below).
 The short version: it is for the person it shows, it proposes and the person decides, it shows signs
 and never diagnoses, and how it felt counts as much as what was done.
 
 ## Getting in
 
-`wimym` is on the PATH once installed (docs/schema.md, "The skills"); otherwise run
-`~/mirror/bin/wimym`. Start every answer by loading what you need, not everything:
+The Wimym repository is wherever the person keeps the code, `~/wimym` by default: this skill is
+linked from it, so `readlink -f ~/.claude/skills/wimym` ends in `<repository>/skills/wimym`. Paths
+below are in that folder. `wimym` is on the PATH once linked (`./install.sh --link`); otherwise run
+`<repository>/bin/wimym`. Start every answer by loading what you need, not everything:
 
 ```bash
 wimym schema                 # tables and columns with meanings, and the coverage dates
 wimym schema messages        # one table in full
 ```
 
-Read the "Before trusting a number" section of `~/mirror/docs/schema.md` once per conversation. It is
+Read the "Before trusting a number" section of `docs/schema.md` once per conversation. It is
 short and it is the difference between an answer and a wrong one.
 
 The commands:

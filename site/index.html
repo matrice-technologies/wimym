@@ -169,6 +169,12 @@ p { text-wrap: pretty; }
 .warn { margin-top: 32px; border: 1px solid var(--warn-line); background: var(--warn-bg); border-radius: var(--r-l); padding: 20px 22px; }
 .warn h3 { color: var(--flag); font-size: 19px; }
 .warn p { margin: 8px 0 0; color: var(--ink-2); max-width: 70ch; }
+.prompt { margin-top: 32px; border: 1px solid var(--line-2); background: var(--surface); border-radius: var(--r-l); padding: 20px 22px; box-shadow: var(--shadow); }
+.prompt p { margin: 8px 0 0; color: var(--ink-2); max-width: 70ch; }
+.prompt pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14.5px; }
+.by-hand { margin-top: 32px; }
+.by-hand > summary { cursor: pointer; font: 600 17px/1.4 var(--display); color: var(--ink); }
+.by-hand > summary + p { margin: 8px 0 0; color: var(--ink-2); max-width: 70ch; }
 .steps { list-style: none; counter-reset: step; margin: 36px 0 0; padding: 0; display: grid; gap: 14px; }
 .steps > li { counter-increment: step; position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-l); padding: 20px 20px 22px 62px; min-width: 0; }
 .steps > li::before { content: counter(step); position: absolute; left: 18px; top: 18px; width: 30px; height: 30px; border-radius: 50%;
@@ -389,6 +395,17 @@ footer p { margin: 0; max-width: 70ch; }
         <li>Claude Code transcripts in <code>~/.claude/projects</code></li>
       </ul>
 
+      <div class="prompt">
+        <h3>One prompt, and Claude does the rest</h3>
+        <p>Paste this into Claude Code. It reads the setup guide and walks you through it a step at a time: it says what each step does, and asks you before anything that changes your Mac.</p>
+        <pre><code>Set up Wimym on this Mac for me. Read the guide with curl -fsSL https://wimym.matricetechnologies.com/setup.md and follow it step by step: say what each step does, and ask me before anything that changes my Mac.</code></pre>
+        <p>It backs up <code>~/.claude</code> first, checks Python and Node, gets the code, offers the demo, starts Wimym on your own record, then offers the command, the skills, the limits and the labels. You still need your GitHub account invited to the private repository; Claude checks, and tells you which account to give. The guide it follows: <a href="/setup.md">setup.md</a>.</p>
+      </div>
+
+      <details class="by-hand">
+      <summary>Or set it up by hand</summary>
+      <p>The same steps, as commands to run yourself.</p>
+
       <div class="warn" role="note">
         <h3>First, back up ~/.claude</h3>
         <p>That folder is your whole history with Claude Code: every transcript and every memory note your agents keep about you. Wimym only reads it. But it is young software, and that folder is worth more than any tool. Make a copy before you start, and check the copy is there:</p>
@@ -460,6 +477,7 @@ python3 labeller/label.py --all</code></pre>
           <p>Every label says it is a model's reading, and the Labels page shows how far each one has been checked.</p>
         </li>
       </ol>
+      </details>
     </div>
   </section>
 </main>

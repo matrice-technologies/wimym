@@ -20,6 +20,16 @@ narrates as it goes; a few dozen transcripts take a second or two, months of the
 Run it again any time: it only redoes what changed. `./install.sh --help` for the options, `--stop` to
 stop the engine.
 
+Or let Claude Code do the whole setup, a step at a time and asking before each change. Paste this
+into Claude Code:
+
+```
+Set up Wimym on this Mac for me. Read the guide with curl -fsSL https://wimym.matricetechnologies.com/setup.md and follow it step by step: say what each step does, and ask me before anything that changes my Mac.
+```
+
+The guide it follows is [site/setup.md](site/setup.md): the backup, the checks, the code, the demo,
+your own record, then the command, the skills, the limits and the labels, each offered.
+
 ## What you see
 
 - **This week**: your days as a planet, every message a light, the night side lit by the hours you
