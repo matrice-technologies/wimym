@@ -4,9 +4,9 @@ Wimym, short for Where is your mind, exists to protect and raise the mental heal
 and the performance of people who work with agents on ambitious projects.
 
 Read this before changing Wimym, whether you are a person or an agent. It says
-why Wimym exists and where it is going. How the current code runs is in
-[the README](README.md), and what was learned along the way is in
-[the research notes](docs/research/README.md).
+why Wimym exists and where it is going. How we get there is in
+[the strategy](STRATEGY.md), and how the current code runs is in
+[the README](README.md).
 
 ## Context
 
