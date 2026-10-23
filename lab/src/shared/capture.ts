@@ -17,7 +17,8 @@ export function savePNG(piece: Piece, theme: Theme, name: string, t: number, wit
   g.fillStyle = theme.muted;
   g.font = `500 ${12 * s}px "Instrument Sans Variable", system-ui`;
   g.textBaseline = "middle";
-  for (const l of piece.labels?.() ?? []) { g.textAlign = l.align ?? "center"; g.fillText(l.text, l.x * s, l.y * s); }
+  for (const l of piece.labels?.() ?? []) { g.globalAlpha = l.alpha ?? 1; g.textAlign = l.align ?? "center"; g.fillText(l.text, l.x * s, l.y * s); }
+  g.globalAlpha = 1;
   g.textAlign = "left"; g.textBaseline = "alphabetic";
   if (!withCaption) return download(out, name);
   const pad = 40 * s;

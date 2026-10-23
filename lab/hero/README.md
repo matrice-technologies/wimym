@@ -7,8 +7,9 @@ are open sea. Every message is a light. The sun stands over 13:00 and the planet
 night side, so the lights you see are the hours you worked after dark: amber in the evening,
 orange, then red after eleven.
 
-Three other pictures of the same data ride along behind the same component (`piece`): the nebula,
-the core sample and the organism. See them in the lab (`npm --prefix lab run dev`, then
+Four other pictures of the same data ride along behind the same component (`piece`): the nebula,
+the core sample, the organism and the strummed Loom with its aurora, which the app's This week page
+shows in the planet's place. See them in the lab (`npm --prefix lab run dev`, then
 <http://localhost:5194/>), each with its own page.
 
 ## Use
@@ -32,7 +33,7 @@ import { Hero } from "@wimym/hero";
 |---|---|---|
 | `points` | | `GET /api/points` as is (docs/contract-points.md). With it, a message's words are fetched one at a time on hover (`/api/points?ids=1` once, then `/api/message/<id>`), never in share mode. |
 | `messages`, `days` | | Or the app's `Message[]` and `Core.days`. With `points`, `days` is optional: without it the days are worked out from the points (no nights' lengths or switches, which the planet doesn't need). |
-| `piece` | `"planet"` | `"planet"`, `"nebula"`, `"core"` or `"organism"` (the organism also reads `/api/vitals`). |
+| `piece` | `"planet"` | `"planet"`, `"nebula"`, `"core"`, `"organism"` (which also reads `/api/vitals`) or `"loom"`: the strummed Loom with its aurora on, on a 2D canvas (no WebGL needed), leaving the page's wheel and keys alone. With points it has no session ids and guesses sessions from pauses. |
 | `theme` | required | Redraws in place when it changes. |
 | `share` | `false` | Can change at any time; from then on no text or project name leaves the component. |
 | `motion` | `"auto"` | `"auto"` follows `prefers-reduced-motion`; `"still"` draws one frame and holds it; `"full"` always moves. |

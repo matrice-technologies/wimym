@@ -12,10 +12,13 @@ import { globe } from "../src/pieces/globe";
 import { nebula } from "../src/pieces/nebula";
 import { core } from "../src/pieces/core";
 import { organism } from "../src/pieces/organism";
+import { loomHero } from "../src/pieces/loom-strum";
 import { makePostcard, type PostcardOptions } from "./postcard";
 
-export type HeroPiece = "planet" | "nebula" | "core" | "organism";
-const PIECES: Record<HeroPiece, PieceFactory> = { planet: globe, nebula, core, organism };
+export type HeroPiece = "planet" | "nebula" | "core" | "organism" | "loom";
+const PIECES: Record<HeroPiece, PieceFactory> = { planet: globe, nebula, core, organism, loom: loomHero };
+// the strummed Loom draws on a 2D canvas, so it needs no WebGL and has no still in its place
+const NEEDS_GL: Record<HeroPiece, boolean> = { planet: true, nebula: true, core: true, organism: true, loom: false };
 
 export interface HeroProps {
   /** GET /api/points as is: every message as a small row. The light way in; text is then fetched one message at a time on hover. */
@@ -79,10 +82,11 @@ export const Hero = forwardRef<HeroHandle, HeroProps>(function Hero(props, ref) 
   const mind = useMemo(() => shapesOf(points, messages, days, () => latest.current.share), [points, messages, days]);
   const shapes = useMemo(() => shapesOf(points, messages, days, () => true), [points, messages, days]);
   const still = motion === "still" || (motion === "auto" && reduced());
+  const blocked = noGL && NEEDS_GL[piece];
 
   useEffect(() => {
     const el = box.current, holder = stage.current;
-    if (!mind || !el || !holder || noGL) return;
+    if (!mind || !el || !holder || blocked) return;
     // a fresh canvas for each piece: two renderers never share one WebGL context
     const canvas = document.createElement("canvas");
     canvas.setAttribute("role", "img");
@@ -124,6 +128,7 @@ export const Hero = forwardRef<HeroHandle, HeroProps>(function Hero(props, ref) 
         if (!l) { s.hidden = true; return; }
         s.hidden = false;
         if (s.textContent !== l.text) s.textContent = l.text;
+        s.style.opacity = l.alpha == null ? "" : String(l.alpha);
         const shift = l.align === "right" ? "-100%" : l.align === "left" ? "0" : "-50%";
         s.style.transform = `translate(${l.x}px, ${l.y}px) translate(${shift}, -50%)`;
       });
@@ -190,7 +195,7 @@ export const Hero = forwardRef<HeroHandle, HeroProps>(function Hero(props, ref) 
       canvas.remove();
       live.current = null;
     };
-  }, [mind, piece, still, noGL]);  // entrance is read once, when the piece is made
+  }, [mind, piece, still, blocked]);  // entrance is read once, when the piece is made
 
   useEffect(() => { live.current?.piece.setTheme(theme === "dark" ? DARK : LIGHT); }, [theme]);
   useEffect(() => { live.current?.piece.setShift?.(shift); }, [shift]);
@@ -207,7 +212,7 @@ export const Hero = forwardRef<HeroHandle, HeroProps>(function Hero(props, ref) 
   return (
     <div ref={box} className={className} style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden", ...style }}>
       <div ref={stage} style={{ position: "absolute", inset: 0 }} />
-      {noGL && <img src={fallbackSrc ?? (theme === "dark" ? stillDark : stillLight)} alt="A planet whose night side is covered in small warm lights" style={{
+      {blocked && <img src={fallbackSrc ?? (theme === "dark" ? stillDark : stillLight)} alt="A planet whose night side is covered in small warm lights" style={{
         position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", objectPosition: `${50 + shift * 100}% 50%`,
         maskImage: "radial-gradient(closest-side, #000 82%, transparent)", WebkitMaskImage: "radial-gradient(closest-side, #000 82%, transparent)",
       }} />}
@@ -243,6 +248,7 @@ function captionFor(piece: HeroPiece) {
     nebula: "Every message as a star on a spiral of time",
     core: "Your days stacked into a column",
     organism: "One week as a living form",
+    loom: "Your messages as a harp of light, under an aurora of the weight each project carries",
   }[piece];
 }
 

@@ -19,7 +19,8 @@ function initialTheme(): Theme {
   return matchMedia("(prefers-color-scheme: dark)").matches ? DARK : LIGHT;
 }
 
-export async function mountLab(name: string, factory: PieceFactory) {
+/** load: where the data comes from instead of the lab's engine (?demo still means synthetic); badge says whose it is. */
+export async function mountLab(name: string, factory: PieceFactory, source: { load?: () => Promise<Mind>; badge?: string } = {}) {
   let theme = initialTheme();
   document.documentElement.dataset.theme = theme.dark ? "dark" : "light";
   document.title = `${name} · Wimym lab`;
@@ -39,17 +40,18 @@ export async function mountLab(name: string, factory: PieceFactory) {
   const badge = root.querySelector<HTMLDivElement>(".badge")!;
   const labelBox = root.querySelector<HTMLDivElement>(".labels")!;
 
-  const mind: Mind = await getMind();
+  const mind: Mind = source.load && !params.has("demo") ? await source.load() : await getMind();
   root.querySelector(".wait")!.remove();
   const still = matchMedia("(prefers-reduced-motion: reduce)").matches || params.has("still");
   const piece: Piece = factory(canvas, mind, theme, { share: share.on, still });
+  if (import.meta.env.DEV) (window as unknown as { __piece: Piece }).__piece = piece;  // for poking at it from the console
 
   const line = root.querySelector(".line")!, sub = root.querySelector(".sub")!;
   const setCaption = () => {
     const c = piece.caption();
     if (line.textContent !== c.line) line.textContent = c.line;
     if (sub.textContent !== c.sub) sub.textContent = c.sub;
-    badge.textContent = [mind.synthetic ? "Synthetic data" : "", share.on ? "Share mode: shapes only" : ""].filter(Boolean).join(" · ");
+    badge.textContent = [mind.synthetic ? "Synthetic data" : source.badge ?? "", share.on ? "Share mode: shapes only" : ""].filter(Boolean).join(" · ");
   };
   setCaption();
 
@@ -74,6 +76,7 @@ export async function mountLab(name: string, factory: PieceFactory) {
       e.hidden = false; e.textContent = l.text;
       const shift = l.align === "right" ? "-100%" : l.align === "left" ? "0" : "-50%";
       e.style.transform = `translate(${l.x}px, ${l.y}px) translate(${shift}, -50%)`;
+      e.style.opacity = l.alpha == null ? "" : String(l.alpha);
     });
   };
   // with reduced motion the picture holds still, redrawn now and then in case its data arrived late

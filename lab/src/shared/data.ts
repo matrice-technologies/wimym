@@ -16,11 +16,15 @@ export interface Mind {
   project: Uint8Array;       // rank of the project by messages, 0 is the biggest
   family: Int8Array;         // index in FAMILIES, -1 when not labelled
   words: Uint16Array;
+  /** The session each message was sent in, as an index (-1 unknown), when the data carries sessions (/api/messages does, points don't). */
+  session?: Int32Array;
   projects: number;          // distinct projects
   perDay: DayRow[];
   /** What a tooltip may say about message i. Null in share mode, and always null for synthetic data.
    * With points, text is fetched on first ask: null until it arrives, then listen() callers hear of it. */
   detail(i: number): { text: string; project: string } | null;
+  /** A project's name by its rank, for a label on the picture without fetching any message. Null in share mode. */
+  name?(p: number): string | null;
   /** Hear when a lazily fetched detail arrives, to redraw a tooltip. Returns the way to stop. */
   listen?(cb: () => void): () => void;
 }
@@ -59,7 +63,7 @@ function mondays(days: string[]) {
 }
 
 /** The fields read from the app's Message (engine /api/messages); the app's own type fits as is. */
-export interface RawMessage { id: string; project: string; day: string; hour: number; kind: string; words: number; family: string | null; text: string }
+export interface RawMessage { id: string; project: string; day: string; hour: number; kind: string; words: number; family: string | null; text: string; sid?: string | null }
 /** The fields read from the app's Day (engine /api/core days). */
 export interface RawDay { day: string; n: number; start?: number; end?: number; active?: number; rest?: number | null; projects?: number; switchH?: number | null; frustrated?: number | null }
 
@@ -89,9 +93,10 @@ export function mindFrom(messages: readonly RawMessage[], coreDays: readonly Raw
 
   const n = msgs.length;
   const day = new Uint16Array(n), hour = new Float32Array(n), project = new Uint8Array(n);
-  const family = new Int8Array(n), words = new Uint16Array(n);
+  const family = new Int8Array(n), words = new Uint16Array(n), session = new Int32Array(n).fill(-1), sids = new Map<string, number>();
   let fullFrom = days.length;
   msgs.forEach((x, i) => {
+    if (x.sid) { if (!sids.has(x.sid)) sids.set(x.sid, sids.size); session[i] = sids.get(x.sid)!; }
     day[i] = di.get(x.day) ?? 0;
     hour[i] = x.hour;
     project[i] = rank.get(x.project) ?? 254;
@@ -112,7 +117,9 @@ export function mindFrom(messages: readonly RawMessage[], coreDays: readonly Raw
 
   return {
     synthetic: false, days, weeks: mondays(days), fullFrom, n, day, hour, project, family, words, projects: ranked.length, perDay,
+    session: sids.size ? session : undefined,
     detail: i => (isShared() ? null : { text: msgs[i].text, project: msgs[i].project }),
+    name: p => (isShared() || p >= 254 ? null : ranked[p] ?? null),
   };
 }
 
@@ -198,6 +205,7 @@ export function mindFromPoints(pts: PointsPayload, coreDays?: readonly RawDay[] 
       if (t == null) { fetchText(i); return null; }
       return { text: t, project: pts.projects[rows[i][fProject] as number] ?? "" };
     },
+    name: p => (isShared() || p >= 254 ? null : pts.projects[ranked[p]] ?? null),
     listen: cb => { listeners.add(cb); return () => listeners.delete(cb); },
   };
 }

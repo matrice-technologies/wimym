@@ -17,8 +17,8 @@ export interface Piece {
   select?(x: number, y: number): string | null;
   /** One sentence for the caption, from the data. */
   caption(): { line: string; sub: string };
-  /** Small words placed on the picture (CSS pixels), redrawn every frame. */
-  labels?(): { x: number; y: number; text: string; align?: "left" | "center" | "right" }[];
+  /** Small words placed on the picture (CSS pixels), redrawn every frame; alpha fades one out. */
+  labels?(): { x: number; y: number; text: string; align?: "left" | "center" | "right"; alpha?: number }[];
   dispose(): void;
 }
 

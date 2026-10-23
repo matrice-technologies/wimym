@@ -7,5 +7,5 @@
     "noFallthroughCasesInSwitch": true, "noUncheckedSideEffectImports": true,
     "types": ["vite/client"]
   },
-  "include": ["src", "hero", "nebula", "core", "organism", "globe"]
+  "include": ["src", "hero", "nebula", "core", "organism", "globe", "loom-strum"]
 }

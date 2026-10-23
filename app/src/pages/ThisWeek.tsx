@@ -15,11 +15,12 @@ import { famColor, fmtDate, fmtDay, fmtHour } from "../lib/format";
 import type { Core, Measure, Message, Vitals } from "../lib/types";
 
 const iso = d3.timeFormat("%Y-%m-%d");
-// The planet (lab/hero, with three) loads after the page, so the words come first.
+// The strummed Loom and its aurora (lab/hero) load after the page, so the words come first.
 const Hero = lazy(() => import("@wimym/hero").then(m => ({ default: m.Hero })));
 const FirstRun = lazy(() => import("@wimym/hero").then(m => ({ default: m.FirstRun })));
 const ORDER = { flag: 0, ok: 1, partial: 2, missing: 3 };
 const rank = (m: Measure) => (m.flag && m.status !== "missing" ? ORDER.flag : ORDER[m.status]);
+const LOOM = "Your messages as a harp of light, under an aurora of the weight each project carries";
 const WORDS = ["", "One day", "Two days", "Three days", "Four days", "Five days", "Six days", "Seven days"];
 
 /** The front page: where your mind has been this week, against your own usual. */
@@ -27,7 +28,7 @@ export default function ThisWeek() {
   const { core, state } = useData();
   const points = usePoints();
   // Decided once per visit: someone whose engine is still on its first build gets the first-run show,
-  // which hands over to the planet itself; someone up to date goes straight to the planet.
+  // which hands over to the planet itself; someone up to date goes straight to the Loom.
   const [firstRun, setFirstRun] = useState<boolean | null>(null);
   useEffect(() => { if (firstRun == null && (state || core)) setFirstRun(!!state?.first); }, [state, core, firstRun]);
   const pts = points && points !== "absent" ? points : null;
@@ -52,18 +53,18 @@ export default function ThisWeek() {
 
   if (vitals === "absent" || wk === "absent") return <Older />;
   const theme = C.dark ? "dark" as const : "light" as const;
-  // the planet draws from /api/points alone, so it starts before the rest of the data is here
+  // the Loom draws from /api/points alone, so it starts before the rest of the data is here
   const stage = firstRun
     ? <Suspense fallback={null}><FirstRun state={state} points={state?.first === false ? pts : null} days={core?.days ?? null}
         theme={theme} share={shareOn} shift={wide ? 0.25 : 0} onSelect={d => nav(`/days/${d}`)} onCaption={setCaption} style={{ position: "absolute", inset: 0 }} /></Suspense>
-    : pts && <Suspense fallback={null}><Hero points={pts} days={core?.days} theme={theme} share={shareOn} shift={wide ? 0.25 : 0}
+    : pts && <Suspense fallback={null}><Hero piece="loom" points={pts} days={core?.days} theme={theme} share={shareOn}
         onSelect={d => nav(`/days/${d}`)} onCaption={setCaption} style={{ position: "absolute", inset: 0 }} /></Suspense>;
   if (!core || !vitals || !week) {
-    // The question is there from the first paint; the same first elements as below, so the planet
+    // The question is there from the first paint; the same first elements as below, so the Loom
     // (or the first-run show) isn't restarted when the rest of the data arrives.
     return (
       <div className="wrap thisweek">
-        <section className={"planet" + (firstRun ? " first" : "")} aria-label="Your days, as a world">
+        <section className={"planet" + (firstRun ? " first" : "")} aria-label={firstRun ? "Your days, as a world" : LOOM}>
           <div className="pl-stage">{stage}</div>
           <div className="pl-scrim" aria-hidden="true" />
           <div className="pl-words">
@@ -80,7 +81,7 @@ export default function ThisWeek() {
 
   return (
     <div className="wrap thisweek">
-      <section className="planet" aria-label="Your days since March, as a world">
+      <section className="planet" aria-label={firstRun ? "Your days since March, as a world" : LOOM}>
         <div className="pl-stage">{stage}</div>
         <div className="pl-scrim" aria-hidden="true" />
         <div className="pl-words">

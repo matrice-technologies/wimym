@@ -11,12 +11,13 @@ const page = (p: string) => resolve(__dirname, p);
 
 export default defineConfig({
   plugins: [react()],
-  server: { port: Number(process.env.LAB_PORT) || 5194, proxy: { "/api": target } },
+  // the lab may read Robin, the public page's made-up person, from site/media
+  server: { port: Number(process.env.LAB_PORT) || 5194, proxy: { "/api": target }, fs: { allow: [__dirname, page("../site/media")] } },
   build: {
     rollupOptions: {
       input: {
         index: page("index.html"), nebula: page("nebula/index.html"), core: page("core/index.html"),
-        organism: page("organism/index.html"), globe: page("globe/index.html"), hero: page("hero/demo.html"), firstrun: page("hero/first-run.html"), week: page("hero/week.html"),
+        organism: page("organism/index.html"), globe: page("globe/index.html"), loomstrum: page("loom-strum/index.html"), hero: page("hero/demo.html"), firstrun: page("hero/first-run.html"), week: page("hero/week.html"),
       },
     },
   },
