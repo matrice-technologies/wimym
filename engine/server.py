@@ -43,6 +43,9 @@ LOCAL = ("127.0.0.1", "localhost", "[::1]")
 TYPES = {".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
          ".svg": "image/svg+xml", ".png": "image/png", ".woff2": "font/woff2", ".woff": "font/woff", ".json": "application/json",
          ".ico": "image/x-icon", ".txt": "text/plain; charset=utf-8"}
+# the loop reads the transcripts at most this often: while any session runs one has always changed, and each change
+# re-measures everything (5 to 10 s of CPU), so every 30 s kept a core busy. What you enter still shows at once.
+READ_EVERY = 300
 
 
 class Engine:
@@ -54,6 +57,7 @@ class Engine:
         self.git = Git()
         self.codex = Codex()
         self.git_at = 0
+        self.read_at = 0
         self.model = None
         self.vitals = None
         self.lock = threading.Lock()
@@ -94,7 +98,7 @@ class Engine:
         return {t.get("cwd") for _, r in self.index.records() + self.codex.records() for t in r.get("turns") or []} | \
             {e.get("cwd") for e in self.history.entries.values()}
 
-    def tick(self, git=True):
+    def tick(self, git=True, read=True):
         """One pass at a time: a tick asked for while another runs marks the data dirty, and the running one goes
         round again before it lets go, so a check-in or a limit saved mid-rebuild is never lost."""
         self.dirty = True
@@ -104,7 +108,7 @@ class Engine:
             while self.dirty:
                 self.dirty = False
                 try:
-                    self._tick(git)
+                    self._tick(git, read)
                 except Exception:
                     self.step = "error"
                     raise
@@ -120,12 +124,15 @@ class Engine:
             import traceback
             traceback.print_exc()
 
-    def _tick(self, git):
-        self.step = "indexing"
-        changed = self.index.refresh()
-        self.step = "history"
-        changed = self.history.refresh() or changed
-        changed = self.codex.refresh() or changed
+    def _tick(self, git, read=True):
+        changed = False
+        if read:  # without it, only what you entered (labels, check-ins, limits) is looked at
+            self.read_at = time.time()
+            self.step = "indexing"
+            changed = self.index.refresh()
+            self.step = "history"
+            changed = self.history.refresh() or changed
+            changed = self.codex.refresh() or changed
         if git and time.time() - self.git_at > 300:  # git every five minutes; the first read takes half a minute
             self.git_at = time.time()
             self.step = "git"
@@ -167,7 +174,7 @@ class Engine:
     def loop(self):
         while True:
             try:
-                self.tick()
+                self.tick(read=time.time() - self.read_at >= READ_EVERY)
             except Exception as e:  # keep serving the last good model
                 self.error = f"{type(e).__name__}: {e}"
                 import traceback
