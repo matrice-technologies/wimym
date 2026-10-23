@@ -274,9 +274,9 @@ def batch_text(items, name="categories"):
     parts, where = [], bool(DEFS[name].get("before"))
     for n, p in enumerate(items, 1):
         before = before_of(name, p) or ("(not recorded)" if p.get("history") else "(nothing)" if p["stopped"] else "(start of session)")
-        stop = "\n(Alex stopped Claude's previous turn before it finished.)" if p["stopped"] else ""
+        stop = "\n(The person stopped Claude's previous turn before it finished.)" if p["stopped"] else ""
         proj = f"Project: {p['project']}\n" if where else ""
-        parts.append(f"### Message {n}\n{proj}Claude before: {before}{stop}\nAlex: {p['text']}")
+        parts.append(f"### Message {n}\n{proj}Claude before: {before}{stop}\nPerson: {p['text']}")
     return "\n\n".join(parts) + f"\n\nLabel all {len(items)} messages. JSON array only."
 
 

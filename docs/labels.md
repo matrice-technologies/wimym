@@ -41,10 +41,14 @@ itself. Everything else is shown as a reading that hasn't been checked. Marked n
 
 | Set | Version | Checked fields | Why |
 |---|---|---|---|
-| categories | 3 | `in` | The engine counts v2 intent already. In `docs/research/relabel.md`, v3 intent is as good as a v2 rerun against the Opus marks (26 and 25 of 38) and agrees with it as often as two v2 runs agree (79%). So the switch to v3 when the running relabel promotes it is seamless. Tone and "specific" stay unchecked: run to run, two v2 runs agree on only 75% of "specific", and the rare tones weren't measured again. |
-| acts | 3 | `dfr`, `dom`, `off`, `ppl` | 94–100% on the held-out random messages (`off` 85%). For `ppl`, only none against any value holds up (`with` against `mention` doesn't), and the engine can't express that. So a measure should read `ppl != "none"` ("days with people"), never `with` alone. |
-| sessions | 5 | `goal`, `outcome`, `decisions`, `rework`, `people`, `account` | 35/36 or better on the 40-session sample and 23–24/24 held out. `open` (33/37, 19/24 held out) stays a reading. |
-| days | 5 | `decided`, `dropped`, `postponed` | Across every days sample since v2 (12 + 12 held out + 8 history + 6 in the second person): decided 37/38, dropped 36/38, postponed 35/38. `high`, `low`, `strain` and the account are for reading, not counting. |
+| categories | 3, 4 | `in` | The engine counts v2 intent already. In `docs/research/relabel.md`, v3 intent is as good as a v2 rerun against the Opus marks (26 and 25 of 38) and agrees with it as often as two v2 runs agree (79%). So the switch to v3 when the running relabel promotes it is seamless. Tone and "specific" stay unchecked: run to run, two v2 runs agree on only 75% of "specific", and the rare tones weren't measured again. |
+| acts | 3, 4 | `dfr`, `dom`, `off`, `ppl` | 94–100% on the held-out random messages (`off` 85%). For `ppl`, only none against any value holds up (`with` against `mention` doesn't), and the engine can't express that. So a measure should read `ppl != "none"` ("days with people"), never `with` alone. |
+| sessions | 5, 6 | `goal`, `outcome`, `decisions`, `rework`, `people`, `account` | 35/36 or better on the 40-session sample and 23–24/24 held out. `open` (33/37, 19/24 held out) stays a reading. |
+| days | 5, 6 | `decided`, `dropped`, `postponed` | Across every days sample since v2 (12 + 12 held out + 8 history + 6 in the second person): decided 37/38, dropped 36/38, postponed 35/38. `high`, `low`, `strain` and the account are for reading, not counting. |
+
+The second version in each row is the neutral wording (below, "Wording for anyone"): its marks were carried
+over from the judged version without a new judge, because only the voice changed. The judged versions keep their
+marks in the engine (`CHECKED` in `engine/wimym/labels.py`), so labels made before the change still count.
 
 Not checked: `dec`, `dw`, `fw`, `names`, `st`, `rule`, `nd` in acts (rare values unreliable or too rare to
 measure), weeks and rules (accounts and candidates to read, not measure inputs).
@@ -76,6 +80,41 @@ sessions (one open loop was Claude's own note). Weeks v3: every field right on 3
 since June, 2 from April and May): decided, postponed and low 6/6; dropped, high and strain 4/6; account 3/6 (two
 too long, one with a mistyped id). `dropped` stays checked: 36 of 38 right across every days sample since v2. The judges' cards and marks are in `judge/` next to the files,
 and the run logs in `logs/`.
+
+## Wording for anyone (23 Oct)
+
+Up to categories v3, signals v3, acts v3, sessions v5, days v5, rules v2 and weeks v3, every prompt named Alex
+("a software founder (Alex)", "Alex's words", "he") and said messages were in English or French. Since Wimym ships
+to other people, the next version of every set (categories v4, signals v4, acts v4, sessions v6, days v6, rules
+v3, weeks v4) says "the person" and "they" for whoever typed the messages, says messages can be in any language,
+and drops the examples from Alex's own life (his camper, the Truva team, a colleague's name). The inputs the
+labeller builds name the speaker "Person" instead of "Alex", and the accounts still write to the reader as "you",
+now told never to use a name or the third person. The stored key `alex` for "who makes the call" stays; the
+prompt says it means the person who typed the message. The rules and guards are unchanged.
+
+None of the new versions has been judged. A small Opus judge per set (the held-out samples) before the next
+release is owed; until then their `checked` marks rest on the old versions' figures.
+
+**Relabel for Alex: not needed.** His files stay at the old versions and keep counting through `CHECKED`. But a
+version bump makes the next run of a set a full run: `label.py --all` or `accounts.py <set> --all` would relabel
+every item of that set, not only the new ones. A dry run on copies of his files on 23 Oct
+(`--dry-run`, nothing sent), with the cost of each set's last full run:
+
+| Set | To go | Last full run |
+|---|---|---|
+| categories v4 | 8,064 (+ 7,152 history) | $14.19 (+ $10.19) |
+| signals v4 | 7,901 | $13.92 |
+| acts v4 | 7,901 (+ 7,148 history) | $28.12 (+ $20.80) |
+| sessions v6 | 1,327 | $48.77 |
+| days v6 | 102 (+ 85 history) | $10.61 (+ $6.58) |
+| weeks v4 | 31 | $2.86 |
+| rules v3 | 36 groups | $0.40 |
+| **All** | | **about $156**, list price on the subscription |
+
+There is no cheaper path: a new message gets a label at the new version only, and the file's version moves with
+it. So until Alex chooses to pay for the full run, don't run the labeller on his data. When he does, run it into a
+separate folder (`--dir`) and `--promote` it when complete, as the v2 to v3 relabel did, so his counts hold during
+the run. Careful: `accounts.py rules` calls Opus whatever the flags (`--dry-run` is not read for rules).
 
 ## acts: what you decide, put off and hand over
 

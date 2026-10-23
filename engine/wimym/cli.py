@@ -776,8 +776,8 @@ def draft(c, g, json_=False):
     quotes = [f"- {m['day']}, {m['project']}: \"{clip(m['text'], 140)}\" ({db.link(m['id'])})" for m in msgs[:4]]
     note = (f"---\nname: {name}\ndescription: {clip(g['rule'], 120)}\nmetadata:\n  type: feedback\n---\n\n"
             f"{g['rule'][0].upper() + g['rule'][1:]}.\n\n"
-            f"**Why:** Alex has asked for this {g['n']} times ({g.get('first')} to {g.get('last')}), so it keeps being forgotten.\n\n"
-            f"**How to apply:** <say when it applies, in Alex's words, after reading the messages below>\n")
+            f"**Why:** The person has asked for this {g['n']} times ({g.get('first')} to {g.get('last')}), so it keeps being forgotten.\n\n"
+            f"**How to apply:** <say when it applies, in the person's words, after reading the messages below>\n")
     line = f"- {g['rule'][0].upper() + g['rule'][1:]}."
     res = {"rule": g["rule"], "times": g["n"], "where": where.replace(HOME, "~"), "memory_note": note, "claude_md_line": line,
            "messages": [m["id"] for m in msgs], "covered": g.get("covered") or g.get("known")}

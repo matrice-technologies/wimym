@@ -98,16 +98,16 @@ def did(t):
         if n:
             bits.append(f"{n} {one if n == 1 else many}")
     if t.get("interrupted"):
-        bits.append("stopped by Alex")
+        bits.append("stopped by the person")
     return f" ({', '.join(bits)})" if bits else ""
 
 
 def session_text(s, budget=SESSION_CHARS):
-    """The session as Sonnet reads it: Alex's messages and Claude's replies, cut to fit the budget."""
+    """The session as Opus reads it: the person's messages and Claude's replies, cut to fit the budget."""
     r, turns = s["r"], s["turns"]
     head = (f"Project: {s['project']}. Title: {r.get('title') or '(none)'}. "
             f"From {local(s['start']):%a %d %b %H:%M} to {local(s['end']):%a %d %b %H:%M}. "
-            f"{sum(t['mine'] for t in turns)} messages from Alex.")
+            f"{sum(t['mine'] for t in turns)} messages from the person.")
 
     def render(a, b, keep=None):
         out = [head]
@@ -115,7 +115,7 @@ def session_text(s, budget=SESSION_CHARS):
             at = f"{local(t['ts']):%H:%M}"
             middle = keep is not None and keep[0] <= i < len(turns) - keep[1]
             if t["mine"]:
-                who = "Alex (a brief written by an agent, passed on)" if t["brief"] else "Alex"
+                who = "Person (a brief written by an agent, passed on)" if t["brief"] else "Person"
                 out.append(f"[{ref(t['key'])} {at}] {who}: {cap(t['words'], 150 if middle else a, 50 if middle else a // 4)}")
             else:
                 out.append(f"[{at}] (automatic: {cap(t['words'], 120, 30)})")
@@ -202,13 +202,13 @@ def day_text(d, budget=DAY_CHARS):
     gap = ""
     if d["prev_last"]:
         h = (datetime.fromisoformat(ms[0][0]["ts"][:19]) - datetime.fromisoformat(d["prev_last"][:19])).total_seconds() / 3600
-        gap = f" The gap since his last message the day before: {h:.1f} hours."
+        gap = f" The gap since their last message the day before: {h:.1f} hours."
     head = [f"Day: {datetime.fromisoformat(d['id']):%A %d %B %Y}. First message {first:%H:%M}, last {last:%H:%M}"
-            f"{' (after midnight)' if last.date() > first.date() else ''}.{gap} {len(ms)} messages from Alex in "
+            f"{' (after midnight)' if last.date() > first.date() else ''}.{gap} {len(ms)} messages from the person in "
             f"{len(sess)} sessions, on " + ", ".join(f"{p} ({n})" for p, n in projects.most_common()) + "."]
-    acc = ["", "Sessions he worked in that day:"]
-    if all(s.get("history") for s in sess.values()):  # March to June: only his prompts were kept
-        acc = ["", "For this period only his own messages were kept: not Claude's replies, nor what each session did."]
+    acc = ["", "Sessions they worked in that day:"]
+    if all(s.get("history") for s in sess.values()):  # March to June: only their prompts were kept
+        acc = ["", "For this period only their own messages were kept: not Claude's replies, nor what each session did."]
     for sid, s in sess.items():
         if s.get("history"):
             continue
@@ -224,7 +224,7 @@ def day_text(d, budget=DAY_CHARS):
         acc.append(line)
 
     def render(n):
-        out = ["", "His messages:"]
+        out = ["", "Their messages:"]
         for t, s in ms:
             out.append(f"[{ref(t['key'])} {local(t['ts']):%H:%M}] {s['project']}: "
                        f"{'(a brief written by an agent) ' if t['brief'] else ''}{cap(t['words'], n, n // 4)}"
@@ -263,7 +263,7 @@ def week_text(w):
     y, n = w["id"].split("-W")
     mon = datetime.fromisocalendar(int(y), int(n), 1)
     out = [f"Week {w['id']}, Monday {mon:%d %B} to Sunday {mon + timedelta(days=6):%d %B %Y}. "
-           f"Days with messages from Alex: {len(w['days'])} of 7."]
+           f"Days with messages from the person: {len(w['days'])} of 7."]
     for d, lab in w["days"]:
         ms = d["msgs"]
         first, last = local(ms[0][0]["ts"]), local(max(t["ts"] for t, _ in ms))

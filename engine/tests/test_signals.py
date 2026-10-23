@@ -268,8 +268,11 @@ class Checked(unittest.TestCase):
         self.assertTrue(labels.checked("acts", "st", 2))
         self.assertFalse(labels.checked("acts", "st", 3))
         self.assertFalse(labels.checked("acts", "ppl"))
-        self.assertTrue(labels.checked("categories", "in", 2))     # the audited version
-        self.assertFalse(labels.checked("categories", "in", 3))
+        self.assertTrue(labels.checked("categories", "in", 2))     # the audited versions
+        self.assertTrue(labels.checked("categories", "in", 3))
+        self.assertFalse(labels.checked("categories", "in", 4))
+        self.assertTrue(labels.checked("sessions", "goal", 5))
+        self.assertFalse(labels.checked("sessions", "goal", 6))
 
 
 def tearDownModule():

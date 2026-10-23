@@ -85,7 +85,12 @@ def rules():
 # checked by the Opus audit. A set or field becomes checked when labeller/definitions.json says so on the
 # set ("checked": true, or a list of field keys), or the label file itself carries "checked" the same way.
 # Everything else is shown as a reading, never counted.
-CHECKED = {("categories", 2): {"in"}}   # (set, version) → fields known to be good enough to count
+# The judged versions before the wording was made neutral for anyone (categories v4, acts v4, sessions v6, days v6)
+# keep their marks here, so labels made before that change still count until a relabel replaces them.
+CHECKED = {("categories", 2): {"in"}, ("categories", 3): {"in"},   # (set, version) → fields known to be good enough to count
+           ("acts", 3): {"dfr", "dom", "off", "ppl"},
+           ("sessions", 5): {"goal", "outcome", "decisions", "rework", "people", "account"},
+           ("days", 5): {"decided", "dropped", "postponed"}}
 _heads = {}
 
 
