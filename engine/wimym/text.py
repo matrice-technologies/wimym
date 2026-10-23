@@ -1,11 +1,14 @@
 """Reading what a transcript line says: is it a message you typed, where from, which project,
 what kind of tool call. Rules carried over from claude-memory-map (server.py and its studies),
 so prompt ids and labels line up with the labels Haiku already gave there."""
+import functools
+import json
 import os
 import re
+import subprocess
 from collections import Counter
 
-from .paths import HOME, SCRATCH
+from .paths import CLAUDE, HOME, SCRATCH
 
 SR = re.compile(r"<(system-reminder|artifact-view-context)\b.*?</\1>", re.S)
 CMD = re.compile(r"<command-name>/?([^<]+)</command-name>")
@@ -113,11 +116,12 @@ def project_of(cwd):
 # Text you didn't type, whatever Haiku says: test pings and work orders one session wrote for
 # another. The same rule as claude-memory-map's categorize.py (NOT_TYPED, as of its commit 1223a32);
 # its labels carry it as "ag" only for messages labelled after a rule was added, so Wimym applies it too.
+# categorize.py names Alex in one rule ("Alex wants…", "Alex asked…"); here that rule is about_you(), with
+# your own first name, so it fires for whoever uses Wimym.
 
 NOT_TYPED = [
     re.compile(r"^\s*reply with exactly\b", re.I),
     re.compile(r"^\s*(?:continue sdlc dev\.\s*)?you are (?:a |an |the |starting|continuing|implementing|building|working)", re.I),
-    re.compile(r"\bAlex\b(?! *[,:])(?=.{0,40}\b(?:wants|is|has|asked|said|owns|\(|will|needs|prefers)\b)"),
     re.compile(r"\b(?:read|boot per) `?(?:CLAUDE|AGENTS|BOOT|sdlc/BOOT)\.md`?(?: and [^.\n]{0,60})? first\b", re.I),
     re.compile(r"\bboot (?:via|per) `?\S*BOOT\.md", re.I),
     re.compile(r"\bread memory\b.{0,60}\bfirst\b", re.I),
@@ -125,9 +129,57 @@ NOT_TYPED = [
 ]
 _HEADING = re.compile(r"^#{2,3} \S", re.M)
 
+# Claude Code keeps the account it is signed in with in .claude.json: in $CLAUDE_CONFIG_DIR when that is set, else in ~.
+CLAUDE_JSON = os.path.join(CLAUDE if os.environ.get("CLAUDE_CONFIG_DIR") else HOME, ".claude.json")
+# First names that are also everyday words: "Will this work? It is…" would read as a work order about Will.
+_WORDS = {"Will", "May", "Mark", "Bill", "Pat", "Sue", "Rob", "Hope", "Grace", "Joy", "Guy", "Ray", "Don", "Art", "June", "April"}
+
+
+def first_names(display=None, full=None, git=None):
+    """The names a work order would call you by: your Claude account's display name, the first word of its
+    full name, and the first word of git's user.name when that is a full name (a handle like "alexcollet" isn't)."""
+    out = set()
+    for v, one_word_ok in ((display, True), (full, False), (git, False)):
+        w = (v or "").split()
+        if w and (one_word_ok or len(w) > 1) and w[0].isalpha() and len(w[0]) > 1:
+            n = w[0][0].upper() + w[0][1:]
+            if n not in _WORDS:
+                out.add(n)
+    return sorted(out)
+
+
+def about_you(names):
+    """A work order about you: one of your names, not addressed ("Alex, …"), then wants/asked/said… soon after."""
+    if not names:
+        return None
+    alt = "|".join(re.escape(n) for n in names)
+    return re.compile(rf"\b(?:{alt})\b(?! *[,:])(?=.{{0,40}}\b(?:wants|is|has|asked|said|owns|\(|will|needs|prefers)\b)")
+
+
+def account(path=CLAUDE_JSON):
+    """(displayName, fullName) of the Claude account in .claude.json, read only; (None, None) when there is none."""
+    try:
+        with open(path, encoding="utf-8") as f:
+            a = json.load(f).get("oauthAccount") or {}
+        return a.get("displayName"), a.get("fullName")
+    except (OSError, ValueError, AttributeError):
+        return None, None
+
+
+@functools.lru_cache(maxsize=1)
+def _you():
+    try:
+        r = subprocess.run(["git", "config", "--global", "--get", "user.name"], capture_output=True, text=True, timeout=10)
+        git = r.stdout.strip() if r.returncode == 0 else None
+    except (OSError, subprocess.TimeoutExpired):
+        git = None
+    return about_you(first_names(*account(), git))
+
 
 def not_typed(t):
-    return any(r.search(t) for r in NOT_TYPED) or (len(t) > 600 and len(_HEADING.findall(t)) >= 2)
+    you = _you()
+    return (any(r.search(t) for r in NOT_TYPED) or bool(you and you.search(t))
+            or (len(t) > 600 and len(_HEADING.findall(t)) >= 2))
 
 
 # ---------------------------------------------------------------------------
