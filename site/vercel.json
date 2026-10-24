@@ -1,7 +1,7 @@
 {
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/demo/:path((?!api/|assets/).*)", "destination": "/demo/index.html" }
+    { "source": "/demo/:path((?!api/|assets/).*)", "destination": "/demo/" }
   ],
   "headers": [
     { "source": "/media/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=604800" }] },
