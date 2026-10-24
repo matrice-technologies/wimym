@@ -43,6 +43,11 @@ def local(ts):
     return utc(ts).astimezone()
 
 
+def parent_of(path):
+    """The session a subagent's transcript belongs to: <session>/subagents/<agent>.jsonl, a Windows path too."""
+    return slashed(path).split("/subagents/")[0].rsplit("/", 1)[-1]
+
+
 def day_of(dt):
     return (dt - timedelta(hours=DAY_START)).date()
 
@@ -205,7 +210,7 @@ class Model:
             return by_sid[sid][i] if i >= 0 else None
         for path, r in records:
             if r.get("sub") and r.get("out"):
-                t = by_pid.get(r.get("pid")) or (r.get("start") and running(path.split("/subagents/")[0].rsplit("/", 1)[-1], r["start"]))
+                t = by_pid.get(r.get("pid")) or (r.get("start") and running(parent_of(path), r["start"]))
                 if t:
                     t["levSub"] += r["out"]
         # the session that started each session
@@ -259,7 +264,7 @@ class Model:
             if r.get("sub"):
                 for sp in (r.get("act") or {}).values():
                     self.sub_spans.extend(sp)
-                parent = path.split("/subagents/")[0].rsplit("/", 1)[-1]
+                parent = parent_of(path)
                 by_file.setdefault(parent, {"subs": 0})["subs"] += 1
                 continue
             for sid, sp in (r.get("act") or {}).items():
@@ -852,7 +857,7 @@ class Model:
             by_sid[m["sid"]].append(m)
         for path, r in records:
             stem = os.path.splitext(os.path.basename(path))[0]
-            sid = path.split("/subagents/")[0].rsplit("/", 1)[-1] if r.get("sub") else stem
+            sid = parent_of(path) if r.get("sub") else stem
             for p, ts in (r.get("docs") or {}).get("reads") or []:
                 if "/memory/" in p:
                     reads[p] = reads.get(p, 0) + 1
