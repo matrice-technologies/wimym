@@ -866,3 +866,11 @@ details.inside summary { color: var(--muted); }
 details.inside .outside { margin-top: 8px; opacity: .8; }
 .showmore { display: block; margin: 10px 4px 0; font-size: var(--t-s); }
 .wiym .hl { color: var(--brand); }
+
+/* The demo build in a frame on the public page (lib/demo.ts): ?embed=page is one page that doesn't scroll,
+   ?embed=<id> is only that element, on the page's ground, everything around it gone. */
+html.embed, html.embed body { overflow: hidden; }
+html.embed-one .rail, html.embed-one .sharechip { display: none; }
+html.embed-one .shell { display: block; }
+html.embed-one main.page { min-height: 0; background-image: none; }
+html.embed-one main.page :not(.embed-target, .embed-target *, :has(.embed-target)) { display: none; }

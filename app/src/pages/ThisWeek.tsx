@@ -122,7 +122,7 @@ export default function ThisWeek() {
         const ms = vitals.measures.filter(m => keys.includes(m.key)).sort((a, b) => rank(a) - rank(b) || keys.indexOf(a.key) - keys.indexOf(b.key));
         const live = ms.filter(m => m.status !== "missing"), gone = ms.filter(m => m.status === "missing");
         return (
-          <section key={group} className="vgroup">
+          <section key={group} id={group} className="vgroup">
             <header>
               <h2 className="section">{group === "health" ? "Health" : "Performance"}</h2>
               <p className="sub">{group === "health"

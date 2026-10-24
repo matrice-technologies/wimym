@@ -263,6 +263,16 @@ img, video { display: block; max-width: 100%; height: auto; }
 .shot img, .shot video { display: block; width: 100%; height: auto; }
 .shot figcaption { margin-top: 12px; font-size: 13.5px; color: var(--muted-foreground); }
 .shot.tall { max-width: 340px; }
+/* a live frame: the demo (/demo, the app on Robin's record) drawn at its own width and scaled into the row */
+.live-frame { position: relative; overflow: hidden; border: 1px solid var(--border); background: var(--background);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 18px 40px -18px rgba(0, 0, 0, .45); }
+.live-frame iframe { position: absolute; top: 0; left: 0; display: block; border: 0; transform-origin: 0 0; opacity: 0; transition: opacity .6s ease; }
+.live-frame.is-in iframe { opacity: 1; }
+.live-frame:not(.is-in)::after { content: "Loading Robin's record"; position: absolute; inset: 0; display: grid; place-items: center;
+  font: 400 11px/1 var(--font-heading); letter-spacing: .14em; text-transform: uppercase; color: var(--muted-foreground); }
+.shot figcaption a { color: var(--foreground); white-space: nowrap; }
+.shot figcaption a::after { content: " ↗"; color: var(--brand); }
+.shot figcaption a:hover { color: var(--brand); }
 .quote { margin: 18px 0 0; padding: 12px 14px; border-left: 2px solid var(--stale); background: var(--sunk);
   font: 400 13.5px/1.55 var(--font-heading) !important; color: var(--foreground) !important; max-width: 56ch; overflow-wrap: anywhere; }
 
@@ -347,6 +357,7 @@ pre code { background: none; border: 0; padding: 0; font: inherit; overflow-wrap
       <a href="#what">What it does</a>
       <a href="#shows">What it shows</a>
       <a href="#privacy">Privacy</a>
+      <a href="/demo/">Demo</a>
     </nav>
     <div class="end">
       <a class="btn btn-frame" href="/setup.md">setup.md</a>
@@ -430,7 +441,7 @@ pre code { background: none; border: 0; padding: 0; font: inherit; overflow-wrap
 
   <section class="band" id="shows" aria-label="What it shows">
     <div class="frame">
-      <p class="strip"><span><span class="star" aria-hidden="true">✦</span>What it shows</span><span class="count">// 6 views</span></p>
+      <p class="strip"><span><span class="star" aria-hidden="true">✦</span>What it shows</span><span class="count">// Live, on Robin's record</span></p>
       <div class="rows">
         <div class="gutter" aria-hidden="true"></div>
         <div>
@@ -442,10 +453,8 @@ pre code { background: none; border: 0; padding: 0; font: inherit; overflow-wrap
             </div>
             <div class="pic">
               <figure class="shot">
-                <a href="/media/front-dark-1440.webp?v=1024">
-                  <img src="/media/front-dark-1440.webp?v=1024" srcset="/media/front-dark-800.webp?v=1024 800w, /media/front-dark-1440.webp?v=1024 1440w" sizes="(min-width: 1024px) 680px, 100vw" width="1440" height="900" loading="lazy" decoding="async" alt="Wimym's front page in share mode: Where is your mind? beside the loom, its strings lit under a green aurora, columns named Project 1 to Project 8 and Other projects, and a line saying the week is fuller than usual.">
-                </a>
-                <figcaption>The front page, with share mode on: the projects go by Project 1, 2, 3 and on.</figcaption>
+                <div class="live-frame" data-src="/demo/?embed=page" data-w="1440" data-h="900" data-title="Wimym's This week page, live on Robin's record" style="aspect-ratio: 1440 / 900"></div>
+                <figcaption>This week, live on Robin's record. Point at a string to read the message. <a href="/demo/">Open it in the demo</a></figcaption>
               </figure>
             </div>
           </div>
@@ -466,10 +475,8 @@ pre code { background: none; border: 0; padding: 0; font: inherit; overflow-wrap
             </div>
             <div class="pic">
               <figure class="shot">
-                <a href="/media/vitals-dark-1440.webp?v=1024">
-                  <img src="/media/vitals-dark-1440.webp?v=1024" srcset="/media/vitals-dark-800.webp?v=1024 800w, /media/vitals-dark-1440.webp?v=1024 1440w" sizes="(min-width: 1024px) 680px, 100vw" width="1440" height="566" loading="lazy" decoding="async" alt="Eight vital signs, each a line over the weeks so far with a shaded band for the person's usual range: late minutes, nights, days off, days in a row, active hours, sessions at once, longest stretch and switches.">
-                </a>
-                <figcaption>Health signs for Robin: 37 days in a row, the longest run on record.</figcaption>
+                <div class="live-frame" data-src="/demo/?embed=health" data-w="1280" data-h="800" data-title="Robin's health signs in Wimym, live" style="aspect-ratio: 1280 / 800"></div>
+                <figcaption>Robin's health signs, live. Each opens on what it measures. <a href="/demo/#health">Open it in the demo</a></figcaption>
               </figure>
             </div>
           </div>
@@ -483,10 +490,8 @@ pre code { background: none; border: 0; padding: 0; font: inherit; overflow-wrap
             </div>
             <div class="pic">
               <figure class="shot">
-                <a href="/media/week-dark-1440.webp?v=1024">
-                  <img src="/media/week-dark-1440.webp?v=1024" srcset="/media/week-dark-800.webp?v=1024 800w, /media/week-dark-1440.webp?v=1024 1440w" sizes="(min-width: 1024px) 680px, 100vw" width="1440" height="900" loading="lazy" decoding="async" alt="The week page: the week of 19 October, an orange organic form beside the word Frayed, and below, the signs outside the usual range as chips against their usual values.">
-                </a>
-                <figcaption>The week of 19 October, for Robin: frayed, a slow heavy pulse, light.</figcaption>
+                <div class="live-frame" data-src="/demo/week?embed=page" data-w="1440" data-h="900" data-title="Wimym's week page for Robin, live" style="aspect-ratio: 1440 / 900"></div>
+                <figcaption>Robin's week, live, with the weeks before it a click away. <a href="/demo/week">Open it in the demo</a></figcaption>
               </figure>
             </div>
           </div>
@@ -501,10 +506,8 @@ pre code { background: none; border: 0; padding: 0; font: inherit; overflow-wrap
             </div>
             <div class="pic">
               <figure class="shot">
-                <a href="/media/spiral-dark-1440.webp?v=1024">
-                  <img src="/media/spiral-dark-1440.webp?v=1024" srcset="/media/spiral-dark-800.webp?v=1024 800w, /media/spiral-dark-1440.webp?v=1024 1440w" sizes="(min-width: 1024px) 680px, 100vw" width="1440" height="909" loading="lazy" decoding="async" alt="A spiral with one turn per day of the week: white arcs for working time, blue for nights, orange where work ran past the stopping hour every evening, and 51.7 hours active this week at its centre.">
-                </a>
-                <figcaption>The week turn by turn, with the stopping hour Robin set.</figcaption>
+                <div class="live-frame" data-src="/demo/?embed=week" data-w="1280" data-h="760" data-title="Robin's week as a spiral in Wimym, live" style="aspect-ratio: 1280 / 760"></div>
+                <figcaption>The week turn by turn, with the stopping hour Robin set. <a href="/demo/#week">Open it in the demo</a></figcaption>
               </figure>
             </div>
           </div>
@@ -517,10 +520,8 @@ pre code { background: none; border: 0; padding: 0; font: inherit; overflow-wrap
             </div>
             <div class="pic">
               <figure class="shot">
-                <a href="/media/day-dark-1440.webp?v=1024">
-                  <img src="/media/day-dark-1440.webp?v=1024" srcset="/media/day-dark-800.webp?v=1024 800w, /media/day-dark-1440.webp?v=1024 1440w" sizes="(min-width: 1024px) 680px, 100vw" width="1440" height="900" loading="lazy" decoding="async" alt="A day page: Tuesday 20 October, 126 messages from 09:01 to 23:58 across 6 projects, figures against the usual, and the day as a score of sessions grouped by project.">
-                </a>
-                <figcaption>One of Robin's days, as a score.</figcaption>
+                <div class="live-frame" data-src="/demo/days/2026-10-20?embed=page" data-w="1440" data-h="900" data-title="Tuesday 20 October in Wimym, live" style="aspect-ratio: 1440 / 900"></div>
+                <figcaption>Tuesday 20 October, one of Robin's days, as a score. <a href="/demo/days/2026-10-20">Open it in the demo</a></figcaption>
               </figure>
             </div>
           </div>
@@ -694,6 +695,7 @@ New-Item -ItemType Junction -Path $HOME\.claude\skills\wimym -Target $HOME\wimym
         <a href="#shows">What it shows</a>
         <a href="#privacy">Privacy</a>
         <a href="#setup">Set it up</a>
+        <a href="/demo/">The demo</a>
         <a href="/setup.md">The setup guide</a>
       </nav>
       <nav aria-label="Matrice">
@@ -724,6 +726,31 @@ New-Item -ItemType Junction -Path $HOME\.claude\skills\wimym -Target $HOME\wimym
     const box = document.createElement("div"); box.className = "code";
     pre.replaceWith(box); box.append(pre, b);
   }
+
+  // The live frames: the demo scaled into each row, loaded as it comes near the screen. A frame of one part of a
+  // page (?embed=<id>) tells its height once drawn (app/src/lib/demo.ts).
+  const frames = [...document.querySelectorAll(".live-frame")];
+  const fit = box => {
+    const f = box.firstElementChild, s = box.clientWidth / +box.dataset.w;
+    box.style.aspectRatio = "auto"; box.style.height = Math.round(+box.dataset.h * s) + "px";
+    if (f) f.style.transform = `scale(${s})`;
+  };
+  const load = box => {
+    const f = document.createElement("iframe");
+    Object.assign(f, { src: box.dataset.src, title: box.dataset.title, width: box.dataset.w, height: box.dataset.h });
+    f.setAttribute("scrolling", "no");
+    f.addEventListener("load", () => box.classList.add("is-in"), { once: true });
+    box.append(f); fit(box);
+  };
+  const near = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { near.unobserve(e.target); load(e.target); } }), { rootMargin: "600px 0px" });
+  const sized = new ResizeObserver(es => es.forEach(e => fit(e.target)));
+  frames.forEach(box => { near.observe(box); sized.observe(box); });
+  addEventListener("message", e => {
+    if (e.origin !== location.origin || e.data?.wimym !== "embed" || !(e.data.height > 0)) return;
+    const box = frames.find(b => b.firstElementChild?.contentWindow === e.source);
+    if (!box) return;
+    box.dataset.h = e.data.height; box.firstElementChild.height = e.data.height; fit(box);
+  });
 })();
 </script>
 <script type="module" src="/live/live.js"></script>
