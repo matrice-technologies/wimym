@@ -119,7 +119,7 @@ def ours(pidfile):
 
 def running(pid):
     if WINDOWS:
-        return bool(out("tasklist", "/FI", f"PID eq {pid}", "/NH", "/FO", "CSV") or "").count(f'"{pid}"') > 0
+        return f'"{pid}"' in (out("tasklist", "/FI", f"PID eq {pid}", "/NH", "/FO", "CSV") or "")
     try:
         os.kill(pid, 0)
         return True
