@@ -114,6 +114,7 @@ def update():
 
 
 if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")  # what the installer says, as it says it, whatever Windows' code page
     demo()
     update()
     print("All good.")
