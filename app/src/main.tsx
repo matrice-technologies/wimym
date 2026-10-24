@@ -1,3 +1,5 @@
+// first, so the demo build answers /api from its files before anything asks (lib/demo.ts)
+import "./lib/demo";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
@@ -38,7 +40,7 @@ const router = createBrowserRouter([
       { path: "*", element: <NotFound /> },
     ],
   },
-]);
+], { basename: import.meta.env.BASE_URL.replace(/\/$/, "") || undefined });
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

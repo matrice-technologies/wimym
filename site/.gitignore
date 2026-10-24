@@ -1,1 +1,3 @@
 .vercel
+# built by python3 lab/site/export-demo.py before each deploy (README.md)
+demo/

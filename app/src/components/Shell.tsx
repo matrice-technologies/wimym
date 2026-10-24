@@ -6,6 +6,7 @@ import Empty from "./Empty";
 import { Mark } from "./Loading";
 import Postcard from "./Postcard";
 import { setShare, shareOn } from "../lib/share";
+import { DEMO, EMBED, embedOne } from "../lib/demo";
 
 const P = { width: 18, height: 18, viewBox: "0 0 18 18", fill: "none", stroke: "currentColor", strokeWidth: 1.5, "aria-hidden": true } as const;
 const I = {
@@ -43,6 +44,7 @@ export default function Shell() {
       : [...NAV, ...EXPLORE.map(([to, l]) => [to, l] as const)].find(([to]) => to === p)?.[1];
     document.title = name ? `${name}, Wimym` : "Wimym";
   }, [loc.pathname]);
+  useEffect(() => (EMBED && EMBED !== "page" ? embedOne(EMBED) : undefined), []);
   const busy = !!state && state.phase !== "ready" && state.phase !== "error";
   return (
     <div className="shell">
@@ -65,7 +67,7 @@ export default function Shell() {
         <div className="foot">
           {update?.restart ? <Upgrade say="Wimym's code changed since it started. To run the new code:" command={update.restartCommand} />
             : update?.available ? <Upgrade say="A new version of Wimym is out. To get it, in a terminal:" command={update.command} /> : null}
-          <span className={"live" + (busy ? " busy" : core ? "" : " wait")}><i />{busy ? state?.label || `Reading transcripts ${fmtN(state?.done)} / ${fmtN(state?.total)}` : state?.phase === "error" ? "The engine hit an error; showing the last good data" : core ? `Up to date, ${new Date(core.generated).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}` : "Connecting…"}</span>
+          <span className={"live" + (busy ? " busy" : core ? "" : " wait")}><i />{DEMO ? "Demo: Robin Vale, made up" : busy ? state?.label || `Reading transcripts ${fmtN(state?.done)} / ${fmtN(state?.total)}` : state?.phase === "error" ? "The engine hit an error; showing the last good data" : core ? `Up to date, ${new Date(core.generated).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}` : "Connecting…"}</span>
           <button className={"sharesw" + (shareOn ? " on" : "")} role="switch" aria-checked={shareOn} onClick={() => setShare(!shareOn)}
             title="Hide what you wrote and the names of your projects, keep the shapes and numbers, so the page can be shown">
             <i aria-hidden="true" />Share mode
