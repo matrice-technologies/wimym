@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Wimym: Where is your mind?</title>
 <meta name="description" content="Wimym reads your Claude Code transcripts on your own computer and shows, against your own usual, how your weeks with agents are going for your health and your work. A weekly retro, practices, and nothing sent anywhere.">
-<meta name="theme-color" content="#0d1017">
-<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="color-scheme" content="dark light">
 <link rel="canonical" href="https://wimym.matricetechnologies.com/">
 <link rel="icon" type="image/svg+xml" href="/wimym.svg">
 <meta property="og:type" content="website">
@@ -22,134 +22,194 @@
 <meta name="twitter:title" content="Where is your mind?">
 <meta name="twitter:description" content="Your attention with agents woven as one thread, vital signs against your own usual, and a weekly retro. Local, and it sends nothing.">
 <meta name="twitter:image" content="https://wimym.matricetechnologies.com/og.jpg">
-<link rel="preload" href="/fonts/bricolage-grotesque-latin-standard-normal.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/fonts/instrument-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/geist-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/jetbrains-mono-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<script>
+// Matrice's theme rule (matrice-website-v2, theme-provider.tsx): a first visit is dark, whatever the system says;
+// D switches it, and the choice is kept. Set before the first paint, so the page never flashes the other one.
+(() => {
+  let t = null;
+  try { t = localStorage.getItem("theme"); } catch {}
+  if (t === "system") t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+  document.documentElement.className = t === "light" ? "light" : "dark";
+})();
+</script>
 <style>
 @font-face {
-  font-family: "Bricolage Grotesque Variable"; font-style: normal; font-display: swap;
-  font-weight: 200 800; font-stretch: 75% 100%;
-  src: url(/fonts/bricolage-grotesque-latin-standard-normal.woff2) format("woff2-variations");
+  font-family: "Geist Variable"; font-style: normal; font-display: swap; font-weight: 100 900;
+  src: url(/fonts/geist-latin-wght-normal.woff2) format("woff2-variations");
 }
 @font-face {
-  font-family: "Instrument Sans Variable"; font-style: normal; font-display: swap;
-  font-weight: 400 700;
-  src: url(/fonts/instrument-sans-latin-wght-normal.woff2) format("woff2-variations");
+  font-family: "JetBrains Mono Variable"; font-style: normal; font-display: swap; font-weight: 100 800;
+  src: url(/fonts/jetbrains-mono-latin-wght-normal.woff2) format("woff2-variations");
 }
-/* The app's tokens (app/src/styles.css), so this reads as the same product. */
-:root {
+/* Matrice's tokens (matrice-website-v2, app/globals.css), so this reads as a Matrice page. .light and .dark also
+   mark a band in the other theme: the Loom and the replayed day are drawn for the dark, so they sit in dark bands
+   whatever the page's theme, the way Matrice's own drawn heroes do. */
+:root, .light {
+  color-scheme: light;
+  --background: oklch(1 0 0); --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0); --primary: oklch(0.205 0 0); --primary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.97 0 0); --muted-foreground: oklch(0.556 0 0);
+  --border: oklch(0.922 0 0); --input: oklch(0.922 0 0); --ring: oklch(0.708 0 0);
+  --brand: oklch(0.47 0.26 265);
+  /* the hour Robin meant to stop, and what ran past it: Matrice's amber */
+  --stale: oklch(0.6 0.16 55);
+  --sunk: color-mix(in oklch, var(--foreground) 4%, var(--background));
+  --font-sans: "Geist Variable", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --font-heading: "JetBrains Mono Variable", ui-monospace, "SF Mono", Menlo, monospace;
+  /* the Loom types its opening line in this: the sans, as the mono runs it across the words */
+  --display: var(--font-sans);
+  --px: 16px;
+}
+.dark {
   color-scheme: dark;
-  --ground: #0d1017; --surface: #141925; --raised: #1a2030; --sunk: #0a0d13;
-  --line: #242c3d; --line-2: #313b50;
-  --ink: #e9edf5; --ink-2: #b4bccb; --muted: #7d8698; --faint: #525b6e;
-  --focus: #6aa7f0; --glow: rgba(106, 167, 240, .16);
-  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 30px rgba(0, 0, 0, .35);
-  --night: #8d8ff5; --late: #f0a050; --flag: #eba05a; --up: #0ca30c;
-  --warn-bg: #241a10; --warn-line: #5a3d1f;
-  --display: "Bricolage Grotesque Variable", "Avenir Next", system-ui, sans-serif;
-  --text: "Instrument Sans Variable", -apple-system, "Segoe UI", system-ui, sans-serif;
-  --mono: ui-monospace, "SF Mono", Menlo, monospace;
-  --r-s: 6px; --r-m: 10px; --r-l: 16px;
+  --background: oklch(0.145 0 0); --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0); --primary: oklch(0.922 0 0); --primary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.269 0 0); --muted-foreground: oklch(0.708 0 0);
+  --border: oklch(1 0 0 / 10%); --input: oklch(1 0 0 / 15%); --ring: oklch(0.556 0 0);
+  --brand: oklch(0.72 0.16 265);
+  --stale: oklch(0.76 0.14 65);
 }
-* { box-sizing: border-box; }
+@media (min-width: 640px) { :root { --px: 24px; } }
+@media (min-width: 1024px) { :root { --px: 40px; } }
+
+* { box-sizing: border-box; border-color: var(--border); }
 html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
 body {
-  margin: 0; background: var(--ground); color: var(--ink);
-  font: 400 16px/1.55 var(--text); font-feature-settings: "ss01";
-  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+  margin: 0; background: var(--background); color: var(--foreground);
+  font: 400 16px/1.5 var(--font-sans); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
   overflow-x: hidden;
 }
-a { color: inherit; }
+h1, h2, h3 { font-family: var(--font-heading); font-weight: 500; text-transform: uppercase; text-wrap: balance; margin: 0; }
+p { text-wrap: pretty; }
+a { color: inherit; text-underline-offset: 3px; }
+p a:hover, li a:hover { color: var(--brand); }
 img, video { display: block; max-width: 100%; height: auto; }
-:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
-::selection { background: var(--glow); }
+:focus-visible { outline: 2px solid color-mix(in oklch, var(--ring) 70%, transparent); outline-offset: 2px; }
+::selection { background: color-mix(in oklch, var(--brand) 30%, transparent); }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { animation: none !important; transition: none !important; } }
 
-.wrap { width: 100%; max-width: 1180px; margin: 0 auto; padding: 0 16px; }
-@media (min-width: 720px) { .wrap { padding: 0 32px; } }
+/* the frame: one bordered column down the page, every section a band across it */
+.band { background: var(--background); color: var(--foreground); scroll-margin-top: 64px; }
+.frame { max-width: 1400px; margin: 0 auto; border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
 
-/* buttons: smooth glass pills, floating over whatever is behind them: no sheen, no bevel */
-.glass { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 16px;
-  border-radius: 999px; text-decoration: none; white-space: nowrap; cursor: pointer; font: 560 14.5px/1 var(--text); color: var(--ink);
-  background: rgba(22, 27, 39, .58); border: 1px solid rgba(255, 255, 255, .1);
-  box-shadow: 0 12px 32px -12px rgba(0, 0, 0, .7);
-  backdrop-filter: blur(18px) saturate(1.6); -webkit-backdrop-filter: blur(18px) saturate(1.6);
-  transition: transform .2s ease, border-color .2s, background-color .2s, box-shadow .2s; }
-.glass:hover { transform: translateY(-1px); border-color: rgba(255, 255, 255, .18); background-color: rgba(30, 36, 50, .66); }
-.glass:active { transform: translateY(0); }
-.glass.primary { color: var(--ground); background: var(--ink); border-color: var(--ink); box-shadow: 0 12px 34px -10px rgba(255, 210, 140, .32); }
-.glass.primary:hover { background: #fff; border-color: #fff; box-shadow: 0 16px 40px -10px rgba(255, 210, 140, .48); }
-.glass.lg { height: 50px; padding: 0 24px; font-size: 16px; font-weight: 600; }
-.glass.sm { height: 32px; padding: 0 13px; font-size: 13px; font-weight: 500; }
+/* the small blue badge that names a section */
+.eyebrow { display: inline-flex; width: fit-content; align-items: center; gap: 6px; margin: 0; padding: 2px 8px; border-radius: 6px;
+  font: 500 14px/20px var(--font-sans); color: var(--brand); background: color-mix(in oklch, var(--brand) 10%, transparent); }
+.dark .eyebrow { background: color-mix(in oklch, var(--brand) 15%, transparent); }
+/* a section's label strip: ✦ the name, // a count */
+.strip { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0; padding: 20px var(--px);
+  border-bottom: 1px dashed var(--border); font: 400 11px/1.3 var(--font-heading); letter-spacing: .14em; text-transform: uppercase; }
+.strip > span:first-child { display: flex; align-items: center; gap: 8px; }
+.star { color: var(--brand); }
+.count { color: var(--muted-foreground); text-align: right; }
+.label { margin: 0; font: 400 12px/1.3 var(--font-heading); letter-spacing: .14em; text-transform: uppercase; color: var(--brand); }
 
-/* the top: no bar, only the buttons, floating */
-.top { position: fixed; top: 0; left: 0; right: 0; z-index: 20; pointer-events: none; padding-top: max(14px, env(safe-area-inset-top)); }
-.top .wrap { display: flex; align-items: center; gap: 8px; }
-.top .wrap > * { pointer-events: auto; }
-.brand { padding: 0 16px 0 8px; gap: 9px; }
-.brand img { width: 26px; height: 26px; border-radius: 50%; }
-.brand b { font: 650 17px/1 var(--display); letter-spacing: -.01em; }
-.top nav { margin-left: auto; display: flex; gap: 8px; align-items: center; }
-.top nav .hide-s { display: none; }
-@media (min-width: 720px) { .top nav .hide-s { display: inline-flex; } }
+/* buttons: Matrice's square ones. default is filled, frame is outlined and fills on hover */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 16px; flex-shrink: 0;
+  border: 1px solid transparent; border-radius: 0; cursor: pointer; text-decoration: none; white-space: nowrap; user-select: none;
+  font: 500 13px/1 var(--font-heading); letter-spacing: .06em; text-transform: uppercase;
+  transition: background-color .15s, color .15s, border-color .15s; }
+.btn:active { transform: translateY(1px); }
+.btn svg { width: 16px; height: 16px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.btn-default { color: var(--primary-foreground); background: var(--primary); }
+.btn-default:hover { background: color-mix(in oklch, var(--primary) 80%, transparent); }
+.btn-frame { color: var(--foreground); background: var(--background); border-color: color-mix(in oklch, var(--foreground) 70%, transparent); }
+.btn-frame:hover, .btn-frame[aria-pressed="true"] { color: var(--background); background: var(--foreground); }
+.btn.sm { height: 32px; padding: 0 10px; font-size: 11.5px; }
+.btn.icon { width: 40px; padding: 0; }
+
+/* the header: a bar across the top that takes the theme and colour of the band under it */
+.site-header { position: sticky; top: 0; z-index: 40; border-bottom: 1px solid var(--border); background: var(--background); color: var(--foreground);
+  transition: background-color .3s, color .3s; }
+.site-header .bar { max-width: 1400px; height: 64px; margin: 0 auto; padding: 0 var(--px); display: flex; align-items: center; gap: 24px; }
+.logo { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; }
+.logo img { width: 22px; height: 22px; }
+.logo b { font: 700 15px/1 var(--font-heading); letter-spacing: .14em; }
+.logo .by { display: none; font: 400 11px/1 var(--font-heading); letter-spacing: .14em; text-transform: uppercase; color: var(--muted-foreground); }
+@media (min-width: 640px) { .logo .by { display: inline; } }
+.site-header nav { display: none; margin: 0 auto; gap: 4px; }
+@media (min-width: 1024px) { .site-header nav { display: flex; } }
+.site-header nav a { display: inline-flex; align-items: center; height: 36px; padding: 0 12px; text-decoration: none;
+  font: 400 13px/1 var(--font-heading); letter-spacing: .06em; text-transform: uppercase; transition: background-color .15s; }
+.site-header nav a:hover { background: var(--muted); }
+.site-header .end { margin-left: auto; display: flex; gap: 8px; }
+@media (min-width: 1024px) { .site-header .end { margin-left: 0; } }
+.site-header .end .btn-frame { display: none; }
+@media (min-width: 640px) { .site-header .end .btn-frame { display: inline-flex; } }
+
+/* coming in: blocks rise into place, the headline word by word, each after its own --rise-delay */
+.rise, .rise-word { animation: rise .9s cubic-bezier(.22, 1, .36, 1) both; animation-delay: var(--rise-delay, 0s); }
+.rise-word { display: inline-block; animation-name: rise-word; animation-duration: 1s; }
+@keyframes rise { from { opacity: 0; transform: translateY(14px); filter: blur(6px); } }
+@keyframes rise-word { from { opacity: 0; transform: translateY(.45em) rotate(1.5deg); filter: blur(10px); } }
 
 /* hero: the strummed Loom and its aurora across the first screen (live/live.js), the words over its left side */
-.hero { position: relative; height: clamp(640px, 100svh, 980px); overflow: hidden; }
+.hero { position: relative; height: clamp(620px, calc(100svh - 65px), 940px); overflow: hidden; border-bottom: 1px solid var(--border); }
 .hero .stage { position: absolute; inset: 0; }
 .hero .live { position: absolute; inset: 0; opacity: 0; transition: opacity 1.2s ease; }
 .hero.is-live .live { opacity: 1; }
 /* the picture fades into the page below; the words on it (names, legend) stay sharp */
 .hero .live canvas { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 160px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 160px), transparent); }
-.lm-labels { position: absolute; inset: 0; pointer-events: none; font: 500 12px/1 var(--text); color: var(--muted); }
+.lm-labels { position: absolute; inset: 0; pointer-events: none; font: 500 12px/1 var(--font-sans); color: var(--muted-foreground); }
 .lm-labels span { position: absolute; left: 0; top: 0; white-space: nowrap; }
-.lm-tip, .dy-tip { position: absolute; z-index: 2; max-width: 320px; padding: 9px 11px; border-radius: 8px; pointer-events: none; font-size: 13px; line-height: 1.4; color: var(--ink);
-  background: color-mix(in srgb, var(--surface) 94%, transparent); border: 1px solid var(--line); box-shadow: var(--shadow); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
-.lm-tip .m, .dy-tip .m { color: var(--muted); }
-.lm-tip .q { margin-top: 5px; color: var(--ink-2); }
+.lm-tip, .dy-tip { position: absolute; z-index: 2; max-width: 320px; padding: 9px 11px; pointer-events: none; font-size: 13px; line-height: 1.4; color: var(--foreground);
+  background: color-mix(in oklch, var(--card) 94%, transparent); border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.lm-tip .m, .dy-tip .m { color: var(--muted-foreground); }
+.lm-tip .q { margin-top: 5px; color: var(--foreground); }
 .hero .scrim { position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(90deg, var(--ground) 0%, color-mix(in srgb, var(--ground) 82%, transparent) 28%, transparent 50%); }
-.hero .words { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: center; pointer-events: none; }
-.hero .words > * { pointer-events: auto; max-width: 540px; }
-.wiym { font: 650 clamp(48px, 9vw, 92px)/.96 var(--display); letter-spacing: -.035em; margin: 0; text-wrap: balance; }
-.lede { margin: 22px 0 0; color: var(--ink-2); font-size: clamp(18px, 2vw, 21px); line-height: 1.45; max-width: 34ch; text-wrap: pretty; }
-.sub { margin: 14px 0 0; color: var(--muted); font-size: 15.5px; max-width: 46ch; text-wrap: pretty; }
-.ctas { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
-.hero .cap { position: absolute; left: 0; right: 0; bottom: 22px; margin: 0 auto; font-size: 13px; color: var(--muted); pointer-events: none; }
+  background: linear-gradient(90deg, var(--background) 0%, color-mix(in oklch, var(--background) 82%, transparent) 28%, transparent 50%); }
+.hero .words { position: relative; height: 100%; max-width: 1400px; margin: 0 auto; padding: 0 var(--px);
+  display: flex; flex-direction: column; justify-content: center; align-items: flex-start; pointer-events: none; }
+.hero .words > * { pointer-events: auto; max-width: 560px; }
+.wiym { margin-top: 24px; font-size: clamp(2.4rem, 6vw, 4.6rem); line-height: 1.02; letter-spacing: -.035em; }
+.wiym .hl { color: var(--brand); }
+.lede { margin: 24px 0 0; font-size: clamp(18px, 1.8vw, 20px); line-height: 1.5; max-width: 36ch; }
+.sub { margin: 14px 0 0; color: var(--muted-foreground); font-size: 16px; line-height: 1.6; max-width: 48ch; }
+.ctas { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 40px; }
+.hero .cap { position: absolute; left: 0; right: 0; bottom: 22px; max-width: 1400px; margin: 0 auto; padding: 0 var(--px);
+  font-size: 13px; color: var(--muted-foreground); pointer-events: none; }
 .hero .cap span { display: block; max-width: 46ch; }
 @media (max-width: 959px) {
   .hero { height: auto; display: flex; flex-direction: column; }
-  .hero .words { order: -1; height: auto; padding-top: 96px; }
+  .hero .words { order: -1; height: auto; padding-top: 56px; }
   .hero .stage { position: relative; height: min(118vw, 640px); margin-top: 8px; }
   .hero .live canvas { -webkit-mask-image: linear-gradient(to bottom, transparent, #000 60px, #000 calc(100% - 120px), transparent); mask-image: linear-gradient(to bottom, transparent, #000 60px, #000 calc(100% - 120px), transparent); }
   .hero .scrim { display: none; }
   .hero .cap { position: static; padding-bottom: 28px; }
 }
 
-/* sections */
-section.block { padding: 56px 0; border-top: 1px solid var(--line); }
-@media (min-width: 960px) { section.block { padding: 88px 0; } }
-.kicker { font: 500 13.5px/1.3 var(--text); color: var(--muted); margin: 0 0 10px; letter-spacing: .01em; }
-h2 { font: 650 clamp(30px, 4.4vw, 46px)/1.05 var(--display); letter-spacing: -.028em; margin: 0; text-wrap: balance; max-width: 22ch; }
-h3 { font: 620 21px/1.25 var(--display); letter-spacing: -.012em; margin: 0; }
-.intro { color: var(--ink-2); font-size: 18px; max-width: 60ch; margin: 18px 0 0; text-wrap: pretty; }
-p { text-wrap: pretty; }
+/* a section's heading: the badge, the title, a lead under it */
+.head { padding: 56px var(--px); border-bottom: 1px solid var(--border); }
+@media (min-width: 640px) { .head { padding-top: 80px; padding-bottom: 80px; } }
+.head h2 { margin-top: 16px; max-width: 48rem; font-size: clamp(1.6rem, 3.4vw, 2.5rem); line-height: 1.1; letter-spacing: -.02em; }
+.head .lead { margin: 20px 0 0; max-width: 42rem; font-size: 17px; line-height: 1.65; color: var(--muted-foreground); }
+/* a two-tone statement: what is said, then the rest of it in grey */
+.statement { padding: 64px var(--px); border-bottom: 1px solid var(--border); }
+@media (min-width: 640px) { .statement { padding-top: 96px; padding-bottom: 96px; } }
+@media (min-width: 1024px) { .statement { padding-left: calc(2.5rem + 5rem); padding-right: calc(2.5rem + 5rem); } }
+.statement .eyebrow { margin-bottom: 24px; }
+.statement h2, .statement .say { margin: 0; max-width: 48rem; font: 500 clamp(1.4rem, 2.6vw, 1.9rem)/1.3 var(--font-sans); letter-spacing: -.015em;
+  text-transform: none; text-wrap: balance; }
+.statement h2.big { font-size: clamp(1.9rem, 4vw, 3rem); line-height: 1.1; letter-spacing: -.03em; max-width: 56rem; }
+.rest { color: var(--muted-foreground); }
+.statement .lead { margin: 24px 0 0; max-width: 42rem; font-size: 17px; line-height: 1.65; color: var(--muted-foreground); }
 
 /* A new kind of work: one of Robin's days, replayed (live/live.js) */
-section.loop { padding-top: 72px; overflow: hidden; }
-@media (min-width: 960px) { section.loop { padding-top: 120px; } }
-.loop-h { font: 650 clamp(34px, 4.8vw, 58px)/1.04 var(--display); letter-spacing: -.034em; max-width: 20ch; }
-.loop-h em { font-style: normal; color: var(--muted); }
-
-.replay { position: relative; margin: 64px 0 0; }
-.rp-hud { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 20px 40px; }
-.rp-label { margin: 0 0 6px; font: 500 13.5px/1.3 var(--text); color: var(--muted); }
-.rp-time { display: block; font: 650 clamp(68px, 12vw, 148px)/.86 var(--display); letter-spacing: -.045em; font-variant-numeric: tabular-nums;
-  color: var(--ink); transition: color 1.2s ease, text-shadow 1.2s ease; }
+.replay { position: relative; margin: 0; overflow: hidden; }
+.rp-hud { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 28px 40px; padding: 48px var(--px) 0; }
+.rp-label { margin: 0 0 14px; font: 400 11px/1.3 var(--font-heading); letter-spacing: .14em; text-transform: uppercase; color: var(--muted-foreground); }
+.rp-time { display: block; font: 500 clamp(64px, 11vw, 140px)/.88 var(--font-heading); letter-spacing: -.05em; font-variant-numeric: tabular-nums;
+  color: var(--foreground); transition: color 1.2s ease, text-shadow 1.2s ease; }
 .replay.is-night .rp-time { color: #cfd0ff; text-shadow: 0 0 60px rgba(141, 143, 245, .45); }
-.rp-date { margin: 14px 0 0; color: var(--muted); font-size: 15px; }
-.rp-counts { display: grid; grid-template-columns: repeat(2, minmax(120px, auto)); align-items: end; gap: 18px 36px; margin: 0; }
+.rp-date { margin: 16px 0 0; color: var(--muted-foreground); font-size: 15px; }
+.rp-counts { display: grid; grid-template-columns: repeat(2, minmax(120px, auto)); align-items: end; gap: 20px 0; margin: 0; }
 @media (min-width: 720px) { .rp-counts { grid-template-columns: repeat(4, auto); } }
-.rp-counts dt { font: 500 12.5px/1.3 var(--text); color: var(--muted); max-width: 16ch; }
-.rp-counts dd { margin: 4px 0 0; font: 620 clamp(30px, 3.4vw, 42px)/1 var(--display); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.rp-counts > div { padding: 0 24px 0 16px; border-left: 1px solid var(--border); }
+.rp-counts dt { font: 400 11px/1.35 var(--font-heading); letter-spacing: .1em; text-transform: uppercase; color: var(--muted-foreground); max-width: 18ch; }
+.rp-counts dd { margin: 8px 0 0; font: 500 clamp(28px, 3.2vw, 40px)/1 var(--font-heading); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
 .rp-counts dd.tick { animation: tick .7s ease-out; }
 @keyframes tick { from { color: #fff3d6; text-shadow: 0 0 22px rgba(255, 243, 214, .7); } }
 .rp-strings { position: relative; height: 250px; margin-top: 36px; touch-action: pan-y; }
@@ -157,176 +217,224 @@ section.loop { padding-top: 72px; overflow: hidden; }
   background: radial-gradient(34% 50% at 86% 50%, rgba(141, 143, 245, .12), rgba(141, 143, 245, 0) 100%); }
 .replay.is-night .rp-strings::before { opacity: 1; }
 .rp-strings canvas { position: absolute; inset: 0; display: block; }
-.rp-names span { position: absolute; font: 500 12.5px/1 var(--text); color: var(--ink-2); white-space: nowrap; pointer-events: none; }
-.rp-bar { display: grid; gap: 18px 40px; margin-top: 10px; align-items: center; }
+.rp-names span { position: absolute; font: 500 12px/1 var(--font-sans); color: var(--muted-foreground); white-space: nowrap; pointer-events: none; }
+.rp-bar { display: grid; gap: 18px 40px; padding: 10px var(--px) 40px; align-items: center; }
 @media (min-width: 960px) { .rp-bar { grid-template-columns: 1fr auto; min-height: 76px; } }
 .rp-caption { margin: 0; min-height: 3.2em; max-width: 62ch; }
-.rp-caption b { display: block; font: 620 19px/1.3 var(--display); letter-spacing: -.012em; }
-.rp-caption[data-key="late"] b { color: var(--late); }
-.rp-caption span { display: block; margin-top: 4px; color: var(--ink-2); font-size: 16px; }
-.rp-caption.in { animation: rise .5s ease-out; }
-@keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+.rp-caption b { display: block; font: 500 15px/1.35 var(--font-heading); letter-spacing: .04em; text-transform: uppercase; }
+.rp-caption[data-key="late"] b { color: var(--stale); }
+.rp-caption span { display: block; margin-top: 6px; color: var(--muted-foreground); font-size: 16px; }
+.rp-caption.in { animation: caption .5s ease-out; }
+@keyframes caption { from { opacity: 0; transform: translateY(6px); } }
 .rp-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; }
-.rp-play { width: 44px; height: 44px; padding: 0; }
-.rp-play svg { width: 16px; height: 16px; display: none; fill: currentColor; }
+.rp-play svg { display: none; fill: currentColor; stroke: none; }
 .rp-play[data-state="play"] .i-play, .rp-play[data-state="pause"] .i-pause, .rp-play[data-state="again"] .i-again { display: block; }
 .rp-scrub { -webkit-appearance: none; appearance: none; width: 160px; height: 22px; margin: 0; background: transparent; cursor: pointer; }
-.rp-scrub::-webkit-slider-runnable-track { height: 4px; border-radius: 4px; background: linear-gradient(90deg, rgba(233, 237, 245, .35), rgba(141, 143, 245, .45)); }
-.rp-scrub::-moz-range-track { height: 4px; border-radius: 4px; background: linear-gradient(90deg, rgba(233, 237, 245, .35), rgba(141, 143, 245, .45)); }
-.rp-scrub::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border-radius: 50%; border: 0;
-  background: var(--ink); box-shadow: 0 2px 10px rgba(255, 220, 160, .45); }
-.rp-scrub::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; border: 0; background: #eef1f7; box-shadow: 0 2px 10px rgba(255, 220, 160, .45); }
+.rp-scrub::-webkit-slider-runnable-track { height: 2px; background: color-mix(in oklch, var(--foreground) 30%, transparent); }
+.rp-scrub::-moz-range-track { height: 2px; background: color-mix(in oklch, var(--foreground) 30%, transparent); }
+.rp-scrub::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; margin-top: -6px; border: 0; border-radius: 0; background: var(--foreground); }
+.rp-scrub::-moz-range-thumb { width: 14px; height: 14px; border: 0; border-radius: 0; background: var(--foreground); }
 .dy-days { display: flex; flex-wrap: wrap; gap: 6px; }
-.dy-days .glass[aria-pressed="true"] { color: var(--ground); border-color: var(--ink); background: var(--ink); }
 .replay:not(.is-live) .rp-hud, .replay:not(.is-live) .rp-strings, .replay:not(.is-live) .rp-bar { display: none; }
 
-.rp-moments { list-style: none; margin: 40px 0 0; padding: 0; display: grid; gap: 12px; grid-template-columns: 1fr; }
+/* the moments: a grid of cells with hairlines between them */
+.rp-moments { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; grid-template-columns: 1fr;
+  background: var(--border); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 @media (min-width: 640px) { .rp-moments { grid-template-columns: 1fr 1fr; } }
 @media (min-width: 960px) { .rp-moments { grid-template-columns: repeat(3, 1fr); } }
-.rp-moments button { display: flex; flex-direction: column; justify-content: flex-start; width: 100%; height: 100%; text-align: left; padding: 18px 20px 20px; font: inherit; color: inherit; cursor: pointer;
-  border-radius: var(--r-l); border: 1px solid var(--line);
-  background: var(--surface); transition: border-color .2s, background-color .2s, transform .2s; }
-.rp-moments button:hover { border-color: var(--line-2); transform: translateY(-1px); }
-.rp-moments button[aria-pressed="true"] { border-color: color-mix(in srgb, var(--late) 55%, transparent); background-color: color-mix(in srgb, var(--late) 6%, var(--surface)); }
+.rp-moments li { display: flex; background: var(--background); }
+.rp-moments button { display: flex; flex-direction: column; justify-content: flex-start; width: 100%; text-align: left; padding: 28px var(--px) 32px;
+  font: inherit; color: inherit; cursor: pointer; border: 0; border-radius: 0; background: var(--background); transition: background-color .2s, box-shadow .2s; }
+.rp-moments button:hover { background: color-mix(in oklch, var(--muted) 50%, var(--background)); }
+.rp-moments button[aria-pressed="true"] { background: color-mix(in oklch, var(--stale) 7%, var(--background)); box-shadow: inset 2px 0 0 var(--stale); }
 .rp-moments button[data-quiet] { cursor: default; }
-.mo-name { display: block; font: 500 13.5px/1.3 var(--text); color: var(--muted); }
-.mo-num { display: block; margin-top: 8px; color: var(--ink-2); font-size: 15px; }
-.mo-num b { font: 650 38px/1 var(--display); letter-spacing: -.03em; color: var(--ink); margin-right: 2px; }
-.rp-moments button[aria-pressed="true"] .mo-num b { color: var(--late); }
-.mo-fact { display: block; margin-top: 8px; color: var(--muted); font-size: 14.5px; line-height: 1.5; }
+.mo-name { display: block; font: 400 11px/1.3 var(--font-heading); letter-spacing: .14em; text-transform: uppercase; color: var(--muted-foreground); }
+.mo-num { display: block; margin-top: 14px; color: var(--muted-foreground); font-size: 15px; }
+.mo-num b { font: 500 36px/1 var(--font-heading); letter-spacing: -.04em; color: var(--foreground); margin-right: 4px; }
+.rp-moments button[aria-pressed="true"] .mo-num b { color: var(--stale); }
+.mo-fact { display: block; margin-top: 10px; color: var(--muted-foreground); font-size: 14.5px; line-height: 1.55; }
 .dy-tip .m { display: block; }
-.dy-tip .q { display: block; margin-top: 4px; color: var(--ink); }
-.replay figcaption { margin: 18px 0 0; font-size: 13.5px; color: var(--muted); max-width: 80ch; }
-.loop-end { margin: 72px 0 0; font: 620 clamp(24px, 2.8vw, 34px)/1.22 var(--display); letter-spacing: -.02em; max-width: 30ch; text-wrap: balance; }
-.loop-end span { color: var(--muted); }
+.dy-tip .q { display: block; margin-top: 4px; color: var(--foreground); }
+.replay figcaption { margin: 0; padding: 20px var(--px); font-size: 13.5px; color: var(--muted-foreground); }
+.replay figcaption, .replay-end .note { max-width: none; }
+.note { margin: 20px 0 0; color: var(--muted-foreground); font-size: 15px; max-width: 70ch; }
 
-.feature { display: grid; gap: 28px; align-items: center; margin-top: 8px; }
-@media (min-width: 960px) { .feature { grid-template-columns: 5fr 7fr; gap: 56px; } .feature.flip { grid-template-columns: 7fr 5fr; } .feature.flip .shot { order: -1; } }
-.feature + .feature { margin-top: 72px; }
-.feature p { color: var(--ink-2); margin: 14px 0 0; max-width: 52ch; }
-.feature ul { margin: 16px 0 0; padding: 0; list-style: none; color: var(--ink-2); max-width: 52ch; }
-.feature li { padding: 7px 0 7px 20px; position: relative; border-top: 1px solid var(--line); }
-.feature li:first-child { border-top: 0; }
-.feature li::before { content: ""; position: absolute; left: 2px; top: 16px; width: 7px; height: 7px; border-radius: 50%; background: var(--late); }
-.shot { margin: 0; }
-.shot a { display: block; border-radius: var(--r-m); overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); background: var(--surface); }
+/* What it shows: rows of words beside a picture, between hatched gutters */
+.rows { display: grid; }
+@media (min-width: 1024px) { .rows { grid-template-columns: 5rem minmax(0, 1fr) 5rem; } }
+.gutter { display: none; background-image: repeating-linear-gradient(135deg, var(--border) 0 1px, transparent 1px 7px); }
+@media (min-width: 1024px) { .gutter { display: block; } .gutter:first-child { border-right: 1px solid var(--border); } .gutter:last-child { border-left: 1px solid var(--border); } }
+.row { display: grid; }
+.row + .row { border-top: 1px solid var(--border); }
+@media (min-width: 1024px) { .row { grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); } }
+.row .text { display: flex; flex-direction: column; padding: 40px var(--px); }
+@media (min-width: 1024px) { .row .text { padding-top: 48px; padding-bottom: 48px; } }
+.row h2 { margin-top: 14px; max-width: 26rem; font-size: clamp(1.15rem, 1.6vw, 1.35rem); line-height: 1.3; font-weight: 600; letter-spacing: .01em; }
+.row p { margin: 16px 0 0; color: var(--muted-foreground); line-height: 1.65; max-width: 52ch; }
+.row p.label { margin: 0; color: var(--brand); line-height: 1.3; }
+.row ul { margin: 18px 0 0; padding: 0; list-style: none; max-width: 52ch; }
+.row li { position: relative; padding: 9px 0 9px 20px; border-top: 1px solid var(--border); color: var(--muted-foreground); }
+.row li:first-child { border-top: 0; }
+.row li::before { content: ""; position: absolute; left: 2px; top: 18px; width: 6px; height: 6px; background: var(--brand); }
+.row .pic { display: flex; min-width: 0; align-items: center; justify-content: center; padding: 48px var(--px); border-top: 1px solid var(--border);
+  background-image: radial-gradient(color-mix(in oklch, var(--foreground) 16%, transparent) 1px, transparent 1.2px); background-size: 16px 16px; }
+@media (min-width: 640px) { .row .pic { padding: 48px 32px; } }
+@media (min-width: 1024px) { .row .pic { min-height: 26rem; border-top: 0; border-left: 1px solid var(--border); } }
+.shot { margin: 0; width: 100%; }
+.shot a { display: block; overflow: hidden; border: 1px solid var(--border); background: var(--card); box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 18px 40px -18px rgba(0, 0, 0, .45); }
 .shot img, .shot video { display: block; width: 100%; height: auto; }
-.shot figcaption { margin-top: 10px; font-size: 13.5px; color: var(--muted); }
-.quote { margin: 18px 0 0; padding: 12px 14px; border-left: 3px solid var(--late); background: var(--raised); border-radius: 0 var(--r-s) var(--r-s) 0;
-  font: 500 14px/1.5 var(--mono); color: var(--ink-2); max-width: 56ch; overflow-wrap: anywhere; }
-.postcard-row { display: grid; gap: 28px; align-items: center; }
-@media (min-width: 760px) { .postcard-row { grid-template-columns: 1fr 340px; gap: 56px; } }
-.postcard-row .shot a { max-width: 340px; margin: 0 auto; }
+.shot figcaption { margin-top: 12px; font-size: 13.5px; color: var(--muted-foreground); }
+.shot.tall { max-width: 340px; }
+.quote { margin: 18px 0 0; padding: 12px 14px; border-left: 2px solid var(--stale); background: var(--sunk);
+  font: 400 13.5px/1.55 var(--font-heading) !important; color: var(--foreground) !important; max-width: 56ch; overflow-wrap: anywhere; }
 
-/* privacy */
-.promises { display: grid; gap: 14px; margin-top: 32px; grid-template-columns: 1fr; }
-@media (min-width: 760px) { .promises { grid-template-columns: 1fr 1fr; } }
-.promises div { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-l); padding: 20px 22px; }
-.promises p { margin: 6px 0 0; color: var(--ink-2); font-size: 15.5px; }
-.note { margin-top: 28px; color: var(--muted); font-size: 15px; max-width: 70ch; }
+/* privacy: four promises, as cells */
+.cells { display: grid; gap: 1px; background: var(--border); border-bottom: 1px solid var(--border); }
+@media (min-width: 760px) { .cells { grid-template-columns: 1fr 1fr; } }
+.cells > div { padding: 32px var(--px) 36px; background: var(--background); }
+.cells h3 { margin-top: 12px; font-size: 18px; line-height: 1.35; font-weight: 600; letter-spacing: .02em; }
+.cells p { margin: 12px 0 0; color: var(--muted-foreground); line-height: 1.65; max-width: 56ch; }
+.cells .label { color: var(--muted-foreground); letter-spacing: .18em; font-size: 11px; }
 
 /* setup */
-.req { display: flex; flex-wrap: wrap; gap: 8px; margin: 22px 0 0; padding: 0; list-style: none; }
-.req li { border: 1px solid var(--line-2); border-radius: 999px; padding: 6px 12px; font-size: 14.5px; color: var(--ink-2); background: var(--surface); }
-.warn { margin-top: 32px; border: 1px solid var(--warn-line); background: var(--warn-bg); border-radius: var(--r-l); padding: 20px 22px; }
-.warn h3 { color: var(--flag); font-size: 19px; }
-.warn p { margin: 8px 0 0; color: var(--ink-2); max-width: 70ch; }
-.prompt { margin-top: 32px; border: 1px solid var(--line-2); background: var(--surface); border-radius: var(--r-l); padding: 20px 22px; box-shadow: var(--shadow); }
-.prompt p { margin: 8px 0 0; color: var(--ink-2); max-width: 70ch; }
-.prompt pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14.5px; }
-.by-hand { margin-top: 32px; }
-.by-hand > summary { cursor: pointer; font: 600 17px/1.4 var(--display); color: var(--ink); }
-.by-hand > summary + p { margin: 8px 0 0; color: var(--ink-2); max-width: 70ch; }
-.steps { list-style: none; counter-reset: step; margin: 36px 0 0; padding: 0; display: grid; gap: 14px; }
-.steps > li { counter-increment: step; position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-l); padding: 20px 20px 22px 62px; min-width: 0; }
-.steps > li::before { content: counter(step); position: absolute; left: 18px; top: 18px; width: 30px; height: 30px; border-radius: 50%;
-  display: grid; place-items: center; font: 650 15px/1 var(--display); background: var(--raised); border: 1px solid var(--line-2); color: var(--ink-2); }
-.steps p { margin: 8px 0 0; color: var(--ink-2); max-width: 70ch; }
-.steps .opt { font: 500 12px/1 var(--text); color: var(--muted); border: 1px solid var(--line-2); border-radius: 999px; padding: 3px 8px; margin-left: 8px; vertical-align: 3px; }
-@media (max-width: 520px) { .steps > li { padding: 62px 16px 18px; } .steps > li::before { top: 18px; left: 16px; } }
-pre { margin: 12px 0 0; background: var(--sunk); border: 1px solid var(--line); border-radius: var(--r-m); padding: 13px 14px; overflow-x: auto;
-  font: 400 13.5px/1.6 var(--mono); color: var(--ink); max-width: 100%; }
-pre .c { color: var(--muted); }
-code { font: 400 .9em/1 var(--mono); background: var(--sunk); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; overflow-wrap: anywhere; }
+.req { display: flex; flex-wrap: wrap; gap: 8px; margin: 28px 0 0; padding: 0; list-style: none; }
+.req li { border: 1px solid var(--border); padding: 7px 12px; font: 400 12.5px/1.3 var(--font-heading); color: var(--foreground); background: var(--background); }
+.req li code { border: 0; padding: 0; background: none; font-size: 1em; }
+.setup-prompt { padding: 48px var(--px); border-bottom: 1px solid var(--border); }
+.card { max-width: 56rem; border: 1px solid var(--border); background: var(--background); box-shadow: 0 1px 2px rgba(0, 0, 0, .05); }
+.card .card-top { max-width: none; display: flex; justify-content: space-between; gap: 12px; margin: 0; padding: 10px 16px; border-bottom: 1px solid var(--border);
+  font: 400 11px/1.3 var(--font-heading); letter-spacing: .08em; text-transform: uppercase; color: var(--muted-foreground); }
+.card-body { padding: 24px 20px 26px; }
+@media (min-width: 640px) { .card-body { padding: 28px 28px 30px; } }
+.card h3 { font-size: 18px; line-height: 1.35; font-weight: 600; letter-spacing: .02em; }
+.card p { margin: 12px 0 0; color: var(--muted-foreground); line-height: 1.65; max-width: 70ch; }
+.card pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; color: var(--foreground); }
+.by-hand > summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px var(--px); cursor: pointer; list-style: none;
+  font: 500 13px/1.3 var(--font-heading); letter-spacing: .06em; text-transform: uppercase; transition: background-color .15s; }
+.by-hand > summary::-webkit-details-marker { display: none; }
+.by-hand > summary:hover { background: color-mix(in oklch, var(--muted) 50%, var(--background)); }
+.by-hand > summary > span:first-child { display: flex; align-items: center; gap: 10px; }
+.by-hand > summary .count { display: flex; align-items: center; gap: 12px; font-weight: 400; font-size: 11px; letter-spacing: .14em; }
+.by-hand > summary .chev { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; transition: transform .2s; }
+.by-hand[open] > summary { border-bottom: 1px solid var(--border); }
+.by-hand[open] > summary .chev { transform: rotate(180deg); }
+.by-hand .intro { margin: 0; padding: 28px var(--px) 0; color: var(--muted-foreground); }
+.warn { margin: 24px var(--px) 40px; padding: 22px 24px; border: 1px solid color-mix(in oklch, var(--stale) 45%, transparent);
+  background: color-mix(in oklch, var(--stale) 7%, var(--background)); }
+.warn h3 { color: var(--stale); font-size: 15px; letter-spacing: .04em; }
+.warn p { margin: 10px 0 0; color: var(--muted-foreground); line-height: 1.65; max-width: 70ch; }
+.steps { list-style: none; counter-reset: step; margin: 0; padding: 0; }
+.steps > li { counter-increment: step; display: grid; gap: 14px; padding: 36px var(--px) 40px; border-top: 1px solid var(--border); min-width: 0; }
+@media (min-width: 1024px) { .steps > li { grid-template-columns: 11rem minmax(0, 1fr); gap: 32px; } }
+.steps > li::before { content: "Step " counter(step, decimal-leading-zero); font: 400 12px/1.6 var(--font-heading); letter-spacing: .14em; text-transform: uppercase; color: var(--brand); }
+.steps > li > div { min-width: 0; }
+.steps h3 { font-size: 18px; line-height: 1.35; font-weight: 600; letter-spacing: .02em; }
+.steps p { margin: 10px 0 0; color: var(--muted-foreground); line-height: 1.65; max-width: 70ch; }
+.opt { margin-left: 8px; padding: 2px 6px; border: 1px solid var(--border); font: 400 10px/1 var(--font-heading); letter-spacing: .1em; color: var(--muted-foreground); vertical-align: 3px; }
+pre { margin: 14px 0 0; padding: 14px 16px; overflow-x: auto; max-width: 100%; background: var(--sunk); border: 1px solid var(--border);
+  font: 400 13px/1.65 var(--font-heading); color: var(--foreground); }
+pre .c { color: var(--muted-foreground); }
+code { font: 400 .86em/1 var(--font-heading); background: var(--sunk); border: 1px solid var(--border); padding: 2px 5px; overflow-wrap: anywhere; }
 pre code { background: none; border: 0; padding: 0; font: inherit; overflow-wrap: normal; }
 .code { position: relative; }
-@media (max-width: 600px) { .code pre { padding-top: 40px; } }
-.copy { position: absolute; top: 8px; right: 8px; z-index: 1; font: 500 12px/1 var(--text); color: var(--muted); background: var(--surface); border: 1px solid var(--line-2);
-  border-radius: 6px; padding: 5px 8px; cursor: pointer; }
-.copy:hover { color: var(--ink); }
+@media (max-width: 600px) { .code pre { padding-top: 42px; } }
+.copy { position: absolute; top: 8px; right: 8px; z-index: 1; padding: 6px 8px; cursor: pointer; border: 1px solid var(--border); background: var(--background);
+  font: 400 10.5px/1 var(--font-heading); letter-spacing: .08em; text-transform: uppercase; color: var(--muted-foreground); }
+.copy:hover { color: var(--foreground); border-color: color-mix(in oklch, var(--foreground) 70%, transparent); }
 
-footer { border-top: 1px solid var(--line); padding: 36px 0 48px; color: var(--muted); font-size: 14px; }
-footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 24px; justify-content: space-between; }
-footer p { margin: 0; max-width: 70ch; }
+/* footer */
+.site-footer .frame { padding: 0 var(--px); }
+.foot { display: grid; gap: 40px; padding: 56px 0; }
+@media (min-width: 640px) { .foot { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 1024px) { .foot { grid-template-columns: 2fr 1fr 1fr; } }
+.foot > div { display: flex; flex-direction: column; gap: 16px; }
+.foot > div p { margin: 0; max-width: 46ch; font-size: 14px; line-height: 1.65; color: var(--muted-foreground); }
+.foot nav { display: flex; flex-direction: column; gap: 12px; }
+.foot nav p { margin: 0; font: 400 12px/1.3 var(--font-heading); letter-spacing: .14em; text-transform: uppercase; }
+.foot nav a { width: fit-content; font-size: 14px; color: var(--muted-foreground); text-decoration: none; }
+.foot nav a:hover { color: var(--foreground); }
+.mx { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; }
+.mx svg { height: 18px; width: auto; fill: currentColor; }
+.mx b { font: 700 13px/1 var(--font-heading); letter-spacing: .14em; }
+.foot-strip { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding: 24px 0; border-top: 1px solid var(--border);
+  font: 400 11px/1.4 var(--font-heading); letter-spacing: .14em; text-transform: uppercase; color: var(--muted-foreground); }
+.foot-strip button { padding: 0; border: 0; background: none; font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; cursor: pointer; }
+.foot-strip button:hover { color: var(--foreground); }
 </style>
 </head>
 <body>
 
-<header class="top" id="top">
-  <div class="wrap">
-    <a class="glass brand" href="#"><img src="/wimym.svg" alt="" width="26" height="26"><b>Wimym</b></a>
-    <nav>
-      <a class="glass hide-s" href="#what">What it does</a>
-      <a class="glass hide-s" href="#privacy">Privacy</a>
-      <a class="glass primary" href="#setup">Set it up</a>
+<header class="site-header" id="top">
+  <div class="bar">
+    <a class="logo" href="#" aria-label="Wimym, top of the page"><img src="/wimym.svg" alt="" width="22" height="22"><b>WIMYM</b><span class="by">by Matrice</span></a>
+    <nav aria-label="Sections">
+      <a href="#what">What it does</a>
+      <a href="#shows">What it shows</a>
+      <a href="#privacy">Privacy</a>
     </nav>
+    <div class="end">
+      <a class="btn btn-frame" href="/setup.md">setup.md</a>
+      <a class="btn btn-default" href="#setup">Set it up</a>
+    </div>
   </div>
 </header>
 
 <main>
-  <section class="hero" id="loom" aria-label="Robin's messages as a harp of light, under an aurora of what Claude wrote for each project">
+  <section class="hero band dark" id="loom" data-header-theme="dark" aria-label="Robin's messages as a harp of light, under an aurora of what Claude wrote for each project">
     <div class="stage"><div class="live"></div></div>
     <div class="scrim" aria-hidden="true"></div>
-    <div class="wrap words">
-      <h1 class="wiym">Where is your mind?</h1>
-      <p class="lede">For people who work with agents on ambitious projects, and want to look after their mind while they do it.</p>
-      <p class="sub">Wimym reads your Claude Code transcripts on your own computer and shows, against your own usual, how your weeks are going for your health and your work. A weekly retro then helps you decide what to change, and the next weeks show whether it held.</p>
-      <div class="ctas">
-        <a class="glass primary lg" href="#setup">Set it up on your computer</a>
-        <a class="glass lg" href="#what">See what it shows</a>
+    <div class="words">
+      <p class="eyebrow rise" style="--rise-delay: .1s">Runs on your computer, sends nothing</p>
+      <h1 class="wiym"><span class="rise-word" style="--rise-delay: .25s">Where</span> <span class="rise-word" style="--rise-delay: .32s">is</span> <span class="rise-word" style="--rise-delay: .39s">your</span> <span class="rise-word hl" style="--rise-delay: .46s">mind</span><span class="rise-word" style="--rise-delay: .5s">?</span></h1>
+      <p class="lede rise" style="--rise-delay: .7s">For people who work with agents on ambitious projects, and want to look after their mind while they do it.</p>
+      <p class="sub rise" style="--rise-delay: .8s">Wimym reads your Claude Code transcripts on your own computer and shows, against your own usual, how your weeks are going for your health and your work. A weekly retro then helps you decide what to change, and the next weeks show whether it held.</p>
+      <div class="ctas rise" style="--rise-delay: .9s">
+        <a class="btn btn-default" href="#setup">Set it up on your computer <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+        <a class="btn btn-frame" href="#shows">See what it shows</a>
       </div>
     </div>
-    <p class="wrap cap"><span>Robin's messages since September, strummed in the order they were sent: a column for each project, a string for each session, rung as hard as all Claude wrote for the message, and above them an aurora of what Claude wrote for each project. Robin is made up. Point at a string to read it.</span></p>
+    <p class="cap"><span>Robin's messages since September, strummed in the order they were sent: a column for each project, a string for each session, rung as hard as all Claude wrote for the message, and above them an aurora of what Claude wrote for each project. Robin is made up. Point at a string to read it.</span></p>
   </section>
 
-  <section class="block loop" id="what">
-    <div class="wrap">
-      <p class="kicker">A new kind of work</p>
-      <h2 class="loop-h">A message goes out, and minutes later something exists. <em>Nothing in it says stop.</em></h2>
-      <p class="intro">You ask and approve across several sessions while the agents build, at any hour. Here is one day of it, as Claude Code wrote it down.</p>
-    </div>
-    <figure class="replay" id="day">
-      <div class="wrap rp-hud">
-        <div class="rp-clock">
-          <p class="rp-label">One of Robin's days, replayed</p>
-          <b class="rp-time">23:38</b>
-          <p class="rp-date">Thursday 22 October · 216 messages · 7 projects</p>
-        </div>
-        <dl class="rp-counts">
-          <div><dt>Messages</dt><dd data-c="msgs">216</dd></div>
-          <div><dt>Project switches</dt><dd data-c="sw">118</dd></div>
-          <div><dt>Go-aheads, three words or fewer</dt><dd data-c="quick">21</dd></div>
-          <div><dt>Agent sent back</dt><dd data-c="steer">18</dd></div>
-        </dl>
+  <section class="band dark" id="what" data-header-theme="dark" aria-labelledby="what-title">
+    <div class="frame">
+      <p class="strip"><span><span class="star" aria-hidden="true">✦</span>A new kind of work</span><span class="count">// One of Robin's days</span></p>
+      <div class="statement">
+        <p class="eyebrow">A new kind of work</p>
+        <h2 class="big" id="what-title">A message goes out, and minutes later something exists. <span class="rest">Nothing in it says stop.</span></h2>
+        <p class="lead">You ask and approve across several sessions while the agents build, at any hour. Here is one day of it, as Claude Code wrote it down.</p>
       </div>
-      <div class="rp-strings"></div>
-      <div class="wrap rp-bar">
-        <p class="rp-caption" aria-live="polite"></p>
-        <div class="rp-controls">
-          <button type="button" class="glass rp-play" data-state="play" aria-label="Play the day">
-            <svg class="i-play" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z"/></svg>
-            <svg class="i-pause" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 2.5h3.2v11H3.5zM9.3 2.5h3.2v11H9.3z"/></svg>
-            <svg class="i-again" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.6 8A5.6 5.6 0 1 1 8 2.4c1.5 0 2.9.6 3.9 1.6V2h1.6v4.6H8.9V5h2.1A4 4 0 1 0 12 8z"/></svg>
-          </button>
-          <input class="rp-scrub" type="range" min="0" max="1000" value="1000" aria-label="Time of day">
-          <div class="dy-days" role="group" aria-label="Another of Robin's days">
-            <button type="button" class="glass sm" data-day="2026-10-22" aria-pressed="true">Thu 22 Oct</button>
-            <button type="button" class="glass sm" data-day="2026-10-21" aria-pressed="false">Wed 21 Oct</button>
-            <button type="button" class="glass sm" data-day="2026-10-04" aria-pressed="false">Sun 4 Oct</button>
+      <figure class="replay" id="day">
+        <div class="rp-hud">
+          <div class="rp-clock">
+            <p class="rp-label"><span class="star" aria-hidden="true">✦</span> One of Robin's days, replayed</p>
+            <b class="rp-time">23:38</b>
+            <p class="rp-date">Thursday 22 October · 216 messages · 7 projects</p>
+          </div>
+          <dl class="rp-counts">
+            <div><dt>Messages</dt><dd data-c="msgs">216</dd></div>
+            <div><dt>Project switches</dt><dd data-c="sw">118</dd></div>
+            <div><dt>Go-aheads, three words or fewer</dt><dd data-c="quick">21</dd></div>
+            <div><dt>Agent sent back</dt><dd data-c="steer">18</dd></div>
+          </dl>
+        </div>
+        <div class="rp-strings"></div>
+        <div class="rp-bar">
+          <p class="rp-caption" aria-live="polite"></p>
+          <div class="rp-controls">
+            <button type="button" class="btn btn-frame icon rp-play" data-state="play" aria-label="Play the day">
+              <svg class="i-play" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z"/></svg>
+              <svg class="i-pause" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 2.5h3.2v11H3.5zM9.3 2.5h3.2v11H9.3z"/></svg>
+              <svg class="i-again" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.6 8A5.6 5.6 0 1 1 8 2.4c1.5 0 2.9.6 3.9 1.6V2h1.6v4.6H8.9V5h2.1A4 4 0 1 0 12 8z"/></svg>
+            </button>
+            <input class="rp-scrub" type="range" min="0" max="1000" value="1000" aria-label="Time of day">
+            <div class="dy-days" role="group" aria-label="Another of Robin's days">
+              <button type="button" class="btn btn-frame sm" data-day="2026-10-22" aria-pressed="true">Thu 22 Oct</button>
+              <button type="button" class="btn btn-frame sm" data-day="2026-10-21" aria-pressed="false">Wed 21 Oct</button>
+              <button type="button" class="btn btn-frame sm" data-day="2026-10-04" aria-pressed="false">Sun 4 Oct</button>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="wrap">
         <ol class="rp-moments">
           <li><button type="button" data-key="late" aria-pressed="false"><span class="mo-name">Losing the hours</span><span class="mo-num"><b>47</b> messages</span><span class="mo-fact">after 21:30, the hour Robin meant to stop. The last at 23:38.</span></button></li>
           <li><button type="button" data-key="streak" aria-pressed="false"><span class="mo-name">No end of day</span><span class="mo-num"><b>36</b> days in a row</span><span class="mo-fact">without a day off, this one from 08:53 to 23:38.</span></button></li>
@@ -336,150 +444,176 @@ footer p { margin: 0; max-width: 70ch; }
           <li><button type="button" data-key="steer" aria-pressed="false"><span class="mo-name">Strain</span><span class="mo-num"><b>18</b> times sent back</span><span class="mo-fact">At 09:33: “This is the third try at the home screen widget; slow…”</span></button></li>
         </ol>
         <figcaption>Each project is a string, plucked by every message at the hour it was sent. Point at a mark to read it. Robin is made up.</figcaption>
-      </div>
-      <div class="dy-tip" hidden></div>
-    </figure>
-    <div class="wrap">
-      <p class="loop-end">All of this is already in the transcripts on your computer. <span>Wimym reads it back to you.</span></p>
-      <p class="note">It compares you only with your own usual, and diagnoses nothing.</p>
-    </div>
-  </section>
-
-  <section class="block">
-    <div class="wrap">
-      <div class="feature">
-        <div>
-          <p class="kicker">This week</p>
-          <h2>Your attention as one thread.</h2>
-          <p>The front page opens on a loom woven from your messages, in the order you sent them. The projects you worked on most each have a column, which rests while the project is quiet; each session is a string the shuttle strums as it passes, lit in the colour of what the message asked for and rung as hard as all Claude wrote for it, subagents and the sessions it started included. Above it, an aurora shows how much Claude wrote for each project. Point at a string to read the message. Below it, the week so far, one turn of a spiral per day, against your usual day and the hour you meant to stop.</p>
-        </div>
-        <figure class="shot">
-          <a href="/media/front-dark-1440.webp?v=1024">
-            <img src="/media/front-dark-1440.webp?v=1024" srcset="/media/front-dark-800.webp?v=1024 800w, /media/front-dark-1440.webp?v=1024 1440w" sizes="(min-width: 960px) 640px, 100vw" width="1440" height="900" loading="lazy" decoding="async" alt="Wimym's front page in share mode: Where is your mind? beside the loom, its strings lit under a green aurora, columns named Project 1 to Project 8 and Other projects, and a line saying the week is fuller than usual.">
-          </a>
-          <figcaption>The front page, with share mode on: the projects go by Project 1, 2, 3 and on.</figcaption>
-        </figure>
-      </div>
-
-      <div class="feature flip">
-        <div>
-          <p class="kicker">Vital signs</p>
-          <h2>Against your own usual, never anyone else's.</h2>
-          <p>Each sign is twelve weeks long, with your own range drawn as a band. The ones outside it two weeks running come first, in one plain sentence.</p>
-          <ul>
-            <li>Days in a row, active hours, nights and days off</li>
-            <li>The longest stretch on one project, and how often you switch</li>
-            <li>Minutes past the hour you meant to stop</li>
-            <li>Go-aheads sent before you could have read the reply</li>
-            <li>Strain in your messages, and days someone else took part</li>
-            <li>Projects that went quiet with nothing landed</li>
-          </ul>
-        </div>
-        <figure class="shot">
-          <a href="/media/vitals-dark-1440.webp?v=1024">
-            <img src="/media/vitals-dark-1440.webp?v=1024" srcset="/media/vitals-dark-800.webp?v=1024 800w, /media/vitals-dark-1440.webp?v=1024 1440w" sizes="(min-width: 960px) 640px, 100vw" width="1440" height="566" loading="lazy" decoding="async" alt="Eight vital signs, each a line over the weeks so far with a shaded band for the person's usual range: late minutes, nights, days off, days in a row, active hours, sessions at once, longest stretch and switches.">
-          </a>
-          <figcaption>Health signs for Robin: 37 days in a row, the longest run on record.</figcaption>
-        </figure>
-      </div>
-
-      <div class="feature">
-        <div>
-          <p class="kicker">The weekly retro</p>
-          <h2>A few moments, and a question.</h2>
-          <p>Once a week, a Claude session that has read the week brings a few moments worth looking at, each with the messages that make it up, and asks what you see. You talk it through and leave with one or two practices to try, or none if nothing needs changing. Wimym proposes. You decide.</p>
-          <p>The week's page opens on a living form moved by your signs: split into lobes when you ran many sessions at once, frayed when nights were short, pulsing slowly after a long run of days.</p>
-        </div>
-        <figure class="shot">
-          <a href="/media/week-dark-1440.webp?v=1024">
-            <img src="/media/week-dark-1440.webp?v=1024" srcset="/media/week-dark-800.webp?v=1024 800w, /media/week-dark-1440.webp?v=1024 1440w" sizes="(min-width: 960px) 640px, 100vw" width="1440" height="900" loading="lazy" decoding="async" alt="The week page: the week of 19 October, an orange organic form beside the word Frayed, and below, the signs outside the usual range as chips against their usual values.">
-          </a>
-          <figcaption>The week of 19 October, for Robin: frayed, a slow heavy pulse, light.</figcaption>
-        </figure>
-      </div>
-
-      <div class="feature flip">
-        <div>
-          <p class="kicker">Practices and limits</p>
-          <h2>Change, written down and checked.</h2>
-          <p>A practice is whatever you decide to do differently, with the sign that would show it held. Some are yours, like stopping at a set hour. Others are cheaper to hand to the agents as a rule. Nothing is written into their instructions without your yes. The next retro opens with the practices in flight.</p>
-          <p>Set a stopping hour, days off a week or a ceiling on sessions at once, and an optional hook says so in Claude Code at the moment you cross it:</p>
-          <p class="quote">Wimym: It's 23:30, past the 21:30 you set. 7 sessions running, more than the 4 you set.</p>
-        </div>
-        <figure class="shot">
-          <a href="/media/spiral-dark-1440.webp?v=1024">
-            <img src="/media/spiral-dark-1440.webp?v=1024" srcset="/media/spiral-dark-800.webp?v=1024 800w, /media/spiral-dark-1440.webp?v=1024 1440w" sizes="(min-width: 960px) 640px, 100vw" width="1440" height="909" loading="lazy" decoding="async" alt="A spiral with one turn per day of the week: white arcs for working time, blue for nights, orange where work ran past the stopping hour every evening, and 51.7 hours active this week at its centre.">
-          </a>
-          <figcaption>The week turn by turn, with the stopping hour Robin set.</figcaption>
-        </figure>
-      </div>
-
-      <div class="feature">
-        <div>
-          <p class="kicker">The film library</p>
-          <h2>Every day and every message, kept.</h2>
-          <p>Every day as a score of its sessions, every message you sent, filtered by what it asks for, its tone or its project, and opened whole with Claude's reply and the command to resume it. Claude Code deletes old transcripts. Wimym keeps what it has read, so your history only grows.</p>
-        </div>
-        <figure class="shot">
-          <a href="/media/day-dark-1440.webp?v=1024">
-            <img src="/media/day-dark-1440.webp?v=1024" srcset="/media/day-dark-800.webp?v=1024 800w, /media/day-dark-1440.webp?v=1024 1440w" sizes="(min-width: 960px) 640px, 100vw" width="1440" height="900" loading="lazy" decoding="async" alt="A day page: Tuesday 20 October, 126 messages from 09:01 to 23:58 across 6 projects, figures against the usual, and the day as a score of sessions grouped by project.">
-          </a>
-          <figcaption>One of Robin's days, as a score.</figcaption>
-        </figure>
-      </div>
-    </div>
-  </section>
-
-  <section class="block">
-    <div class="wrap postcard-row">
-      <div>
-        <p class="kicker">Share mode</p>
-        <h2>Show it without showing your work.</h2>
-        <p class="intro">One switch hides every word you wrote, every project name and every person's name, everywhere, so the page can be shown or screenshotted safely. The postcard is six seconds of your Loom, its strings ringing as the last messages are woven, with three true lines from your record: shapes and counts only, as a video that loops.</p>
-      </div>
-      <figure class="shot">
-        <a href="/media/postcard-wide.mp4?v=1024"><video src="/media/postcard-tall.mp4?v=1024" poster="/media/postcard-tall.webp?v=1024" width="720" height="900" autoplay muted loop playsinline preload="none" aria-label="A tall postcard, six seconds long: Where is your mind? over the Loom's strings under a green and amber aurora, with 4,521 messages to AI agents since September, 37 days in a row, 757 sent after 9 pm, the latest at 00:27."></video></a>
-        <figcaption>Robin's postcard, tall for a phone. The wide one is for a link or a post.</figcaption>
+        <div class="dy-tip" hidden></div>
       </figure>
-    </div>
-  </section>
-
-  <section class="block" id="privacy">
-    <div class="wrap">
-      <p class="kicker">Privacy</p>
-      <h2>It stays yours.</h2>
-      <p class="intro">Your transcripts hold a working life, with clients, colleagues and sometimes family and health. Wimym is for the person it shows, never for an employer, a team or a vendor.</p>
-      <div class="promises">
-        <div><h3>Read where it lies</h3><p>Wimym reads your transcripts, prompt history and git history on your computer, and sends nothing anywhere itself.</p></div>
-        <div><h3>Served only to your machine</h3><p>The page runs on 127.0.0.1, answers only requests addressed to your machine, and takes input only from its own page.</p></div>
-        <div><h3>Claude, through your own login</h3><p>Text leaves your computer only when you run the labeller or ask through the skills, and then it goes to Claude, through your own <code>claude</code> login. Claude saw it the first time.</p></div>
-        <div><h3>GitHub only if you turn it on</h3><p>Pull requests and reviews are read through your <code>gh</code> login only if you opt in. It is off by default.</p></div>
+      <div class="statement replay-end">
+        <p class="say">All of this is already in the transcripts on your computer. <span class="rest">Wimym reads it back to you.</span></p>
+        <p class="note">It compares you only with your own usual, and diagnoses nothing.</p>
       </div>
     </div>
   </section>
 
-  <section class="block" id="setup">
-    <div class="wrap">
-      <p class="kicker">Set it up</p>
-      <h2>On your Mac or PC, in a few minutes.</h2>
-      <p class="intro">Wimym is young, and built first for one person. If you work with Claude Code most days, it has something to show you.</p>
-      <ul class="req" aria-label="Requirements">
-        <li>macOS, or Windows 10 or 11</li>
-        <li>Python 3.9 or later</li>
-        <li>Node 18 or later</li>
-        <li>Claude Code transcripts in <code>~/.claude/projects</code></li>
-      </ul>
+  <section class="band" id="shows" aria-label="What it shows">
+    <div class="frame">
+      <p class="strip"><span><span class="star" aria-hidden="true">✦</span>What it shows</span><span class="count">// 6 views</span></p>
+      <div class="rows">
+        <div class="gutter" aria-hidden="true"></div>
+        <div>
+          <div class="row">
+            <div class="text">
+              <p class="label">This week</p>
+              <h2>Your attention as one thread.</h2>
+              <p>The front page opens on a loom woven from your messages, in the order you sent them. The projects you worked on most each have a column, which rests while the project is quiet; each session is a string the shuttle strums as it passes, lit in the colour of what the message asked for and rung as hard as all Claude wrote for it, subagents and the sessions it started included. Above it, an aurora shows how much Claude wrote for each project. Point at a string to read the message. Below it, the week so far, one turn of a spiral per day, against your usual day and the hour you meant to stop.</p>
+            </div>
+            <div class="pic">
+              <figure class="shot">
+                <a href="/media/front-dark-1440.webp?v=1024">
+                  <img src="/media/front-dark-1440.webp?v=1024" srcset="/media/front-dark-800.webp?v=1024 800w, /media/front-dark-1440.webp?v=1024 1440w" sizes="(min-width: 1024px) 680px, 100vw" width="1440" height="900" loading="lazy" decoding="async" alt="Wimym's front page in share mode: Where is your mind? beside the loom, its strings lit under a green aurora, columns named Project 1 to Project 8 and Other projects, and a line saying the week is fuller than usual.">
+                </a>
+                <figcaption>The front page, with share mode on: the projects go by Project 1, 2, 3 and on.</figcaption>
+              </figure>
+            </div>
+          </div>
 
-      <div class="prompt">
-        <h3>One prompt, and Claude does the rest</h3>
-        <p>Paste this into Claude Code. It reads the setup guide and walks you through it a step at a time: it says what each step does, and asks you before anything that changes your computer.</p>
-        <pre><code>Set up Wimym on this computer for me. Read the guide with curl -fsSL https://wimym.matricetechnologies.com/setup.md and follow it step by step: say what each step does, and ask me before anything that changes my computer.</code></pre>
-        <p>It backs up <code>~/.claude</code> first, checks Python and Node, gets the code, offers the demo, starts Wimym on your own record, then offers the command, the skills, the limits and the labels. You still need your GitHub account invited to the private repository; Claude checks, and tells you which account to give. The guide it follows: <a href="/setup.md">setup.md</a>.</p>
+          <div class="row">
+            <div class="text">
+              <p class="label">Vital signs</p>
+              <h2>Against your own usual, never anyone else's.</h2>
+              <p>Each sign is twelve weeks long, with your own range drawn as a band. The ones outside it two weeks running come first, in one plain sentence.</p>
+              <ul>
+                <li>Days in a row, active hours, nights and days off</li>
+                <li>The longest stretch on one project, and how often you switch</li>
+                <li>Minutes past the hour you meant to stop</li>
+                <li>Go-aheads sent before you could have read the reply</li>
+                <li>Strain in your messages, and days someone else took part</li>
+                <li>Projects that went quiet with nothing landed</li>
+              </ul>
+            </div>
+            <div class="pic">
+              <figure class="shot">
+                <a href="/media/vitals-dark-1440.webp?v=1024">
+                  <img src="/media/vitals-dark-1440.webp?v=1024" srcset="/media/vitals-dark-800.webp?v=1024 800w, /media/vitals-dark-1440.webp?v=1024 1440w" sizes="(min-width: 1024px) 680px, 100vw" width="1440" height="566" loading="lazy" decoding="async" alt="Eight vital signs, each a line over the weeks so far with a shaded band for the person's usual range: late minutes, nights, days off, days in a row, active hours, sessions at once, longest stretch and switches.">
+                </a>
+                <figcaption>Health signs for Robin: 37 days in a row, the longest run on record.</figcaption>
+              </figure>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="text">
+              <p class="label">The weekly retro</p>
+              <h2>A few moments, and a question.</h2>
+              <p>Once a week, a Claude session that has read the week brings a few moments worth looking at, each with the messages that make it up, and asks what you see. You talk it through and leave with one or two practices to try, or none if nothing needs changing. Wimym proposes. You decide.</p>
+              <p>The week's page opens on a living form moved by your signs: split into lobes when you ran many sessions at once, frayed when nights were short, pulsing slowly after a long run of days.</p>
+            </div>
+            <div class="pic">
+              <figure class="shot">
+                <a href="/media/week-dark-1440.webp?v=1024">
+                  <img src="/media/week-dark-1440.webp?v=1024" srcset="/media/week-dark-800.webp?v=1024 800w, /media/week-dark-1440.webp?v=1024 1440w" sizes="(min-width: 1024px) 680px, 100vw" width="1440" height="900" loading="lazy" decoding="async" alt="The week page: the week of 19 October, an orange organic form beside the word Frayed, and below, the signs outside the usual range as chips against their usual values.">
+                </a>
+                <figcaption>The week of 19 October, for Robin: frayed, a slow heavy pulse, light.</figcaption>
+              </figure>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="text">
+              <p class="label">Practices and limits</p>
+              <h2>Change, written down and checked.</h2>
+              <p>A practice is whatever you decide to do differently, with the sign that would show it held. Some are yours, like stopping at a set hour. Others are cheaper to hand to the agents as a rule. Nothing is written into their instructions without your yes. The next retro opens with the practices in flight.</p>
+              <p>Set a stopping hour, days off a week or a ceiling on sessions at once, and an optional hook says so in Claude Code at the moment you cross it:</p>
+              <p class="quote">Wimym: It's 23:30, past the 21:30 you set. 7 sessions running, more than the 4 you set.</p>
+            </div>
+            <div class="pic">
+              <figure class="shot">
+                <a href="/media/spiral-dark-1440.webp?v=1024">
+                  <img src="/media/spiral-dark-1440.webp?v=1024" srcset="/media/spiral-dark-800.webp?v=1024 800w, /media/spiral-dark-1440.webp?v=1024 1440w" sizes="(min-width: 1024px) 680px, 100vw" width="1440" height="909" loading="lazy" decoding="async" alt="A spiral with one turn per day of the week: white arcs for working time, blue for nights, orange where work ran past the stopping hour every evening, and 51.7 hours active this week at its centre.">
+                </a>
+                <figcaption>The week turn by turn, with the stopping hour Robin set.</figcaption>
+              </figure>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="text">
+              <p class="label">The film library</p>
+              <h2>Every day and every message, kept.</h2>
+              <p>Every day as a score of its sessions, every message you sent, filtered by what it asks for, its tone or its project, and opened whole with Claude's reply and the command to resume it. Claude Code deletes old transcripts. Wimym keeps what it has read, so your history only grows.</p>
+            </div>
+            <div class="pic">
+              <figure class="shot">
+                <a href="/media/day-dark-1440.webp?v=1024">
+                  <img src="/media/day-dark-1440.webp?v=1024" srcset="/media/day-dark-800.webp?v=1024 800w, /media/day-dark-1440.webp?v=1024 1440w" sizes="(min-width: 1024px) 680px, 100vw" width="1440" height="900" loading="lazy" decoding="async" alt="A day page: Tuesday 20 October, 126 messages from 09:01 to 23:58 across 6 projects, figures against the usual, and the day as a score of sessions grouped by project.">
+                </a>
+                <figcaption>One of Robin's days, as a score.</figcaption>
+              </figure>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="text">
+              <p class="label">Share mode</p>
+              <h2>Show it without showing your work.</h2>
+              <p>One switch hides every word you wrote, every project name and every person's name, everywhere, so the page can be shown or screenshotted safely. The postcard is six seconds of your Loom, its strings ringing as the last messages are woven, with three true lines from your record: shapes and counts only, as a video that loops.</p>
+            </div>
+            <div class="pic">
+              <figure class="shot tall">
+                <a href="/media/postcard-wide.mp4?v=1024"><video src="/media/postcard-tall.mp4?v=1024" poster="/media/postcard-tall.webp?v=1024" width="720" height="900" autoplay muted loop playsinline preload="none" aria-label="A tall postcard, six seconds long: Where is your mind? over the Loom's strings under a green and amber aurora, with 4,521 messages to AI agents since September, 37 days in a row, 757 sent after 9 pm, the latest at 00:27."></video></a>
+                <figcaption>Robin's postcard, tall for a phone. The wide one is for a link or a post.</figcaption>
+              </figure>
+            </div>
+          </div>
+        </div>
+        <div class="gutter" aria-hidden="true"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="privacy" aria-labelledby="privacy-title">
+    <div class="frame">
+      <div class="head">
+        <p class="eyebrow">Privacy</p>
+        <h2 id="privacy-title">It stays yours.</h2>
+        <p class="lead">Your transcripts hold a working life, with clients, colleagues and sometimes family and health. Wimym is for the person it shows, never for an employer, a team or a vendor.</p>
+      </div>
+      <div class="cells">
+        <div><p class="label">01</p><h3>Read where it lies</h3><p>Wimym reads your transcripts, prompt history and git history on your computer, and sends nothing anywhere itself.</p></div>
+        <div><p class="label">02</p><h3>Served only to your machine</h3><p>The page runs on 127.0.0.1, answers only requests addressed to your machine, and takes input only from its own page.</p></div>
+        <div><p class="label">03</p><h3>Claude, through your own login</h3><p>Text leaves your computer only when you run the labeller or ask through the skills, and then it goes to Claude, through your own <code>claude</code> login. Claude saw it the first time.</p></div>
+        <div><p class="label">04</p><h3>GitHub only if you turn it on</h3><p>Pull requests and reviews are read through your <code>gh</code> login only if you opt in. It is off by default.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="setup" aria-labelledby="setup-title">
+    <div class="frame">
+      <div class="head">
+        <p class="eyebrow">Set it up</p>
+        <h2 id="setup-title">On your Mac or PC, in a few minutes.</h2>
+        <p class="lead">Wimym is young, and built first for one person. If you work with Claude Code most days, it has something to show you.</p>
+        <ul class="req" aria-label="Requirements">
+          <li>macOS, or Windows 10 or 11</li>
+          <li>Python 3.9 or later</li>
+          <li>Node 18 or later</li>
+          <li>Claude Code transcripts in <code>~/.claude/projects</code></li>
+        </ul>
+      </div>
+
+      <div class="setup-prompt">
+        <div class="card">
+          <p class="card-top"><span>Claude Code</span><span>One prompt</span></p>
+          <div class="card-body">
+            <h3>One prompt, and Claude does the rest</h3>
+            <p>Paste this into Claude Code. It reads the setup guide and walks you through it a step at a time: it says what each step does, and asks you before anything that changes your computer.</p>
+            <pre><code>Set up Wimym on this computer for me. Read the guide with curl -fsSL https://wimym.matricetechnologies.com/setup.md and follow it step by step: say what each step does, and ask me before anything that changes my computer.</code></pre>
+            <p>It backs up <code>~/.claude</code> first, checks Python and Node, gets the code, offers the demo, starts Wimym on your own record, then offers the command, the skills, the limits and the labels. You still need your GitHub account invited to the private repository; Claude checks, and tells you which account to give. The guide it follows: <a href="/setup.md">setup.md</a>.</p>
+          </div>
+        </div>
       </div>
 
       <details class="by-hand">
-      <summary>Or set it up by hand</summary>
-      <p>The same steps, as commands to run yourself.</p>
+      <summary><span><span class="star" aria-hidden="true">✦</span>Or set it up by hand</span><span class="count">// 8 steps <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span></summary>
+      <p class="intro">The same steps, as commands to run yourself.</p>
 
       <div class="warn" role="note">
         <h3>First, back up ~/.claude</h3>
@@ -490,42 +624,42 @@ du -sh ~/.claude ~/Backups/claude-*</code></pre>
       </div>
 
       <ol class="steps">
-        <li>
+        <li><div>
           <h3>Get the code</h3>
           <p>For now, Wimym is shared by invitation, in a private GitHub repository. Ask the person who sent you this page to add your GitHub account, then:</p>
           <pre><code>git clone https://github.com/matrice-technologies/wimym.git ~/wimym</code></pre>
           <p>The steps below assume it is in <code>~/wimym</code>. To update later: <code>git pull</code>, then <code>./install.sh</code> again.</p>
-        </li>
-        <li>
+        </div></li>
+        <li><div>
           <h3>Try the demo first <span class="opt">optional</span></h3>
           <p>See the whole page on Robin, a made-up person, before Wimym reads anything of yours. It runs on port 8997 with its own folders, and none of your data is read.</p>
           <pre><code>cd ~/wimym
 ./install.sh --demo</code></pre>
           <p>When you are done: <code>./install.sh --demo --stop</code>.</p>
-        </li>
-        <li>
+        </div></li>
+        <li><div>
           <h3>Run it on your own record</h3>
           <pre><code>./install.sh</code></pre>
           <p>It checks Python and Node, builds the page, starts Wimym on <code>http://127.0.0.1:8990</code> and opens it. The first time, it reads every transcript on your computer and narrates as it goes: a star arrives for each message it finds, and they fall into your planet. A few dozen transcripts take a second or two, months of them about half a minute.</p>
           <p>Run it again any time: it only redoes what changed. <code>./install.sh --stop</code> stops it. It writes only in its own folder, in <code>~/.wimym</code> (what you enter: keep it) and in <code>~/.cache/wimym</code>. No sudo.</p>
-        </li>
-        <li>
+        </div></li>
+        <li><div>
           <h3>Ask your own record <span class="opt">optional</span></h3>
           <p><code>./install.sh --link</code> puts the <code>wimym</code> command in <code>~/.local/bin</code>. It answers from a local SQLite copy of everything Wimym knows.</p>
           <pre><code>wimym week                       <span class="c"># last week's vital signs, days and moments</span>
 wimym moments --about switches
 wimym rules                      <span class="c"># instructions you keep giving the agents</span>
 wimym practice add …             <span class="c"># and practice list | check, limits</span></code></pre>
-        </li>
-        <li>
+        </div></li>
+        <li><div>
           <h3>Add the two skills <span class="opt">optional</span></h3>
           <p><code>/wimym</code> answers open questions about yourself with your data in context, and <code>/retro</code> runs the weekly retro. They use the <code>wimym</code> command, so run <code>./install.sh --link</code> first, then link them into your skills folder:</p>
           <pre><code>mkdir -p ~/.claude/skills
 ln -s ~/wimym/skills/wimym ~/.claude/skills/wimym
 ln -s ~/wimym/skills/retro ~/.claude/skills/retro</code></pre>
           <p>Then, in Claude Code: <code>/wimym Am I more scattered on days I start before 7?</code> or <code>/retro</code>.</p>
-        </li>
-        <li>
+        </div></li>
+        <li><div>
           <h3>Let your limits speak <span class="opt">optional</span></h3>
           <p>Set a stopping hour, days off or a ceiling on sessions at once, on the front page or with <code>wimym limits</code>. Then see what the hook would say right now:</p>
           <pre><code>python3 ~/wimym/hooks/limits.py --check
@@ -543,15 +677,15 @@ python3 ~/wimym/hooks/limits.py --status</code></pre>
   "statusLine": { "type": "command", "command": "~/wimym/hooks/statusline.sh" }
 }</code></pre>
           <p>It stays silent until a limit is crossed, says it at most once every 30 minutes in a session, and never blocks a prompt. Remove the entries to turn it off.</p>
-        </li>
-        <li>
+        </div></li>
+        <li><div>
           <h3>Labels, for what is read from words <span class="opt">optional</span></h3>
           <p>Tone, strain and what each message asks for come from a model reading your words. The labeller sends them to Claude Haiku through your own <code>claude</code> login, and uses your plan. See how much it would read first:</p>
           <pre><code>python3 labeller/label.py --dry-run
 python3 labeller/label.py --all</code></pre>
           <p>Every label says it is a model's reading, and the Labels page shows how far each one has been checked.</p>
-        </li>
-        <li>
+        </div></li>
+        <li><div>
           <h3>On Windows</h3>
           <p>The same steps in PowerShell, on Windows 10 or 11: <code>.\install.cmd</code> takes every option <code>./install.sh</code> does, and <code>py -3</code> stands for <code>python3</code>. Install what is missing with <code>winget</code>, then open a new terminal:</p>
           <pre><code>winget install Python.Python.3.12
@@ -564,17 +698,39 @@ cd $HOME\wimym
 .\install.cmd                 <span class="c"># your own record; --stop, --update, --link</span>
 New-Item -ItemType Junction -Path $HOME\.claude\skills\wimym -Target $HOME\wimym\skills\wimym</code></pre>
           <p>Skills are linked with junctions, which need no administrator rights (and <code>retro</code> the same way). In <code>settings.json</code>, the hooks' command is <code>py -3 C:/Users/you/wimym/hooks/limits.py</code>, and the status line's the same with <code>--status</code>. If you run Claude Code inside WSL, follow the steps above in WSL instead.</p>
-        </li>
+        </div></li>
       </ol>
       </details>
     </div>
   </section>
 </main>
 
-<footer>
-  <div class="wrap">
-    <p>Wimym, short for Where is your mind. It shows signs and diagnoses nothing: it is not a clinical tool. If you are struggling, talk to someone you trust or a professional.</p>
-    <p>Every image on this page shows Robin Vale, a made-up person. <a href="https://matricetechnologies.com">Matrice Technologies</a></p>
+<footer class="site-footer band">
+  <div class="frame">
+    <div class="foot">
+      <div>
+        <a class="logo" href="#"><img src="/wimym.svg" alt="" width="22" height="22"><b>WIMYM</b></a>
+        <p>Wimym, short for Where is your mind. It shows signs and diagnoses nothing: it is not a clinical tool. If you are struggling, talk to someone you trust or a professional.</p>
+        <p>Every image on this page shows Robin Vale, a made-up person.</p>
+      </div>
+      <nav aria-label="Wimym">
+        <p>Wimym</p>
+        <a href="#what">What it does</a>
+        <a href="#shows">What it shows</a>
+        <a href="#privacy">Privacy</a>
+        <a href="#setup">Set it up</a>
+        <a href="/setup.md">The setup guide</a>
+      </nav>
+      <nav aria-label="Matrice">
+        <p>Made by</p>
+        <a class="mx" href="https://matricetechnologies.com" aria-label="Matrice Technologies"><svg viewBox="8 14 84 72" aria-hidden="true"><path d="M8 14H92V86H76V34H58V86H42V34H24V86H8Z"/></svg><b>MATRICE</b></a>
+        <a href="https://matricetechnologies.com">matricetechnologies.com</a>
+      </nav>
+    </div>
+    <div class="foot-strip">
+      <span>© 2026 Matrice Technologies · France</span>
+      <button type="button" class="theme-switch">Press D for <span>light</span> mode</button>
+    </div>
   </div>
 </footer>
 
@@ -594,6 +750,44 @@ New-Item -ItemType Junction -Path $HOME\.claude\skills\wimym -Target $HOME\wimym
     pre.replaceWith(box); box.append(pre, b);
   }
 
+  // The theme: D, or the footer's line, switches it and keeps the choice.
+  const root = document.documentElement, meta = document.querySelector('meta[name="theme-color"]');
+  const label = document.querySelector(".theme-switch span");
+  const header = document.querySelector(".site-header");
+  const shown = () => {
+    const dark = root.classList.contains("dark");
+    label.textContent = dark ? "light" : "dark";
+    meta.content = dark ? "#0a0a0a" : "#ffffff";
+    band();
+  };
+  const flip = () => {
+    const next = root.classList.contains("dark") ? "light" : "dark";
+    root.className = next;
+    try { localStorage.setItem("theme", next); } catch {}
+    shown();
+  };
+  addEventListener("keydown", e => {
+    if (e.defaultPrevented || e.repeat || e.metaKey || e.ctrlKey || e.altKey || e.key.toLowerCase() !== "d") return;
+    const t = e.target;
+    if (t instanceof HTMLElement && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+    flip();
+  });
+  document.querySelector(".theme-switch").addEventListener("click", flip);
+
+  // The header takes the theme and colour of the band under its bottom edge (matrice-website-v2, site-header.tsx),
+  // so over the Loom it is part of the dark, and over the light page it is light.
+  let frame = 0;
+  function band() {
+    frame = 0;
+    const line = header.getBoundingClientRect().bottom;
+    const under = [...document.querySelectorAll("[data-header-theme]")].find(s => { const b = s.getBoundingClientRect(); return b.top <= line && b.bottom > line; });
+    header.classList.toggle("dark", !!under && under.dataset.headerTheme === "dark");
+    header.style.backgroundColor = under ? getComputedStyle(under).backgroundColor : "";
+  }
+  const schedule = () => { if (!frame) frame = requestAnimationFrame(band); };
+  addEventListener("scroll", schedule, { passive: true });
+  addEventListener("resize", schedule);
+  shown();
 })();
 </script>
 <script type="module" src="/live/live.js"></script>
