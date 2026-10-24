@@ -19,6 +19,7 @@ import re
 import zlib
 from datetime import datetime
 
+from .paths import slashed
 from .text import AUTO_START, EDIT_TOOLS, QUESTIONS, SR, prompt_of, source_of, tool_kind
 
 VERSION = 5
@@ -80,7 +81,7 @@ def spawn_key(s):
 
 
 def scan(path):
-    r = {"v": VERSION, "sid": None, "cwd": None, "start": None, "end": None, "sub": "/subagents/" in path,
+    r = {"v": VERSION, "sid": None, "cwd": None, "start": None, "end": None, "sub": "/subagents/" in slashed(path),
          "title": None, "entry": None, "ver": None, "models": {}, "cost": None, "turns": [], "act": {}, "xact": set(),
          "queue": [], "docs": {"loads": [], "reads": [], "writes": []}, "api": [], "pid": None, "out": 0}
     turn, seen, names = None, set(), {}
@@ -203,8 +204,8 @@ def scan(path):
             r["sid"] = r["sid"] or o.get("sessionId")
             if r["sub"]:  # a subagent's file: the prompt that launched it, and its output
                 r["pid"] = r["pid"] or o.get("promptId")
-            cwd = o.get("cwd") or r["cwd"]
-            r["cwd"] = r["cwd"] or o.get("cwd")
+            cwd = slashed(o.get("cwd")) or r["cwd"]  # Windows folders as C:/Users/…, like everything else here
+            r["cwd"] = r["cwd"] or cwd
             r["entry"] = r["entry"] or o.get("entrypoint")
             r["ver"] = o.get("version") or r["ver"]
             a = o.get("attachment")
@@ -285,7 +286,7 @@ def scan(path):
                     k = tool_kind(name)
                     turn["cat"][k] = turn["cat"].get(k, 0) + 1
                     if name in EDIT_TOOLS and inp.get("file_path"):
-                        turn["files"].add(inp["file_path"])
+                        turn["files"].add(slashed(inp["file_path"]))
                         if name == "Write":
                             turn["add"] += _lines(inp.get("content"))
                         elif name == "MultiEdit":
@@ -316,9 +317,9 @@ def scan(path):
                         turn["skills"].append(str(inp["skill"])[:60])
                 p = inp.get("file_path") or ""
                 if name == "Read" and p.endswith(DOC_EXT):
-                    r["docs"]["reads"].append([os.path.normpath(p), ts])
+                    r["docs"]["reads"].append([slashed(os.path.normpath(p)), ts])
                 elif name in ("Write", "Edit", "MultiEdit") and p.endswith(DOC_EXT):
-                    r["docs"]["writes"].append([os.path.normpath(p), ts])
+                    r["docs"]["writes"].append([slashed(os.path.normpath(p)), ts])
     close()
     if r["sid"] is None:
         r["sid"] = os.path.splitext(os.path.basename(path))[0]

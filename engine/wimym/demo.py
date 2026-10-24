@@ -27,6 +27,7 @@ import json
 import math
 import os
 import random
+import re
 import subprocess
 import sys
 import uuid
@@ -39,6 +40,7 @@ DAYS = 37           # days shown, ending today
 PROMPTS_ONLY = 7    # the first days: history.jsonl only
 QUIET = 15          # days ago, about: the quiet Sunday (the nearest one before)
 CRUNCH = 5          # the last days: later, busier
+VERSION = 2         # how the demo is written: a new one is written once when this changes (2: Claude Code's folder names)
 
 THINGS = ["export to CSV", "search box", "invite flow", "rate limiter", "settings page", "weekly digest email",
           "offline mode", "onboarding checklist", "audit log", "dark theme", "billing webhook", "sync worker",
@@ -329,7 +331,7 @@ class Writer:
             self.label(mid, intent, text, project, d, hour)
         if prompts_only or not lines:
             return
-        folder = os.path.join(self.claude, "projects", cwd.replace("/", "-"))
+        folder = os.path.join(self.claude, "projects", folder_name(cwd))
         os.makedirs(folder, exist_ok=True)
         with open(os.path.join(folder, sid + ".jsonl"), "a", encoding="utf-8") as f:
             f.writelines(lines)
@@ -436,7 +438,8 @@ class Writer:
     # -- the rest --------------------------------------------------------------------------------
     def repos(self):
         """One small repository per project, written in one `git fast-import` stream each (a second or two in all)."""
-        env = {"HOME": self.home, "PATH": os.environ.get("PATH", ""), "GIT_CONFIG_NOSYSTEM": "1"}
+        env = {"HOME": self.home, "PATH": os.environ.get("PATH", ""), "GIT_CONFIG_NOSYSTEM": "1",
+               **{k: os.environ[k] for k in ("SYSTEMROOT", "TEMP", "TMP") if k in os.environ}}  # Windows needs these
         r = self.r
         for project in PROJECTS:
             cs = sorted(self.commits[project])
@@ -549,7 +552,7 @@ class Writer:
         self.person_data()
 
     def memory(self):
-        folder = os.path.join(self.claude, "projects", os.path.join(self.home, "loom").replace("/", "-"), "memory")
+        folder = os.path.join(self.claude, "projects", folder_name(os.path.join(self.home, "loom")), "memory")
         os.makedirs(folder, exist_ok=True)
         notes = {"tests-with-every-change": ("feedback", "Robin wants tests with every change", "Add or update tests in the same commit as the change."),
                  "robin-role": ("user", "Robin is the founder and main engineer of Loom", "Works alone with agents most days; one teammate, Jordan."),
@@ -579,13 +582,19 @@ class Writer:
             json.dump({"days": checks}, f, indent=1)
 
 
+def folder_name(path):
+    """Claude Code's name for a working folder's transcripts folder, on a Mac or Windows (memory.folder_name)."""
+    return re.sub(r"[^A-Za-z0-9]", "-", path)
+
+
 def ensure(root, seed=7):
     """Write the demo into root unless it is already there for today; returns root."""
     stamp = os.path.join(root, "demo.json")
     today = (datetime.now() - timedelta(hours=5)).date().isoformat()
     try:
         with open(stamp) as f:
-            if json.load(f).get("today") == today:
+            kept = json.load(f)
+            if kept.get("today") == today and kept.get("v") == VERSION:
                 return root
     except (OSError, ValueError):
         pass
@@ -594,7 +603,7 @@ def ensure(root, seed=7):
         shutil.rmtree(os.path.join(root, sub), ignore_errors=True)
     Writer(root, seed).write()
     with open(stamp, "w") as f:
-        json.dump({"today": today, "seed": seed, "person": PERSON}, f)
+        json.dump({"today": today, "v": VERSION, "seed": seed, "person": PERSON}, f)
     return root
 
 

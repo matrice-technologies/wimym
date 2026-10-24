@@ -351,6 +351,8 @@ def main():
     paths.clean_tmp(paths.CACHE_DIR)
     paths.clean_tmp(paths.DATA_DIR)
     ENGINE = Engine()
+    # on Windows SO_REUSEADDR lets a second server take a port already in use, so it is never asked for there
+    ThreadingHTTPServer.allow_reuse_address = os.name != "nt"
     srv = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)  # listen first: the page narrates the first build
 
     def first():
@@ -383,12 +385,16 @@ def demo(args):
     print("Writing the demo (Robin, a made-up person)…" if not os.path.exists(os.path.join(root, "demo.json")) else "", end="", flush=True)
     made_up.ensure(root)
     env = {k: v for k, v in os.environ.items() if not k.startswith(("WIMYM_", "MIRROR_", "GH_", "GITHUB_", "CLAUDE_CONFIG_DIR"))}
-    env.update(HOME=os.path.join(root, "home"), CLAUDE_CONFIG_DIR=os.path.join(root, "home", ".claude"),
+    env.update(HOME=os.path.join(root, "home"), USERPROFILE=os.path.join(root, "home"),  # Windows' home is USERPROFILE
+               CLAUDE_CONFIG_DIR=os.path.join(root, "home", ".claude"),
                WIMYM_DATA=os.path.join(root, "data"), WIMYM_CACHE=os.path.join(root, "cache"), GIT_CONFIG_NOSYSTEM="1",
                WIMYM_UPDATES="0")  # Robin's page never asks GitHub anything
     port = args.port if "--port" in " ".join(sys.argv) or os.environ.get("WIMYM_PORT") else 8997
     argv = [sys.executable, os.path.abspath(__file__), "--port", str(port)] + (["--no-open"] if args.no_open else [])
     print(f"\nDemo: {root}", flush=True)
+    if os.name == "nt":  # no exec there: os.execve starts another process and ends this one, which ./install.py follows
+        import subprocess
+        sys.exit(subprocess.call(argv, env=env))
     os.execve(sys.executable, argv, env)
 
 

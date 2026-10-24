@@ -5,6 +5,8 @@
     python3 hooks/limits.py --status   # one short line for the status line: today's active time, days in a row
     python3 hooks/limits.py --check    # what the hook would say right now, ignoring the once-every-30-minutes rule
 
+On Windows, py -3 in place of python3 (hooks/statusline.sh is only this, with --status, for a Mac or Linux).
+
 It adds one plain line when a limit you set in Wimym is crossed: the stopping hour has passed, you have
 worked more than 14 days in a row, or more sessions are running than you allowed. Otherwise it says
 nothing. The same line is said at most once every 30 minutes in a session.
@@ -117,6 +119,8 @@ def status(now_dt, pulse):
 
 
 def main():
+    if sys.stdout.encoding.lower().replace("-", "") != "utf8":  # Windows' code page: Claude Code reads UTF-8 ("·")
+        sys.stdout.reconfigure(encoding="utf-8")
     limits = _read(os.path.join(paths.DATA_DIR, "limits.json"), {})
     pulse = _read(os.path.join(paths.CACHE_DIR, "pulse.json"), {})
     now_dt = datetime.now()

@@ -8,7 +8,7 @@ import re
 import subprocess
 from collections import Counter
 
-from .paths import CLAUDE, HOME, SCRATCH
+from .paths import CLAUDE, HOME, scratch, slashed, under
 
 SR = re.compile(r"<(system-reminder|artifact-view-context)\b.*?</\1>", re.S)
 CMD = re.compile(r"<command-name>/?([^<]+)</command-name>")
@@ -63,10 +63,10 @@ def prompt_of(o):
 def source_of(o, text, cwd):
     """desk: you, in the app or a terminal; massistant: you, through the bridge; auto: nobody typed it.
     cwd is the folder the session started in: a line's own cwd follows Claude's shell around."""
-    cwd = cwd or ""
+    cwd = slashed(cwd or "")
     if o.get("promptSource") == "system" or text.startswith(AUTO_START):
         return "auto"
-    if cwd.startswith(SCRATCH) or "/.matrice-bridge/" in cwd + "/" or "/.massistant-probe" in cwd or "/Library/Logs/" in cwd:
+    if scratch(cwd) or "/.matrice-bridge/" in cwd + "/" or "/.massistant-probe" in cwd or "/Library/Logs/" in cwd:
         return "auto"
     if (o.get("origin") or {}).get("kind") == "human" or o.get("turnOrigin") == "human":
         return "desk"
@@ -98,17 +98,16 @@ def tool_kind(name):
 def project_of(cwd):
     if not cwd:
         return "?"
-    cwd = WORKTREE.sub("", cwd)
+    cwd = WORKTREE.sub("", slashed(cwd))  # a Windows folder (C:\\Users\\robin\\code\\app) is read as C:/Users/robin/code/app
     if "/local-agent-mode-sessions/" in cwd or cwd.startswith("/sessions/"):  # Cowork: its folder here, or inside its sandbox
         return "cowork"
-    if cwd.startswith(SCRATCH):
+    if scratch(cwd):
         return "scratchpads"
     if "/.matrice-bridge" in cwd:
         return "bridge contacts"
-    if cwd == HOME:
-        return "~"
-    if cwd.startswith(HOME + "/"):
-        return cwd[len(HOME) + 1:].split("/")[0]
+    rest = under(cwd, HOME)
+    if rest is not None:
+        return rest.split("/")[0] or "~"
     return cwd
 
 

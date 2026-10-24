@@ -33,7 +33,7 @@ def _entry(o):
     for p in (o.get("pastedContents") or {}).values():
         if isinstance(p, dict) and isinstance(p.get("content"), str):
             pasted += len(p["content"])
-    return {"id": f"h-{int(ts)}-{(sid or 'none')[:8]}", "ts": when, "sid": sid or None, "cwd": o.get("project") or None,
+    return {"id": f"h-{int(ts)}-{(sid or 'none')[:8]}", "ts": when, "sid": sid or None, "cwd": paths.slashed(o.get("project")) or None,
             "text": text[:20000], "pasted": pasted, "images": len(IMAGE.findall(text))}
 
 

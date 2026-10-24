@@ -45,5 +45,10 @@ entries under `hooks`, and swap `statusLine` only if you want Wimym's in place o
 }
 ```
 
+On Windows, the same with `py -3` and the folder's full path written with forward slashes, which every
+shell Claude Code runs there reads the same way; the status line is the hook with `--status`:
+`"command": "py -3 C:/Users/robin/wimym/hooks/limits.py"`, and
+`"statusLine": { "type": "command", "command": "py -3 C:/Users/robin/wimym/hooks/limits.py --status" }`.
+
 The paths assume the code is merged into `~/mirror`. To turn them off, remove the entries. Set your limits
 with `wimym limits set stopHour 21.5` (the CLI) or on the app's limits page; they live in `~/.wimym/limits.json`.

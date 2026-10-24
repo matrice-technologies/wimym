@@ -14,7 +14,7 @@ from statistics import median
 from . import memory
 from .history import text_of as history_text
 from .labels import FAMILIES, FAMILY_OF, INTENT_NAMES
-from .paths import SCRATCH
+from .paths import scratch, slashed, tilde
 from .text import AUTO_START, BY_SESSION, Speller, lang, not_typed, own_words, pasted, project_of
 
 DAY_START = 5
@@ -428,8 +428,8 @@ class Model:
                 continue
             if any(abs((at - x).total_seconds()) <= 300 for x in by_text.get(words[:200].strip()) or ()):
                 continue
-            cwd = e.get("cwd") or ""
-            if cwd.startswith(SCRATCH) or "/.matrice-bridge/" in cwd + "/" or "/.massistant-probe" in cwd or "/Library/Logs/" in cwd:
+            cwd = slashed(e.get("cwd") or "")
+            if scratch(cwd) or "/.matrice-bridge/" in cwd + "/" or "/.massistant-probe" in cwd or "/Library/Logs/" in cwd:
                 continue
             if words.startswith(AUTO_START) or (cats.get(e["id"]) or {}).get("ag") or (kind == "prompt" and not_typed(words)):
                 continue
@@ -972,13 +972,13 @@ class Model:
         if not t and mid in self.history:
             e = self.history[mid]
             return {"id": mid, "text": e["text"], "own": history_text(e)[0], "reply": None, "files": None, "sid": e["sid"],
-                    "cwd": (e.get("cwd") or "").replace(os.path.expanduser("~"), "~", 1), "title": None, "truncated": False,
+                    "cwd": tilde(e.get("cwd") or ""), "title": None, "truncated": False,
                     "skills": None, "perm": None, "origin": "history"}
         if not t:
             return None
         s = self.sessions.get(t["sid"]) or {}
-        return {"id": mid, "text": t["text"], "own": own_words(t["text"]) if t["kind"] == "prompt" else t["text"], "reply": t.get("reply") or "", "files": [f.replace(os.path.expanduser("~"), "~", 1) for f in t["files"]],
-                "sid": t["sid"], "cwd": (t.get("cwd") or "").replace(os.path.expanduser("~"), "~", 1), "title": s.get("title"),
+        return {"id": mid, "text": t["text"], "own": own_words(t["text"]) if t["kind"] == "prompt" else t["text"], "reply": t.get("reply") or "", "files": [tilde(f) for f in t["files"]],
+                "sid": t["sid"], "cwd": tilde(t.get("cwd") or ""), "title": s.get("title"),
                 "truncated": t["chars"] > len(t["text"]), "skills": t.get("skills") or [], "perm": t.get("perm") or {},
                 "origin": t.get("origin") or "transcript"}
 

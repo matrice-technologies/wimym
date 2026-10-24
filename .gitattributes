@@ -1,0 +1,4 @@
+# One line ending everywhere, so a clone on Windows (where git turns LF into CRLF by default) runs the same
+# scripts, and ./install.sh --update finds no changes of its own there. cmd.exe reads its scripts best in CRLF.
+* text=auto eol=lf
+*.cmd text eol=crlf

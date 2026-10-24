@@ -14,8 +14,10 @@ Why it exists and where it is going: [VISION.md](VISION.md). How we get there: [
 ./install.sh
 ```
 
-It checks Python 3.9+ (and Node 18+ when the page needs building), builds the page, starts the
-engine on http://127.0.0.1:8990 and opens it. The first build reads every transcript on the Mac and
+On Windows 10 or 11, `.\install.cmd` in PowerShell, with the same options (`install.py` does the work on
+every system; [site/setup.md](site/setup.md) has the Windows steps). It checks Python 3.9+ (and Node 18+
+when the page needs building), builds the page, starts the
+engine on http://127.0.0.1:8990 and opens it. The first build reads every transcript on the computer and
 narrates as it goes; a few dozen transcripts take a second or two, months of them about half a minute.
 Run it again any time: it only redoes what changed. `./install.sh --help` for the options, `--stop` to
 stop the engine.
@@ -27,7 +29,7 @@ Or let Claude Code do the whole setup, a step at a time and asking before each c
 into Claude Code:
 
 ```
-Set up Wimym on this Mac for me. Read the guide with curl -fsSL https://wimym.matricetechnologies.com/setup.md and follow it step by step: say what each step does, and ask me before anything that changes my Mac.
+Set up Wimym on this computer for me. Read the guide with curl -fsSL https://wimym.matricetechnologies.com/setup.md and follow it step by step: say what each step does, and ask me before anything that changes my computer.
 ```
 
 The guide it follows is [site/setup.md](site/setup.md): the backup, the checks, the code, the demo,
@@ -85,7 +87,8 @@ Set a stopping hour, days off a week or a ceiling on sessions at once, on the fr
   from `~/.claude/history.jsonl` and Codex, the index also reads Cowork sessions, `gitlog.py` reads the
   repositories behind your working folders, `model.py` builds messages, sessions, days and weeks,
   `vitals.py` the vital signs and the week, `update.py` whether a newer Wimym is out, and `server.py`
-  serves the page and `/api/*` on 127.0.0.1 only. Tests: `python3 -m unittest discover -s engine/tests`.
+  serves the page and `/api/*` on 127.0.0.1 only. Tests: `python3 -m unittest discover -s engine/tests`;
+  CI (`.github/workflows/ci.yml`) runs them on Windows and Linux, then the installer for real (`.github/smoke.py`).
 - `app/`: Vite, React and TypeScript, d3. `lab/`: the hero (three.js) and its prototypes.
 - `labeller/`: model labels through your logged-in `claude` CLI: what each message asks for and does,
   an account of each session and each day, and repeated instructions. Their wording, versions and

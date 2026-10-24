@@ -20,7 +20,8 @@ import unittest
 
 TMP = tempfile.mkdtemp(prefix="wimym-tests-")
 if "wimym.paths" not in sys.modules:
-    os.environ.update(HOME=os.path.join(TMP, "home"), CLAUDE_CONFIG_DIR=os.path.join(TMP, "home", ".claude"),
+    os.environ.update(HOME=os.path.join(TMP, "home"), USERPROFILE=os.path.join(TMP, "home"),  # USERPROFILE: Windows' home
+                      CLAUDE_CONFIG_DIR=os.path.join(TMP, "home", ".claude"),
                       WIMYM_DATA=os.path.join(TMP, "data"), WIMYM_CACHE=os.path.join(TMP, "cache"),
                       WIMYM_LABELS=os.path.join(TMP, "data", "labels"))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))

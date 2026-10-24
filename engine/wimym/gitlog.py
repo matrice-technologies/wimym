@@ -423,7 +423,7 @@ class Git:
 
     def _summary(self):
         names, emails = self.identities()
-        return {"repos": [{"project": r["project"], "top": r["top"].replace(os.path.expanduser("~"), "~", 1),
+        return {"repos": [{"project": r["project"], "top": paths.tilde(r["top"]),
                            "default": (r.get("default") or [None])[0], "commits": len(r["commits"]),
                            "landed": sum(c["l"] for c in r["commits"].values()), "open": len(r.get("open") or []),
                           "github": r.get("github"), "prs": len(r.get("prs") or [])}

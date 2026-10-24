@@ -87,9 +87,19 @@ def code_changed():
 
 def status():
     """For /api/state."""
-    home = os.path.expanduser("~")
-    folder = f'"{ROOT}"' if " " in ROOT else "~" + ROOT[len(home):] if ROOT.startswith(home + os.sep) else ROOT
     checked = _now["checked"]
     return {"available": _now["available"], "restart": code_changed(),
             "checked": time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(checked)) if checked else None,
-            "command": f"cd {folder} && ./install.sh --update", "restartCommand": f"cd {folder} && ./install.sh"}
+            "command": command("--update"), "restartCommand": command()}
+
+
+def command(*args, root=None, windows=None):
+    """What to type to run the installer in this folder: in a Mac or Linux terminal, or in Windows' PowerShell."""
+    root = root or ROOT
+    windows = os.name == "nt" if windows is None else windows
+    if windows:
+        cmd = os.path.join(root, "install.cmd")
+        return " ".join([f'& "{cmd}"' if " " in cmd else cmd, *args])
+    home = os.path.expanduser("~")
+    folder = f'"{root}"' if " " in root else "~" + root[len(home):] if root.startswith(home + os.sep) else root
+    return " ".join([f"cd {folder} && ./install.sh", *args])
