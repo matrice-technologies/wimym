@@ -8,6 +8,7 @@ Everything goes in folders next to the checkout ($RUNNER_WORKSPACE, or the check
 """
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -65,6 +66,12 @@ def demo():
     assert names == sorted(["loom", "loom-web", "loom-ios", "loom-infra", "loom-docs", "field-notes", "ledger-tools",
                             "talk-slides", "recipe-box"]), names
     assert {n["project"] for n in core["memory"]["notes"]} == {"loom"}, core["memory"]["notes"]
+    # the page itself, and a file it loads
+    with urllib.request.urlopen("http://127.0.0.1:8997/days", timeout=30) as r:
+        page = r.read().decode()
+    script = re.search(r'src="(/assets/[^"]+\.js)"', page).group(1)
+    with urllib.request.urlopen("http://127.0.0.1:8997" + script, timeout=30) as r:
+        assert r.headers["Content-Type"].startswith("text/javascript") and len(r.read()) > 1000, script
     folders = os.listdir(os.path.join(DEMO, "home", ".claude", "projects"))
     print("transcript folders:", folders[:2])
     if WINDOWS:  # as Claude Code writes them there: C:\…\loom, in a folder named C--…-loom
@@ -94,7 +101,7 @@ def update():
     git(up, "commit", "-qm", "A change for the update test")
     # the page as built above, so the clone needs no packages of its own: copied after the clone, so it is newer
     import shutil
-    shutil.copytree(os.path.join(HERE, "app", "dist"), os.path.join(clone, "app", "dist"))
+    shutil.copytree(os.path.join(HERE, "app", "dist"), os.path.join(clone, "app", "dist"), copy_function=shutil.copy)
     out = installer(clone, "--update", "--demo", "--no-open", "--port", "8998")
     assert "A change for the update test" in out, out
     assert git(clone, "rev-parse", "HEAD") == git(up, "rev-parse", "HEAD"), "the clone wasn't brought up to date"

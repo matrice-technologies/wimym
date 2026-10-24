@@ -533,7 +533,7 @@ def _git(m):
 def _labels_rows():
     rows, audit = [], []
     for p in _label_files():
-        rel = os.path.relpath(p, LABELS_DIR)
+        rel = os.path.relpath(p, LABELS_DIR).replace(os.sep, "/")
         try:
             with open(p, encoding="utf-8") as f:
                 d = json.load(f)

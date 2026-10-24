@@ -12,6 +12,7 @@ import argparse
 import gzip
 import json
 import os
+import posixpath
 import re
 import sys
 import threading
@@ -295,14 +296,15 @@ class Handler(BaseHTTPRequestHandler):
         if not os.path.isdir(DIST):
             return self.send(200, b"Wimym's app isn't built yet: run `npm install && npm run build` in app/, or `npm run dev` there.",
                              "text/plain; charset=utf-8")
-        rel = os.path.normpath(unquote(path)).lstrip("/")
-        full = os.path.join(DIST, rel)
-        if rel.startswith("..") or not os.path.isfile(full):
-            full = os.path.join(DIST, "index.html")  # the app routes its own pages
+        # a URL's path, read with / whatever the system; a backslash or a drive in it (Windows follows them) is no file of ours
+        rel = posixpath.normpath(unquote(path)).lstrip("/")
+        full = os.path.join(DIST, *rel.split("/"))
+        if rel.startswith("..") or "\\" in rel or ":" in rel or not os.path.isfile(full):
+            full, rel = os.path.join(DIST, "index.html"), "index.html"  # the app routes its own pages
         with open(full, "rb") as f:
             body = f.read()
         ext = os.path.splitext(full)[1]
-        cache = {"Cache-Control": "public, max-age=31536000, immutable"} if "/assets/" in full else {}
+        cache = {"Cache-Control": "public, max-age=31536000, immutable"} if rel.startswith("assets/") else {}
         self.send_response(200)
         self.send_header("Content-Type", TYPES.get(ext, "application/octet-stream"))
         for k, v in cache.items():

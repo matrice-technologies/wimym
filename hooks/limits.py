@@ -119,7 +119,7 @@ def status(now_dt, pulse):
 
 
 def main():
-    if sys.stdout.encoding.lower().replace("-", "") != "utf8":  # Windows' code page: Claude Code reads UTF-8 ("·")
+    if (sys.stdout.encoding or "").lower().replace("-", "") != "utf8":  # Windows' code page: Claude Code reads UTF-8 ("·")
         sys.stdout.reconfigure(encoding="utf-8")
     limits = _read(os.path.join(paths.DATA_DIR, "limits.json"), {})
     pulse = _read(os.path.join(paths.CACHE_DIR, "pulse.json"), {})
