@@ -66,7 +66,7 @@ export default function ThisWeek() {
           <div className="pl-stage">{stage}</div>
           <div className="pl-scrim" aria-hidden="true" />
           <div className="pl-words">
-            <h1 className="wiym">Where is your mind?</h1>
+            <h1 className="wiym">Where is your <span className="hl">mind</span>?</h1>
             {!firstRun && <p className="pl-wait">{state && state.phase !== "ready" && state.phase !== "git" ? state.label : "\u00a0"}</p>}
           </div>
         </section>
@@ -83,7 +83,7 @@ export default function ThisWeek() {
         <div className="pl-stage">{stage}</div>
         <div className="pl-scrim" aria-hidden="true" />
         <div className="pl-words">
-          <h1 className="wiym">Where is your mind?</h1>
+          <h1 className="wiym">Where is your <span className="hl">mind</span>?</h1>
           <p className="pl-line" key={caption?.line ? "c" : "w"}>{caption?.line || "\u00a0"}</p>
           {caption?.sub && <p className="pl-sub">{caption.sub}</p>}
           <div className="pl-week">

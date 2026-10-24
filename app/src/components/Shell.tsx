@@ -47,19 +47,21 @@ export default function Shell() {
   return (
     <div className="shell">
       <nav className="rail" aria-label="Pages">
-        <NavLink to="/" className="brand">
-          <Mark size={26} />
-          <span><b>Wimym</b><em>Where is your mind</em></span>
+        <NavLink to="/" className="brand" aria-label="Wimym, by Matrice: this week">
+          <Mark size={24} />
+          <span><b>WIMYM</b><em>by Matrice</em></span>
         </NavLink>
-        {NAV.map(([to, label, icon]) => (
-          <NavLink key={to} to={to} end={to === "/"} className={({ isActive }) => "nav" + (isActive ? " active" : "")}>
-            {I[icon]}{label}
-          </NavLink>
-        ))}
-        <span className="rail-h" role="presentation">Explore</span>
-        {EXPLORE.map(([to, label]) => (
-          <NavLink key={to} to={to} className={({ isActive }) => "nav sub" + (isActive ? " active" : "")}>{label}</NavLink>
-        ))}
+        <div className="rail-nav">
+          {NAV.map(([to, label, icon]) => (
+            <NavLink key={to} to={to} end={to === "/"} className={({ isActive }) => "nav" + (isActive ? " active" : "")}>
+              {I[icon]}{label}
+            </NavLink>
+          ))}
+          <span className="rail-h label-strip" role="presentation"><span><span className="star" aria-hidden="true">✦</span>Explore</span></span>
+          {EXPLORE.map(([to, label]) => (
+            <NavLink key={to} to={to} className={({ isActive }) => "nav sub" + (isActive ? " active" : "")}>{label}</NavLink>
+          ))}
+        </div>
         <div className="foot">
           {update?.restart ? <Upgrade say="Wimym's code changed since it started. To run the new code:" command={update.restartCommand} />
             : update?.available ? <Upgrade say="A new version of Wimym is out. To get it, in a terminal:" command={update.command} /> : null}
