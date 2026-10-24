@@ -18,6 +18,7 @@ day it asks GitHub whether a newer Wimym is out; {"updates": false} in ~/.wimym/
 # hand everything to it.
 import json
 import os
+import re
 import shutil
 import socket
 import subprocess
@@ -200,18 +201,35 @@ def update(argv):
     if git("rev-parse", "HEAD") == before:
         say("This is already the latest Wimym.")
     else:
-        diff = git("diff", before, "HEAD", "--", "CHANGES.md") or ""
-        news = [f"  {line[1:]}" for line in diff.splitlines() if line.startswith("+- ")]
-        if not news:
-            news = [f"  - {s}" for s in (git("log", "--format=%s", f"{before}..HEAD") or "").splitlines()[:20]]
-        say("What's new (all of it in CHANGES.md):")
-        say("\n".join(news))
+        say("What's new:")
+        say("\n".join(news(before)))
     rest = [a for a in argv if a != "--update"]
     # the pull may have changed this script: the new one goes on
     cmd = [sys.executable, os.path.join(HERE, "install.py"), *rest]
     if WINDOWS:
         sys.exit(subprocess.call(cmd))
     os.execv(sys.executable, cmd)
+
+
+def news(before):
+    """What landed on main since before, a line each: a pull request by its title, a merge by its sentence without
+    the branch, an old "Wimym as of …" copy by the lines it listed; merges of main into a branch are nothing to tell."""
+    out = []
+    for entry in (git("log", "--first-parent", "--format=%x1e%s%x1f%b", f"{before}..HEAD") or "").split("\x1e"):
+        if not entry.strip():
+            continue
+        s, _, body = entry.partition("\x1f")
+        lines = body.split("\n")
+        if s.startswith("Wimym as of "):
+            out += ["  " + line for line in lines if line.startswith("- ")]
+            continue
+        if s.startswith("Merge pull request "):
+            s = next((line for line in lines if line), s)
+        if re.match(r"Merge (branch|remote-tracking branch) ", s):
+            continue
+        s = re.sub(r" \(#\d+\)$", "", re.sub(r" \([^() ]*/[^() ]*\)$", "", re.sub(r"^Merge ", "", s)))
+        out.append("  - " + s[:1].upper() + s[1:])
+    return out[:30] or ["  - Small fixes."]
 
 
 # --- the page: built when it's missing or older than its sources (needs Node.js 18 or later)

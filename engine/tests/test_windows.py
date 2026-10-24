@@ -189,6 +189,29 @@ class Commands(unittest.TestCase):
         with self.assertRaises(SystemExit), mock.patch("sys.stderr"):
             install.options(["--nope"])
 
+    def test_whats_new(self):
+        """--update says what landed: pull requests by their titles, merges by their sentences, nothing for main's."""
+        sys.path.insert(0, os.path.join(ENGINE, ".."))
+        import install
+        repo = os.path.join(TMP, "news")
+        env = dict(os.environ, GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@example.com", GIT_COMMITTER_NAME="t",
+                   GIT_COMMITTER_EMAIL="t@example.com", GIT_CONFIG_NOSYSTEM="1")
+
+        def git(*args):
+            subprocess.run(["git", "-C", repo, *args], check=True, capture_output=True, env=env)
+        os.makedirs(repo)
+        git("init", "-q")
+        git("commit", "-q", "--allow-empty", "-m", "Start")
+        with mock.patch.object(install, "HERE", repo):
+            before = install.git("rev-parse", "HEAD")
+            for msg in (["Merge pull request #7 from someone/windows", "Wimym runs on Windows"],
+                        ["Merge branch 'main' into claude/x"], ["Merge the postcard of a day (claude/brave-x)"],
+                        ["Wimym as of abc1234", "- Calmer empty page\n- Labels without an audit"], ["small fix (#9)"]):
+                git("commit", "-q", "--allow-empty", *[x for m in msg for x in ("-m", m)])
+            self.assertEqual(install.news(before), ["  - Small fix", "  - Calmer empty page", "  - Labels without an audit",
+                                                    "  - The postcard of a day", "  - Wimym runs on Windows"])  # newest first
+            self.assertEqual(install.news(install.git("rev-parse", "HEAD")), ["  - Small fixes."])
+
 
 if __name__ == "__main__":
     unittest.main()

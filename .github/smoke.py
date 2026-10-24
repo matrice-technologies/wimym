@@ -95,10 +95,10 @@ def update():
     subprocess.run(["git", "clone", "-q", HERE, up], check=True)
     git(up, "checkout", "-q", "-B", "ci-main")
     subprocess.run(["git", "clone", "-q", "-b", "ci-main", up, clone], check=True)
-    with open(os.path.join(up, "CHANGES.md"), "a", encoding="utf-8") as f:
-        f.write("\n## Today\n\n- A change for the update test\n")
-    git(up, "add", "CHANGES.md")
-    git(up, "commit", "-qm", "A change for the update test")
+    with open(os.path.join(up, "update-test.txt"), "w", encoding="utf-8") as f:
+        f.write("A change for the update test\n")
+    git(up, "add", "update-test.txt")
+    git(up, "commit", "-qm", "Merge pull request #7 from someone/a-branch", "-m", "A change for the update test")
     # the page as built above, so the clone needs no packages of its own: copied after the clone, so it is newer
     import shutil
     shutil.copytree(os.path.join(HERE, "app", "dist"), os.path.join(clone, "app", "dist"), copy_function=shutil.copy)
