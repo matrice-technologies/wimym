@@ -44,10 +44,10 @@ from datetime import datetime, timezone
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), "engine"))
 from wimym.index import Index  # noqa: E402
-from wimym.paths import HOME, LABELS_DIR, SCRATCH, tmp_name  # noqa: E402
+from wimym.paths import HOME, LABELS_DIR, scratch, tmp_name  # noqa: E402
 from wimym.text import not_typed, own_words, project_of  # noqa: E402
 
-CLAUDE_BIN = os.environ.get("CLAUDE_BIN") or os.path.join(HOME, ".local", "bin", "claude")
+CLAUDE_BIN = os.environ.get("CLAUDE_BIN") or os.path.join(HOME, ".local", "bin", "claude.exe" if os.name == "nt" else "claude")
 MINE = ("desk", "massistant")
 MAX_JOBS = 16  # calls at once; failed calls back off for a minute when the error says rate limit or overload
 AUDIT = "audit-opus.json"
@@ -175,7 +175,7 @@ def load_history(transcript_prompts):
         cwd = e.get("cwd") or ""
         if kind != "prompt" or not words.strip() or words.startswith(AUTO_START):
             continue
-        if cwd.startswith(SCRATCH) or "/.matrice-bridge/" in cwd + "/" or "/.massistant-probe" in cwd or "/Library/Logs/" in cwd:
+        if scratch(cwd) or "/.matrice-bridge/" in cwd + "/" or "/.massistant-probe" in cwd or "/Library/Logs/" in cwd:
             continue
         at = datetime.fromisoformat(e["ts"][:19])
         if any(abs((at - x).total_seconds()) <= 10 for x in by_sid.get(e["sid"]) or ()):

@@ -12,6 +12,7 @@ import argparse
 import gzip
 import json
 import os
+import posixpath
 import re
 import sys
 import threading
@@ -195,7 +196,7 @@ def _write_pulse(p):
         tmp = paths.tmp_name(dest)
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump(p, f, separators=(",", ":"))
-        os.replace(tmp, dest)
+        paths.replace(tmp, dest)  # on Windows, waits a moment for the status line reading it
     except OSError:
         pass
 
@@ -295,14 +296,15 @@ class Handler(BaseHTTPRequestHandler):
         if not os.path.isdir(DIST):
             return self.send(200, b"Wimym's app isn't built yet: run `npm install && npm run build` in app/, or `npm run dev` there.",
                              "text/plain; charset=utf-8")
-        rel = os.path.normpath(unquote(path)).lstrip("/")
-        full = os.path.join(DIST, rel)
-        if rel.startswith("..") or not os.path.isfile(full):
-            full = os.path.join(DIST, "index.html")  # the app routes its own pages
+        # a URL's path, read with / whatever the system; a backslash or a drive in it (Windows follows them) is no file of ours
+        rel = posixpath.normpath(unquote(path)).lstrip("/")
+        full = os.path.join(DIST, *rel.split("/"))
+        if rel.startswith("..") or "\\" in rel or ":" in rel or not os.path.isfile(full):
+            full, rel = os.path.join(DIST, "index.html"), "index.html"  # the app routes its own pages
         with open(full, "rb") as f:
             body = f.read()
         ext = os.path.splitext(full)[1]
-        cache = {"Cache-Control": "public, max-age=31536000, immutable"} if "/assets/" in full else {}
+        cache = {"Cache-Control": "public, max-age=31536000, immutable"} if rel.startswith("assets/") else {}
         self.send_response(200)
         self.send_header("Content-Type", TYPES.get(ext, "application/octet-stream"))
         for k, v in cache.items():
@@ -351,6 +353,8 @@ def main():
     paths.clean_tmp(paths.CACHE_DIR)
     paths.clean_tmp(paths.DATA_DIR)
     ENGINE = Engine()
+    # on Windows SO_REUSEADDR lets a second server take a port already in use, so it is never asked for there
+    ThreadingHTTPServer.allow_reuse_address = os.name != "nt"
     srv = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)  # listen first: the page narrates the first build
 
     def first():
@@ -383,12 +387,16 @@ def demo(args):
     print("Writing the demo (Robin, a made-up person)…" if not os.path.exists(os.path.join(root, "demo.json")) else "", end="", flush=True)
     made_up.ensure(root)
     env = {k: v for k, v in os.environ.items() if not k.startswith(("WIMYM_", "MIRROR_", "GH_", "GITHUB_", "CLAUDE_CONFIG_DIR"))}
-    env.update(HOME=os.path.join(root, "home"), CLAUDE_CONFIG_DIR=os.path.join(root, "home", ".claude"),
+    env.update(HOME=os.path.join(root, "home"), USERPROFILE=os.path.join(root, "home"),  # Windows' home is USERPROFILE
+               CLAUDE_CONFIG_DIR=os.path.join(root, "home", ".claude"),
                WIMYM_DATA=os.path.join(root, "data"), WIMYM_CACHE=os.path.join(root, "cache"), GIT_CONFIG_NOSYSTEM="1",
                WIMYM_UPDATES="0")  # Robin's page never asks GitHub anything
     port = args.port if "--port" in " ".join(sys.argv) or os.environ.get("WIMYM_PORT") else 8997
     argv = [sys.executable, os.path.abspath(__file__), "--port", str(port)] + (["--no-open"] if args.no_open else [])
     print(f"\nDemo: {root}", flush=True)
+    if os.name == "nt":  # no exec there: os.execve starts another process and ends this one, which ./install.py follows
+        import subprocess
+        sys.exit(subprocess.call(argv, env=env))
     os.execve(sys.executable, argv, env)
 
 

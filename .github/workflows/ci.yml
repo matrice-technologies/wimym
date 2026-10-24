@@ -1,0 +1,44 @@
+# The engine's tests, then the installer for real: the demo with Robin's month, --stop, and --update from a newer
+# commit. On Windows (where friends run Claude Code natively) and Linux (which covers WSL); the Mac is where Wimym
+# is made, and runs them there.
+name: Engine and installer
+on:
+  push:
+    branches: [main]  # a branch with a pull request is run once, as the pull request
+  pull_request:
+  workflow_dispatch:
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            python: "3.12"
+          - os: ubuntu-latest
+            python: "3.9"  # the oldest Wimym runs on
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # the update test clones this folder
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Engine tests
+        run: python -m unittest discover -s engine/tests -v
+      - name: Install, the demo, --stop and --update
+        run: python .github/smoke.py
+        env:
+          GIT_AUTHOR_NAME: ci
+          GIT_AUTHOR_EMAIL: ci@example.com
+          GIT_COMMITTER_NAME: ci
+          GIT_COMMITTER_EMAIL: ci@example.com
+      - name: The engine's log, when something failed
+        if: failure()
+        shell: bash
+        run: tail -n 80 "$RUNNER_WORKSPACE"/robin-demo/build.log "$RUNNER_WORKSPACE"/robin-demo/engine.log 2>/dev/null || true

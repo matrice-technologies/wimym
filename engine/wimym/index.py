@@ -20,7 +20,7 @@ def transcript_files():
     out = []
     for root in [PROJECTS] + glob.glob(os.path.join(COWORK, "*", "*", "*", ".claude", "projects")):
         out += glob.glob(os.path.join(root, "*", "*.jsonl")) + glob.glob(os.path.join(root, "*", "*", "subagents", "*.jsonl"))
-    return out
+    return [paths.slashed(p) for p in out]  # on Windows C:/Users/…/subagents/…, which the model splits on /
 
 
 def _scan(path):

@@ -18,7 +18,8 @@ from datetime import date, datetime
 TMP = tempfile.mkdtemp(prefix="wimym-tests-")
 os.environ.update(TZ="UTC", CLAUDE_CONFIG_DIR=os.path.join(TMP, "claude"), WIMYM_CACHE=os.path.join(TMP, "cache"),
                   WIMYM_DATA=os.path.join(TMP, "data"))
-time.tzset()
+if hasattr(time, "tzset"):  # not on Windows, whose CI runners keep UTC anyway
+    time.tzset()
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from wimym import scan  # noqa: E402

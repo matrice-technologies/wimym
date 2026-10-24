@@ -14,7 +14,7 @@ from statistics import median
 from . import memory
 from .history import text_of as history_text
 from .labels import FAMILIES, FAMILY_OF, INTENT_NAMES
-from .paths import SCRATCH
+from .paths import fold, scratch, slashed, tilde
 from .text import AUTO_START, BY_SESSION, Speller, lang, not_typed, own_words, pasted, project_of
 
 DAY_START = 5
@@ -41,6 +41,11 @@ def utc(ts):
 
 def local(ts):
     return utc(ts).astimezone()
+
+
+def parent_of(path):
+    """The session a subagent's transcript belongs to: <session>/subagents/<agent>.jsonl, a Windows path too."""
+    return slashed(path).split("/subagents/")[0].rsplit("/", 1)[-1]
 
 
 def day_of(dt):
@@ -205,7 +210,7 @@ class Model:
             return by_sid[sid][i] if i >= 0 else None
         for path, r in records:
             if r.get("sub") and r.get("out"):
-                t = by_pid.get(r.get("pid")) or (r.get("start") and running(path.split("/subagents/")[0].rsplit("/", 1)[-1], r["start"]))
+                t = by_pid.get(r.get("pid")) or (r.get("start") and running(parent_of(path), r["start"]))
                 if t:
                     t["levSub"] += r["out"]
         # the session that started each session
@@ -259,7 +264,7 @@ class Model:
             if r.get("sub"):
                 for sp in (r.get("act") or {}).values():
                     self.sub_spans.extend(sp)
-                parent = path.split("/subagents/")[0].rsplit("/", 1)[-1]
+                parent = parent_of(path)
                 by_file.setdefault(parent, {"subs": 0})["subs"] += 1
                 continue
             for sid, sp in (r.get("act") or {}).items():
@@ -428,8 +433,8 @@ class Model:
                 continue
             if any(abs((at - x).total_seconds()) <= 300 for x in by_text.get(words[:200].strip()) or ()):
                 continue
-            cwd = e.get("cwd") or ""
-            if cwd.startswith(SCRATCH) or "/.matrice-bridge/" in cwd + "/" or "/.massistant-probe" in cwd or "/Library/Logs/" in cwd:
+            cwd = slashed(e.get("cwd") or "")
+            if scratch(cwd) or "/.matrice-bridge/" in cwd + "/" or "/.massistant-probe" in cwd or "/Library/Logs/" in cwd:
                 continue
             if words.startswith(AUTO_START) or (cats.get(e["id"]) or {}).get("ag") or (kind == "prompt" and not_typed(words)):
                 continue
@@ -846,30 +851,35 @@ class Model:
     def _memory(self, records):
         """Your agents' notes about you, each with how often Claude opened it and the message of yours that led to it."""
         ns = memory.notes()
-        reads, first_write = {}, {}
+        reads, first_write, folders = {}, {}, {}
         by_sid = defaultdict(list)
         for m in self.messages:
             by_sid[m["sid"]].append(m)
         for path, r in records:
             stem = os.path.splitext(os.path.basename(path))[0]
-            sid = path.split("/subagents/")[0].rsplit("/", 1)[-1] if r.get("sub") else stem
+            sid = parent_of(path) if r.get("sub") else stem
+            if not r.get("sub") and r.get("cwd"):  # a transcripts folder's project, named as its sessions are
+                folders.setdefault(slashed(path).rsplit("/", 2)[-2], project_of(r["cwd"]))
+            # paths compared whatever their case on Windows: c:\users\Robin\… is the note globbed as C:\Users\robin\…
             for p, ts in (r.get("docs") or {}).get("reads") or []:
                 if "/memory/" in p:
-                    reads[p] = reads.get(p, 0) + 1
+                    reads[fold(p)] = reads.get(fold(p), 0) + 1
             for p, ts in (r.get("docs") or {}).get("writes") or []:
+                p = fold(p)
                 if "/memory/" in p and ts and (p not in first_write or ts < first_write[p][0]):
                     first_write[p] = (ts, sid)
         out = []
         for n in ns:
-            fw = first_write.get(n["path"])
+            # ~/code/app is project "code" in messages, but its folder -Users-x-code-app can't say where the parts split
+            n = dict(n, project=folders.get(n["path"].rsplit("/", 3)[-3]) or n["project"])
+            fw = first_write.get(fold(n["path"]))
             taught = None
             if fw:
                 cands = [m for m in by_sid.get(fw[1], []) if m["ts"] <= fw[0] and m["kind"] == "prompt"]
                 if cands:
                     c = cands[-1]
                     taught = {"id": c["id"], "text": c["text"][:220], "day": c["day"], "intent": c["intent"], "family": c["family"]}
-            n = dict(n)
-            n.update(reads=reads.get(n.pop("path"), 0), written=day_of(local(fw[0])).isoformat() if fw else None, taught=taught)
+            n.update(reads=reads.get(fold(n.pop("path")), 0), written=day_of(local(fw[0])).isoformat() if fw else None, taught=taught)
             out.append(n)
         counts = Counter(n["type"] for n in out)
         self.memory = {"counts": dict(counts), "notes": sorted([n for n in out if n["type"] in ("user", "feedback")], key=lambda n: -n["mtime"]),
@@ -972,13 +982,13 @@ class Model:
         if not t and mid in self.history:
             e = self.history[mid]
             return {"id": mid, "text": e["text"], "own": history_text(e)[0], "reply": None, "files": None, "sid": e["sid"],
-                    "cwd": (e.get("cwd") or "").replace(os.path.expanduser("~"), "~", 1), "title": None, "truncated": False,
+                    "cwd": tilde(e.get("cwd") or ""), "title": None, "truncated": False,
                     "skills": None, "perm": None, "origin": "history"}
         if not t:
             return None
         s = self.sessions.get(t["sid"]) or {}
-        return {"id": mid, "text": t["text"], "own": own_words(t["text"]) if t["kind"] == "prompt" else t["text"], "reply": t.get("reply") or "", "files": [f.replace(os.path.expanduser("~"), "~", 1) for f in t["files"]],
-                "sid": t["sid"], "cwd": (t.get("cwd") or "").replace(os.path.expanduser("~"), "~", 1), "title": s.get("title"),
+        return {"id": mid, "text": t["text"], "own": own_words(t["text"]) if t["kind"] == "prompt" else t["text"], "reply": t.get("reply") or "", "files": [tilde(f) for f in t["files"]],
+                "sid": t["sid"], "cwd": tilde(t.get("cwd") or ""), "title": s.get("title"),
                 "truncated": t["chars"] > len(t["text"]), "skills": t.get("skills") or [], "perm": t.get("perm") or {},
                 "origin": t.get("origin") or "transcript"}
 

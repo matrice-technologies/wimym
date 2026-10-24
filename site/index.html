@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Wimym: Where is your mind?</title>
-<meta name="description" content="Wimym reads your Claude Code transcripts on your own Mac and shows, against your own usual, how your weeks with agents are going for your health and your work. A weekly retro, practices, and nothing sent anywhere.">
+<meta name="description" content="Wimym reads your Claude Code transcripts on your own computer and shows, against your own usual, how your weeks with agents are going for your health and your work. A weekly retro, practices, and nothing sent anywhere.">
 <meta name="theme-color" content="#0d1017">
 <meta name="color-scheme" content="dark">
 <link rel="canonical" href="https://wimym.matricetechnologies.com/">
@@ -12,7 +12,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Wimym">
 <meta property="og:title" content="Where is your mind?">
-<meta property="og:description" content="For people who work with agents on ambitious projects: your attention woven as one thread, vital signs against your own usual, and a weekly retro. It runs on your Mac and sends nothing.">
+<meta property="og:description" content="For people who work with agents on ambitious projects: your attention woven as one thread, vital signs against your own usual, and a weekly retro. It runs on your computer and sends nothing.">
 <meta property="og:url" content="https://wimym.matricetechnologies.com/">
 <meta property="og:image" content="https://wimym.matricetechnologies.com/og.jpg">
 <meta property="og:image:width" content="1200">
@@ -280,9 +280,9 @@ footer p { margin: 0; max-width: 70ch; }
     <div class="wrap words">
       <h1 class="wiym">Where is your mind?</h1>
       <p class="lede">For people who work with agents on ambitious projects, and want to look after their mind while they do it.</p>
-      <p class="sub">Wimym reads your Claude Code transcripts on your own Mac and shows, against your own usual, how your weeks are going for your health and your work. A weekly retro then helps you decide what to change, and the next weeks show whether it held.</p>
+      <p class="sub">Wimym reads your Claude Code transcripts on your own computer and shows, against your own usual, how your weeks are going for your health and your work. A weekly retro then helps you decide what to change, and the next weeks show whether it held.</p>
       <div class="ctas">
-        <a class="glass primary lg" href="#setup">Set it up on your Mac</a>
+        <a class="glass primary lg" href="#setup">Set it up on your computer</a>
         <a class="glass lg" href="#what">See what it shows</a>
       </div>
     </div>
@@ -340,7 +340,7 @@ footer p { margin: 0; max-width: 70ch; }
       <div class="dy-tip" hidden></div>
     </figure>
     <div class="wrap">
-      <p class="loop-end">All of this is already in the transcripts on your Mac. <span>Wimym reads it back to you.</span></p>
+      <p class="loop-end">All of this is already in the transcripts on your computer. <span>Wimym reads it back to you.</span></p>
       <p class="note">It compares you only with your own usual, and diagnoses nothing.</p>
     </div>
   </section>
@@ -450,9 +450,9 @@ footer p { margin: 0; max-width: 70ch; }
       <h2>It stays yours.</h2>
       <p class="intro">Your transcripts hold a working life, with clients, colleagues and sometimes family and health. Wimym is for the person it shows, never for an employer, a team or a vendor.</p>
       <div class="promises">
-        <div><h3>Read where it lies</h3><p>Wimym reads your transcripts, prompt history and git history on your Mac, and sends nothing anywhere itself.</p></div>
+        <div><h3>Read where it lies</h3><p>Wimym reads your transcripts, prompt history and git history on your computer, and sends nothing anywhere itself.</p></div>
         <div><h3>Served only to your machine</h3><p>The page runs on 127.0.0.1, answers only requests addressed to your machine, and takes input only from its own page.</p></div>
-        <div><h3>Claude, through your own login</h3><p>Text leaves your Mac only when you run the labeller or ask through the skills, and then it goes to Claude, through your own <code>claude</code> login. Claude saw it the first time.</p></div>
+        <div><h3>Claude, through your own login</h3><p>Text leaves your computer only when you run the labeller or ask through the skills, and then it goes to Claude, through your own <code>claude</code> login. Claude saw it the first time.</p></div>
         <div><h3>GitHub only if you turn it on</h3><p>Pull requests and reviews are read through your <code>gh</code> login only if you opt in. It is off by default.</p></div>
       </div>
     </div>
@@ -461,10 +461,10 @@ footer p { margin: 0; max-width: 70ch; }
   <section class="block" id="setup">
     <div class="wrap">
       <p class="kicker">Set it up</p>
-      <h2>On your Mac, in a few minutes.</h2>
+      <h2>On your Mac or PC, in a few minutes.</h2>
       <p class="intro">Wimym is young, and built first for one person. If you work with Claude Code most days, it has something to show you.</p>
       <ul class="req" aria-label="Requirements">
-        <li>macOS</li>
+        <li>macOS, or Windows 10 or 11</li>
         <li>Python 3.9 or later</li>
         <li>Node 18 or later</li>
         <li>Claude Code transcripts in <code>~/.claude/projects</code></li>
@@ -472,8 +472,8 @@ footer p { margin: 0; max-width: 70ch; }
 
       <div class="prompt">
         <h3>One prompt, and Claude does the rest</h3>
-        <p>Paste this into Claude Code. It reads the setup guide and walks you through it a step at a time: it says what each step does, and asks you before anything that changes your Mac.</p>
-        <pre><code>Set up Wimym on this Mac for me. Read the guide with curl -fsSL https://wimym.matricetechnologies.com/setup.md and follow it step by step: say what each step does, and ask me before anything that changes my Mac.</code></pre>
+        <p>Paste this into Claude Code. It reads the setup guide and walks you through it a step at a time: it says what each step does, and asks you before anything that changes your computer.</p>
+        <pre><code>Set up Wimym on this computer for me. Read the guide with curl -fsSL https://wimym.matricetechnologies.com/setup.md and follow it step by step: say what each step does, and ask me before anything that changes my computer.</code></pre>
         <p>It backs up <code>~/.claude</code> first, checks Python and Node, gets the code, offers the demo, starts Wimym on your own record, then offers the command, the skills, the limits and the labels. You still need your GitHub account invited to the private repository; Claude checks, and tells you which account to give. The guide it follows: <a href="/setup.md">setup.md</a>.</p>
       </div>
 
@@ -506,7 +506,7 @@ du -sh ~/.claude ~/Backups/claude-*</code></pre>
         <li>
           <h3>Run it on your own record</h3>
           <pre><code>./install.sh</code></pre>
-          <p>It checks Python and Node, builds the page, starts Wimym on <code>http://127.0.0.1:8990</code> and opens it. The first time, it reads every transcript on your Mac and narrates as it goes: a star arrives for each message it finds, and they fall into your planet. A few dozen transcripts take a second or two, months of them about half a minute.</p>
+          <p>It checks Python and Node, builds the page, starts Wimym on <code>http://127.0.0.1:8990</code> and opens it. The first time, it reads every transcript on your computer and narrates as it goes: a star arrives for each message it finds, and they fall into your planet. A few dozen transcripts take a second or two, months of them about half a minute.</p>
           <p>Run it again any time: it only redoes what changed. <code>./install.sh --stop</code> stops it. It writes only in its own folder, in <code>~/.wimym</code> (what you enter: keep it) and in <code>~/.cache/wimym</code>. No sudo.</p>
         </li>
         <li>
@@ -550,6 +550,20 @@ python3 ~/wimym/hooks/limits.py --status</code></pre>
           <pre><code>python3 labeller/label.py --dry-run
 python3 labeller/label.py --all</code></pre>
           <p>Every label says it is a model's reading, and the Labels page shows how far each one has been checked.</p>
+        </li>
+        <li>
+          <h3>On Windows</h3>
+          <p>The same steps in PowerShell, on Windows 10 or 11: <code>.\install.cmd</code> takes every option <code>./install.sh</code> does, and <code>py -3</code> stands for <code>python3</code>. Install what is missing with <code>winget</code>, then open a new terminal:</p>
+          <pre><code>winget install Python.Python.3.12
+winget install OpenJS.NodeJS.LTS
+winget install Git.Git
+Copy-Item -Recurse $HOME\.claude "$HOME\Backups\claude-$(Get-Date -Format yyyy-MM-dd)"
+git clone https://github.com/matrice-technologies/wimym.git $HOME\wimym
+cd $HOME\wimym
+.\install.cmd --demo          <span class="c"># Robin; .\install.cmd --demo --stop after</span>
+.\install.cmd                 <span class="c"># your own record; --stop, --update, --link</span>
+New-Item -ItemType Junction -Path $HOME\.claude\skills\wimym -Target $HOME\wimym\skills\wimym</code></pre>
+          <p>Skills are linked with junctions, which need no administrator rights (and <code>retro</code> the same way). In <code>settings.json</code>, the hooks' command is <code>py -3 C:/Users/you/wimym/hooks/limits.py</code>, and the status line's the same with <code>--status</code>. If you run Claude Code inside WSL, follow the steps above in WSL instead.</p>
         </li>
       </ol>
       </details>

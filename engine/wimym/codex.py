@@ -75,7 +75,7 @@ def scan(path):
             if n == 0:
                 if typ != "session_meta" or p.get("source") != "vscode":
                     return {"skip": "not a session you drove"}
-                r["cwd"], r["ver"] = p.get("cwd"), p.get("cli_version")
+                r["cwd"], r["ver"] = paths.slashed(p.get("cwd")), p.get("cli_version")
                 continue
             if ts:
                 try:
@@ -83,7 +83,7 @@ def scan(path):
                 except ValueError:
                     pass
             if typ == "turn_context":
-                ctx = {"model": p.get("model"), "effort": p.get("effort"), "cwd": p.get("cwd")}
+                ctx = {"model": p.get("model"), "effort": p.get("effort"), "cwd": paths.slashed(p.get("cwd"))}
                 continue
             if typ != "event_msg":
                 continue

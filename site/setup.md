@@ -1,10 +1,11 @@
 # Setting up Wimym: the guide for Claude Code
 
 You are Claude Code, and the person you are working with pasted a prompt asking you to set up Wimym on
-their Mac. This page is that setup, written for you. Read all of it before you start.
+their computer: a Mac, or a Windows 10 or 11 PC. This page is that setup, written for you. Read all of it
+before you start.
 
 Wimym, short for Where is your mind, reads the person's Claude Code transcripts, prompt history and git
-history on their Mac, and shows them, against their own usual, how their weeks are going for their
+history on their computer, and shows them, against their own usual, how their weeks are going for their
 health and their work. It runs a small local engine on 127.0.0.1 and sends nothing of theirs anywhere
 itself. Once a day it asks GitHub whether a newer Wimym is out, with nothing of theirs in the question;
 `{"updates": false}` in `~/.wimym/settings.json` turns that off.
@@ -14,7 +15,7 @@ What it shows: https://wimym.matricetechnologies.com
 
 - **One step at a time, in order.** Before each step, say in one or two sentences what it does and why,
   then do it. Steps marked *optional* are offers: ask, and skip them on anything but a yes.
-- **Ask before anything that changes the Mac outside the Wimym folder**: the backup, installing
+- **Ask before anything that changes the computer outside the Wimym folder**: the backup, installing
   software, linking commands or skills, editing `~/.claude/settings.json`. Running `./install.sh`
   inside the Wimym folder is what they asked for; the steps say where to ask anyway.
 - **Never** use sudo, delete or move anything in `~/.claude`, print or quote the person's transcripts,
@@ -26,9 +27,10 @@ What it shows: https://wimym.matricetechnologies.com
   the person at the end.
 - The person may not be a developer. Plain words; commands only when they help.
 
-Shell commands below assume zsh or bash on macOS. `WIMYM` stands for the Wimym folder (step 3).
+Shell commands below assume zsh or bash on macOS. On Windows, follow the same steps with the commands in
+**On Windows** at the end of this page. `WIMYM` stands for the Wimym folder (step 3).
 
-## 1. Check the Mac
+## 1. Check the computer
 
 Run these and report the results in one short paragraph:
 
@@ -39,7 +41,10 @@ ls -d ~/.claude/projects && find ~/.claude/projects -name '*.jsonl' | wc -l
 df -h ~ | tail -1; du -sh ~/.claude
 ```
 
-- **macOS** is required. On another system, stop and say so: Wimym is built and tested on macOS only.
+- **macOS**, or **Windows 10 or 11** (then use **On Windows** below for every step). Linux, and Claude
+  Code inside WSL on Windows, run the commands here as they are, with the distribution's own packages for
+  Python and Node in place of `brew`; Wimym there reads the transcripts of the Claude Code inside Linux.
+  On anything else, stop and say so.
 - **Python 3.9 or later** runs the engine. **Node 18 or later** builds the page once. If either is
   missing or too old, say so and offer `brew install python` or `brew install node` (if `brew` is
   there; otherwise point to python.org and nodejs.org). Install only on a yes.
@@ -74,7 +79,7 @@ keep everything else as it was, and check the file still parses with
 
 Wimym is shared by invitation, in the private GitHub repository `matrice-technologies/wimym`.
 
-First look for a copy already on the Mac: a folder holding `install.sh`, `bin/wimym` and
+First look for a copy already on the computer: a folder holding `install.sh`, `bin/wimym` and
 `engine/server.py`, such as `~/wimym`. If there is one, that is `WIMYM`: update it with
 `git -C WIMYM pull --ff-only` (if the pull fails because of local changes, say so and leave it).
 
@@ -112,7 +117,7 @@ say they have seen enough, then stop it with `./install.sh --demo --stop`.
 
 This is the step that reads the person's transcripts, so say that plainly before you run it: it reads
 `~/.claude/projects`, `~/.claude/history.jsonl` and the git history of the folders they work in, all on
-this Mac, and writes only inside `WIMYM` (the built page), `~/.wimym` (what they enter later: keep it)
+this computer, and writes only inside `WIMYM` (the built page), `~/.wimym` (what they enter later: keep it)
 and `~/.cache/wimym` (an index it can rebuild).
 
 ```bash
@@ -232,3 +237,54 @@ Give the person a short summary:
 - The retro is the heart of it: once a week, `/retro` (with the skills) or **The week** on the page.
 
 Wimym shows signs and diagnoses nothing; it is not a clinical tool.
+
+## On Windows
+
+Wimym runs natively on Windows 10 and 11, where Claude Code keeps its transcripts in
+`%USERPROFILE%\.claude\projects`. The steps are the same; these are their commands, for PowerShell. If your
+shell is Git Bash, run each one with `powershell -NoProfile -Command "…"`. `install.cmd` takes every
+option `./install.sh` does. After installing anything with `winget`, open a new terminal (or start a new
+Claude Code session) so the PATH has it.
+
+1. **Check the computer.**
+
+   ```powershell
+   [Environment]::OSVersion.VersionString
+   py -3 -V; node -v; npm -v; git --version; gh --version
+   (Get-ChildItem $HOME\.claude\projects -Recurse -Filter *.jsonl -ErrorAction SilentlyContinue).Count
+   Get-PSDrive ($HOME.Substring(0, 1)) | Select-Object Used, Free
+   "{0:N0} MB" -f ((Get-ChildItem $HOME\.claude -Recurse -File | Measure-Object Length -Sum).Sum / 1MB)
+   ```
+
+   Offer what is missing, on a yes: `winget install Python.Python.3.12`, `winget install OpenJS.NodeJS.LTS`,
+   `winget install Git.Git`, and `winget install GitHub.cli` for step 3. `python3` on Windows is often a
+   shortcut to the Microsoft Store, not Python: use `py -3`.
+2. **Back up.** `Copy-Item -Recurse $HOME\.claude "$HOME\Backups\claude-$(Get-Date -Format yyyy-MM-dd)"`,
+   then compare the sizes as in step 1. The settings file is `$HOME\.claude\settings.json`; check it with
+   `py -3 -m json.tool $HOME\.claude\settings.json > $null`.
+3. **Get the code.** `git clone https://github.com/matrice-technologies/wimym.git $HOME\wimym`. Git for
+   Windows may open a browser window to sign in to GitHub: that sign-in is the person's to do.
+4. **The demo.** `cd $HOME\wimym; .\install.cmd --demo`, and `.\install.cmd --demo --stop` after.
+5. **Their own record.** `cd $HOME\wimym; .\install.cmd --no-link`. Check it with
+   `curl.exe -s http://127.0.0.1:8990/api/state` (`curl.exe`: plain `curl` is something else in PowerShell).
+6. **The wimym command.** `.\install.cmd --link --no-open` puts `wimym.cmd` in `$HOME\.local\bin`. If that
+   folder is not on the PATH, the installer prints the one PowerShell line that adds it; run it on a yes,
+   then `wimym week` works in a new terminal.
+7. **The skills.** Links to folders need administrator rights on Windows, so use junctions, which don't:
+
+   ```powershell
+   New-Item -ItemType Directory -Force $HOME\.claude\skills | Out-Null
+   New-Item -ItemType Junction -Path $HOME\.claude\skills\wimym -Target $HOME\wimym\skills\wimym
+   New-Item -ItemType Junction -Path $HOME\.claude\skills\retro -Target $HOME\wimym\skills\retro
+   ```
+
+8. **Limits.** `py -3 $HOME\wimym\hooks\limits.py --check` and `--status`. In `settings.json`, the commands
+   are `py -3` and the full path with forward slashes, which every shell Claude Code uses on Windows reads
+   the same: `"command": "py -3 C:/Users/NAME/wimym/hooks/limits.py"` for the two hooks, and
+   `"statusLine": { "type": "command", "command": "py -3 C:/Users/NAME/wimym/hooks/limits.py --status" }`.
+9. **Labels.** `py -3 labeller\label.py --dry-run`, then `--all`. The labeller has not been tried on Windows
+   yet: if it fails, stop and say so.
+10. **Day to day.** `cd $HOME\wimym; .\install.cmd` starts it again after a restart, `.\install.cmd --stop`
+    stops it, `.\install.cmd --update` updates it. Undo a junction with
+    `cmd /c rmdir "$HOME\.claude\skills\wimym"`, which removes only the junction. Never `Remove-Item` on it:
+    in Windows PowerShell 5 that can delete what is inside the folder it points to.

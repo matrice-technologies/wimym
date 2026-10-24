@@ -18,7 +18,6 @@ log.jsonl       one line per entry: {"at", "kind": finding|retro|practice|limit|
 Nothing here is written without the person asking for it: the CLI and the skills call these
 functions only after the person's yes.
 """
-import fcntl
 import json
 import os
 import re
@@ -28,10 +27,31 @@ from datetime import date, datetime
 from . import paths
 from .paths import DATA_DIR
 
+try:
+    import fcntl
+except ImportError:  # Windows, which locks with msvcrt
+    fcntl = None
+    import msvcrt
+
+
+def _flock(f, on):
+    if fcntl:
+        fcntl.flock(f, fcntl.LOCK_EX if on else fcntl.LOCK_UN)
+        return
+    f.seek(0)  # msvcrt locks bytes from where the file is: always the first one
+    while True:
+        try:
+            msvcrt.locking(f.fileno(), msvcrt.LK_LOCK if on else msvcrt.LK_UNLCK, 1)
+            return
+        except OSError:
+            if not on:
+                raise  # LK_LOCK gives up after ten tries a second apart: another writer is slow, keep waiting
+
+
 class _Lock:
     """One writer at a time across threads and processes (the engine's server and the CLI): a reentrant thread
-    lock plus an flock on <data dir>/.practices.lock, held from the first acquire to the last release. store.py
-    takes it too (`with practices._lock:`) when it writes priorities into limits.json."""
+    lock plus an flock (msvcrt.locking on Windows) on <data dir>/.practices.lock, held from the first acquire to the
+    last release. store.py takes it too (`with practices._lock:`) when it writes priorities into limits.json."""
 
     def __init__(self):
         self._t = threading.RLock()
@@ -43,14 +63,14 @@ class _Lock:
         if self._depth == 0:
             os.makedirs(DATA_DIR, exist_ok=True)
             self._f = open(os.path.join(DATA_DIR, ".practices.lock"), "a")
-            fcntl.flock(self._f, fcntl.LOCK_EX)
+            _flock(self._f, True)
         self._depth += 1
         return self
 
     def __exit__(self, *exc):
         self._depth -= 1
         if self._depth == 0:
-            fcntl.flock(self._f, fcntl.LOCK_UN)
+            _flock(self._f, False)
             self._f.close()
             self._f = None
         self._t.release()

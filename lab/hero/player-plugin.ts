@@ -3,8 +3,8 @@
 // esbuild, so the lab needs no node_modules for the app to build.
 type Build = (o: never) => Promise<{ outputFiles?: { text: string }[]; metafile?: { inputs: Record<string, unknown> } }>;
 const ID = "virtual:postcard-player", RESOLVED = "\0" + ID;
-// paths from file URLs without node's types, which the lab's tsconfig doesn't load
-const path = (u: URL) => decodeURIComponent(u.pathname);
+// paths from file URLs without node's types, which the lab's tsconfig doesn't load; on Windows file:///D:/a/x is D:/a/x
+const path = (u: URL) => decodeURIComponent(u.pathname).replace(/^\/([A-Za-z]:)/, "$1");
 const LAB = new URL("../", import.meta.url), ENTRY = path(new URL("./postcard-player.ts", import.meta.url));
 
 export function postcardPlayer(build: Build) {
