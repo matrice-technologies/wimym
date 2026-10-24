@@ -4,6 +4,7 @@
 name: Engine and installer
 on:
   push:
+    branches: [main]  # a branch with a pull request is run once, as the pull request
   pull_request:
   workflow_dispatch:
 jobs:

@@ -720,11 +720,11 @@ def build(path=DB):
                         ("turns", "sid"), ("labels", "id"), ("vitals", "measure, grain, period"), ("sessions", "sid"), ("days", "day")):
             c.execute(f"create index ix_{t}_{cols.split(',')[0].strip()} on {t} ({cols})")
         c.commit()
+        c.close()
+        paths.replace(tmp, path)  # on Windows, waits a moment for a `wimym` reading the old file
     except BaseException:
         c.close()
         if os.path.exists(tmp):
             os.remove(tmp)
         raise
-    c.close()
-    os.replace(tmp, path)
     return len(msgs)

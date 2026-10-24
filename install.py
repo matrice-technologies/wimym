@@ -214,22 +214,22 @@ def update(argv):
 def news(before):
     """What landed on main since before, a line each: a pull request by its title, a merge by its sentence without
     the branch, an old "Wimym as of …" copy by the lines it listed; merges of main into a branch are nothing to tell."""
-    out = []
+    said = []
     for entry in (git("log", "--first-parent", "--format=%x1e%s%x1f%b", f"{before}..HEAD") or "").split("\x1e"):
         if not entry.strip():
             continue
         s, _, body = entry.partition("\x1f")
         lines = body.split("\n")
         if s.startswith("Wimym as of "):
-            out += ["  " + line for line in lines if line.startswith("- ")]
+            said += ["  " + line for line in lines if line.startswith("- ")]
             continue
         if s.startswith("Merge pull request "):
             s = next((line for line in lines if line), s)
         if re.match(r"Merge (branch|remote-tracking branch) ", s):
             continue
         s = re.sub(r" \(#\d+\)$", "", re.sub(r" \([^() ]*/[^() ]*\)$", "", re.sub(r"^Merge ", "", s)))
-        out.append("  - " + s[:1].upper() + s[1:])
-    return out[:30] or ["  - Small fixes."]
+        said.append("  - " + s[:1].upper() + s[1:])
+    return said[:30] or ["  - Small fixes."]
 
 
 # --- the page: built when it's missing or older than its sources (needs Node.js 18 or later)

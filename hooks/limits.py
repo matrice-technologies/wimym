@@ -151,7 +151,7 @@ def main():
         tmp = paths.tmp_name(state_path)
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump(state, f)
-        os.replace(tmp, state_path)
+        paths.replace(tmp, state_path)  # on Windows, waits a moment for another session's hook
     except OSError:
         pass
     print(json.dumps({"hookSpecificOutput": {"hookEventName": event.get("hook_event_name") or "UserPromptSubmit",

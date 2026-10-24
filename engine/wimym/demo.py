@@ -583,7 +583,8 @@ class Writer:
 
 
 def folder_name(path):
-    """Claude Code's name for a working folder's transcripts folder, on a Mac or Windows (memory.folder_name)."""
+    """Claude Code's name for a working folder's transcripts folder, on a Mac or Windows. The same as
+    memory.folder_name, kept here so this file runs on its own (python3 engine/wimym/demo.py <folder>)."""
     return re.sub(r"[^A-Za-z0-9]", "-", path)
 
 

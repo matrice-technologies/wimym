@@ -14,7 +14,7 @@ from statistics import median
 from . import memory
 from .history import text_of as history_text
 from .labels import FAMILIES, FAMILY_OF, INTENT_NAMES
-from .paths import scratch, slashed, tilde
+from .paths import fold, scratch, slashed, tilde
 from .text import AUTO_START, BY_SESSION, Speller, lang, not_typed, own_words, pasted, project_of
 
 DAY_START = 5
@@ -851,30 +851,35 @@ class Model:
     def _memory(self, records):
         """Your agents' notes about you, each with how often Claude opened it and the message of yours that led to it."""
         ns = memory.notes()
-        reads, first_write = {}, {}
+        reads, first_write, folders = {}, {}, {}
         by_sid = defaultdict(list)
         for m in self.messages:
             by_sid[m["sid"]].append(m)
         for path, r in records:
             stem = os.path.splitext(os.path.basename(path))[0]
             sid = parent_of(path) if r.get("sub") else stem
+            if not r.get("sub") and r.get("cwd"):  # a transcripts folder's project, named as its sessions are
+                folders.setdefault(slashed(path).rsplit("/", 2)[-2], project_of(r["cwd"]))
+            # paths compared whatever their case on Windows: c:\users\Robin\… is the note globbed as C:\Users\robin\…
             for p, ts in (r.get("docs") or {}).get("reads") or []:
                 if "/memory/" in p:
-                    reads[p] = reads.get(p, 0) + 1
+                    reads[fold(p)] = reads.get(fold(p), 0) + 1
             for p, ts in (r.get("docs") or {}).get("writes") or []:
+                p = fold(p)
                 if "/memory/" in p and ts and (p not in first_write or ts < first_write[p][0]):
                     first_write[p] = (ts, sid)
         out = []
         for n in ns:
-            fw = first_write.get(n["path"])
+            # ~/code/app is project "code" in messages, but its folder -Users-x-code-app can't say where the parts split
+            n = dict(n, project=folders.get(n["path"].rsplit("/", 3)[-3]) or n["project"])
+            fw = first_write.get(fold(n["path"]))
             taught = None
             if fw:
                 cands = [m for m in by_sid.get(fw[1], []) if m["ts"] <= fw[0] and m["kind"] == "prompt"]
                 if cands:
                     c = cands[-1]
                     taught = {"id": c["id"], "text": c["text"][:220], "day": c["day"], "intent": c["intent"], "family": c["family"]}
-            n = dict(n)
-            n.update(reads=reads.get(n.pop("path"), 0), written=day_of(local(fw[0])).isoformat() if fw else None, taught=taught)
+            n.update(reads=reads.get(fold(n.pop("path")), 0), written=day_of(local(fw[0])).isoformat() if fw else None, taught=taught)
             out.append(n)
         counts = Counter(n["type"] for n in out)
         self.memory = {"counts": dict(counts), "notes": sorted([n for n in out if n["type"] in ("user", "feedback")], key=lambda n: -n["mtime"]),

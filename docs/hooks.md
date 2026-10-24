@@ -35,13 +35,13 @@ entries under `hooks`, and swap `statusLine` only if you want Wimym's in place o
 {
   "hooks": {
     "SessionStart": [
-      { "hooks": [{ "type": "command", "command": "python3 ~/mirror/hooks/limits.py", "timeout": 5 }] }
+      { "hooks": [{ "type": "command", "command": "python3 ~/wimym/hooks/limits.py", "timeout": 5 }] }
     ],
     "UserPromptSubmit": [
-      { "hooks": [{ "type": "command", "command": "python3 ~/mirror/hooks/limits.py", "timeout": 5 }] }
+      { "hooks": [{ "type": "command", "command": "python3 ~/wimym/hooks/limits.py", "timeout": 5 }] }
     ]
   },
-  "statusLine": { "type": "command", "command": "~/mirror/hooks/statusline.sh" }
+  "statusLine": { "type": "command", "command": "~/wimym/hooks/statusline.sh" }
 }
 ```
 
@@ -50,5 +50,5 @@ shell Claude Code runs there reads the same way; the status line is the hook wit
 `"command": "py -3 C:/Users/robin/wimym/hooks/limits.py"`, and
 `"statusLine": { "type": "command", "command": "py -3 C:/Users/robin/wimym/hooks/limits.py --status" }`.
 
-The paths assume the code is merged into `~/mirror`. To turn them off, remove the entries. Set your limits
+The paths assume Wimym is cloned into `~/wimym`; write your own folder in its place. To turn them off, remove the entries. Set your limits
 with `wimym limits set stopHour 21.5` (the CLI) or on the app's limits page; they live in `~/.wimym/limits.json`.

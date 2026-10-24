@@ -196,7 +196,7 @@ def _write_pulse(p):
         tmp = paths.tmp_name(dest)
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump(p, f, separators=(",", ":"))
-        os.replace(tmp, dest)
+        paths.replace(tmp, dest)  # on Windows, waits a moment for the status line reading it
     except OSError:
         pass
 

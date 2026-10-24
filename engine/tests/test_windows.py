@@ -51,6 +51,12 @@ class Paths(unittest.TestCase):
         self.assertEqual(paths.under("/Users/robin/loom", "/Users/robin"), "loom")
         self.assertIsNone(paths.under("/Users/Robin/loom", "/Users/robin"))  # a Mac's paths: compared as they are
 
+    def test_fold(self):
+        self.assertEqual(paths.fold("c:\\Users\\Robin\\.claude\\x.md"), paths.fold("C:\\Users\\robin\\.claude\\x.md"))
+        self.assertEqual(paths.fold("C:\\Users\\Robin"), "c:/users/robin")
+        self.assertEqual(paths.fold("/Users/Robin/x.md"), "/Users/Robin/x.md")  # a Mac's path: its case counts
+        self.assertEqual(paths.fold(None), "")
+
     def test_tilde(self):
         with mock.patch.object(paths, "HOME", ROBIN):
             self.assertEqual(paths.tilde("C:\\Users\\robin\\loom\\a.py"), "~/loom/a.py")

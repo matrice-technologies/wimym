@@ -31,6 +31,12 @@ def slashed(p):
     return p
 
 
+def fold(p):
+    """A path as compared with another: slashed, and lower-cased when it is a Windows path, whose case doesn't count."""
+    p = slashed(p or "")
+    return p.lower() if _DRIVE.match(p) else p
+
+
 def under(p, root):
     """What follows root in p ("" when p is root), or None when p isn't inside root. Both are read slashed, and a
     Windows path whatever its case (c:/users/Robin is in C:/Users/robin there)."""
@@ -97,11 +103,16 @@ def alive(pid):
     """Whether a process with this id runs. Never os.kill(pid, 0) on Windows: there it ends the process."""
     if WINDOWS:
         import ctypes
+        from ctypes import wintypes
         k = ctypes.windll.kernel32
+        # a HANDLE is 64 bits there: ctypes would otherwise read it as a 32-bit int
+        k.OpenProcess.restype, k.OpenProcess.argtypes = wintypes.HANDLE, [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+        k.GetExitCodeProcess.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD)]
+        k.CloseHandle.argtypes = [wintypes.HANDLE]
         h = k.OpenProcess(0x1000, False, int(pid))  # PROCESS_QUERY_LIMITED_INFORMATION
         if not h:
             return False
-        code = ctypes.c_ulong()
+        code = wintypes.DWORD()
         ok = k.GetExitCodeProcess(h, ctypes.byref(code))
         k.CloseHandle(h)
         return bool(ok) and code.value == 259  # STILL_ACTIVE
