@@ -186,14 +186,14 @@ export function mountDay(el: HTMLElement, r: RobinFile) {
     if (head > xs) {
       const ng = g.createLinearGradient(xs, 0, Math.min(head, X(h1)), 0);
       ng.addColorStop(0, "rgba(141,143,245,0.05)"); ng.addColorStop(1, "rgba(141,143,245,0.13)");
-      g.fillStyle = ng; g.beginPath(); g.roundRect(xs, yA, Math.min(head, X(h1)) - xs, yB - yA, 8); g.fill();
+      g.fillStyle = ng; g.beginPath(); g.rect(xs, yA, Math.min(head, X(h1)) - xs, yB - yA); g.fill();
     }
     // the hours along the foot
-    g.font = "500 11px 'Instrument Sans Variable', system-ui, sans-serif"; g.textAlign = "center"; g.textBaseline = "alphabetic";
+    g.font = "400 11px 'JetBrains Mono Variable', ui-monospace, monospace"; g.textAlign = "center"; g.textBaseline = "alphabetic";
     const step = x1 - x0 < 700 ? 3 : x1 - x0 < 1000 ? 2 : 1;
     for (let h = h0; h <= h1; h += step) {
-      g.fillStyle = "rgba(125,134,152,0.55)"; g.fillText(String(h % 24).padStart(2, "0"), X(h), yB + 22);
-      g.fillStyle = "rgba(49,59,80,0.45)"; g.fillRect(X(h) - 0.5, yA, 1, yB - yA);
+      g.fillStyle = "rgba(180,180,180,0.55)"; g.fillText(String(h % 24).padStart(2, "0"), X(h), yB + 22);
+      g.fillStyle = "rgba(255,255,255,0.07)"; g.fillRect(X(h) - 0.5, yA, 1, yB - yA);
     }
     // the stopping hour
     g.strokeStyle = now >= STOP ? "rgba(240,160,80,0.95)" : "rgba(240,160,80,0.4)"; g.lineWidth = 1.5; g.setLineDash([3, 4]);

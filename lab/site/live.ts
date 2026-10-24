@@ -20,8 +20,9 @@ function mountLoom(hero: HTMLElement, box: HTMLElement, r: RobinFile) {
   const labels = document.createElement("div"), tip = document.createElement("div");
   labels.className = "lm-labels"; labels.setAttribute("aria-hidden", "true"); tip.className = "lm-tip"; tip.hidden = true;
   box.append(canvas, labels, tip);
-  // loomHero's, with the loom kept to the right of the page's words: they end about half way across
-  const p = new Strum(canvas, mindFrom(messages, days, () => false), DARK, false, still,
+  // loomHero's, with the loom kept to the right of the page's words: they end about half way across. On the page's
+  // ground, Matrice's neutral dark (site/index.html, .dark), so the names' halos melt into it.
+  const p = new Strum(canvas, mindFrom(messages, days, () => false), { ...DARK, ground: "#0a0a0a", deep: "#000000" }, false, still,
     { mass: true, colour: "type", keys: false, caption: false, wheel: false, intro: true, clear: 0.47 });
 
   const size = () => { const b = box.getBoundingClientRect(); if (b.width && b.height) p.resize(b.width, b.height, Math.min(devicePixelRatio || 1, 2)); };

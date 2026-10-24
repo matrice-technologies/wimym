@@ -1,7 +1,8 @@
 # The public page
 
-wimym.matricetechnologies.com: what Wimym does and how to set it up. Static: `index.html`, the app's fonts
-and tokens, and `media/`, every image and video captured from the demo person (Robin Vale,
+wimym.matricetechnologies.com: what Wimym does and how to set it up. Static: `index.html`, in Matrice's
+design language (matrice-website-v2's tokens, fonts and components, ported to plain CSS), and `media/`, every image
+and video captured from the demo person (Robin Vale,
 `./install.sh --demo`), never from real data: the screenshots at 2x from a 1440 by 900 window, and the postcard films
 (`postcard-tall.mp4`, `postcard-wide.mp4`) saved with the app's own Save a postcard. The social image `og.jpg` is the
 wide postcard's first frame. Point `WIMYM_DEMO` at a short path (`~/.cache/...`) when capturing: under a long
