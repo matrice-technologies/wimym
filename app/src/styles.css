@@ -1,4 +1,4 @@
-/* Wimym (Where is your mind), in Matrice's design language (matrice-website-v2, app/globals.css; site/index.html
+/* Wimym (Where is your mind), in Matrice's design language, dark only (matrice-website-v2, app/globals.css; site/index.html
    ports the same to plain CSS). Time is the spine: rings, scores, streams. Quiet chrome, loud data.
    Seven families of what you ask for, one color each, everywhere (palette validated on the dark ground). */
 /* the postcard draws its words in these (lab/hero/postcard.ts); the browser fetches them only when it does */
@@ -14,41 +14,22 @@
   src: url(./fonts/jetbrains-mono-latin-wght-normal.woff2) format("woff2-variations");
 }
 
-/* Matrice's tokens. .light and .dark also mark a band in the other theme: the drawn pieces (the Loom, the spiral,
-   the week's form, the rings, the strata) are drawn for the dark, so they sit in dark bands whatever the page's
-   theme, the way Matrice's own drawn heroes do. */
-:root, .light {
-  color-scheme: light;
-  --background: oklch(1 0 0); --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0); --primary: oklch(0.205 0 0); --primary-foreground: oklch(0.985 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --border: oklch(0.922 0 0); --input: oklch(0.922 0 0); --ring: oklch(0.708 0 0);
-  --brand: oklch(0.47 0.26 265);
-  /* late, or suspect: Matrice's amber */
-  --stale: oklch(0.6 0.16 55);
-  /* Wimym's own steps between those: v2's muted (a surface, here --raised), a second ink, a fainter one, a firmer
-     line, and the frame's hairline drawn opaque, so where two meet it stays one line */
-  --raised: oklch(0.97 0 0); --ink-2: oklch(0.37 0 0); --faint: oklch(0.72 0 0); --line-2: oklch(0.87 0 0);
-  --frame: var(--border);
-  --shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 14px 34px -14px rgba(0, 0, 0, .22);
-  /* the week's neutrals, for the charts that sit on the light page: work, the usual day, the person's range */
-  --work: oklch(0.36 0.02 265); --usual: oklch(0.94 0.005 265); --band: oklch(0.145 0 0 / 6%); --bandmid: oklch(0.145 0 0 / 24%);
-}
-.dark {
+/* Matrice's tokens, dark: Wimym has only the dark theme. */
+:root {
   color-scheme: dark;
   --background: oklch(0.145 0 0); --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0); --primary: oklch(0.922 0 0); --primary-foreground: oklch(0.205 0 0);
   --muted-foreground: oklch(0.708 0 0);
   --border: oklch(1 0 0 / 10%); --input: oklch(1 0 0 / 15%); --ring: oklch(0.556 0 0);
   --brand: oklch(0.72 0.16 265);
+  /* late, or suspect: Matrice's amber */
   --stale: oklch(0.76 0.14 65);
+  /* Wimym's own steps between those: v2's muted (a surface, here --raised), a second ink, a fainter one, a firmer
+     line, and the frame's hairline drawn opaque, so where two meet it stays one line */
   --raised: oklch(0.215 0 0); --ink-2: oklch(0.84 0 0); --faint: oklch(0.5 0 0); --line-2: oklch(1 0 0 / 17%);
   --frame: oklch(0.235 0 0);
   --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 30px rgba(0, 0, 0, .35);
-  --work: #dde4f2; --usual: #161c29; --band: rgba(221, 228, 242, .08); --bandmid: rgba(221, 228, 242, .2);
-}
-/* the names the pages were written with, set again wherever a theme is, so a band takes its own theme's values */
-:root, .light, .dark {
+  /* the names the pages were written with */
   --ground: var(--background); --surface: var(--background); --sunk: color-mix(in oklch, var(--foreground) 4%, var(--background));
   --ink: var(--foreground); --muted: var(--muted-foreground); --line: var(--border);
   --focus: var(--brand); --glow: color-mix(in oklch, var(--brand) 18%, transparent);
@@ -57,8 +38,8 @@
   --f-ask: #3987e5; --f-steer: #d95926; --f-make: #199e70; --f-approve: #c98500;
   --f-run: #d55181; --f-ship: #008300; --f-think: #9085e9; --f-none: #3a4357;
   --up: #0ca30c; --down: #e66767;
-  /* the week: nights, time past the usual stop */
-  --night: #8d8ff5; --late: #f0a050;
+  /* the week: work, nights, the usual day, time past the usual stop, the person's range */
+  --work: #dde4f2; --night: #8d8ff5; --usual: #161c29; --late: #f0a050; --band: rgba(221, 228, 242, .08); --bandmid: rgba(221, 228, 242, .2);
   --flag: #eba05a;
 
   --font-sans: "Geist Variable", -apple-system, "Segoe UI", system-ui, sans-serif;
@@ -85,17 +66,13 @@ a { color: inherit; text-underline-offset: 3px; }
 :focus-visible { outline: 2px solid color-mix(in oklch, var(--ring) 70%, transparent); outline-offset: 2px; }
 ::selection { background: color-mix(in oklch, var(--brand) 30%, transparent); }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
-.switching * { transition: none !important; }
-/* a band in its own theme, painted as one */
-.band { background: var(--background); color: var(--foreground); }
 
 /* ---------- the small pieces of Matrice's language ---------- */
 /* the small blue badge that names a section */
 .eyebrow, .kicker {
   display: inline-flex; width: fit-content; align-items: center; gap: 6px; margin: 0 0 16px; padding: 2px 8px; border-radius: 6px;
-  font: 500 14px/20px var(--font-sans); color: var(--brand); background: color-mix(in oklch, var(--brand) 10%, transparent);
+  font: 500 14px/20px var(--font-sans); color: var(--brand); background: color-mix(in oklch, var(--brand) 15%, transparent);
 }
-.dark .eyebrow, .dark .kicker { background: color-mix(in oklch, var(--brand) 15%, transparent); }
 /* a label strip: ✦ the name, // a count */
 .label-strip {
   display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0;
@@ -136,10 +113,6 @@ a { color: inherit; text-underline-offset: 3px; }
 .rail .upgrade code { font-family: var(--font-heading); font-size: 11px; word-break: break-all; }
 .rail .upgrade button span { flex: none; font: 400 10.5px/1 var(--font-heading); letter-spacing: .08em; text-transform: uppercase; color: var(--muted-foreground); }
 .rail .upgrade button:hover span { color: var(--ink); }
-/* Matrice's line at the foot: D switches the theme, and so does a click */
-.themesw { width: fit-content; padding: 0; border: 0; background: none; cursor: pointer; font: 400 10.5px/1.4 var(--font-heading); letter-spacing: .14em; text-transform: uppercase; color: var(--muted-foreground); }
-.themesw:hover { color: var(--foreground); }
-.themesw.short { display: none; }
 
 /* the page: one bordered column, the gutters beside it hatched. A container, so a piece can reach the page's full
    width (cqw) from inside its column. */
@@ -164,7 +137,6 @@ main.page { --pad: clamp(20px, 4vw, 56px); min-width: 0; min-height: 100vh; cont
   .rail a.nav svg { display: none; }
   .rail-h { display: none; }
   .rail .foot { display: none; }
-  .themesw.short { display: block; flex: none; padding: 0 16px; white-space: nowrap; }
   main.page { --pad: 16px; background-image: none; }
   .wrap { padding: 24px var(--pad) 72px; box-shadow: none; }
 }
@@ -240,7 +212,7 @@ table.t tr:last-child td { border-bottom: 0; }
 .scroll-x { overflow-x: auto; }
 
 /* ---------- portrait ---------- */
-/* the portrait's rings and their words: a band at the top of the column, dark whatever the page */
+/* the portrait's rings and their words: a band at the top of the column */
 .hero { display: grid; grid-template-columns: minmax(300px, 440px) minmax(0, 1fr); gap: clamp(24px, 4vw, 56px); align-items: center; min-height: min(86vh, 860px);
   margin: -40px calc(-1 * var(--pad)) 0; padding: 40px var(--pad); border-bottom: 1px solid var(--border); }
 .hero-art { min-width: 0; }
@@ -807,7 +779,7 @@ a.vsb:hover { background: var(--raised); }
 .pl-next { display: inline-flex; align-items: center; height: 40px; margin-top: 20px; padding: 0 16px; color: var(--foreground); background: var(--background); text-decoration: none; border: 1px solid color-mix(in oklch, var(--foreground) 70%, transparent); font: 500 13px/1 var(--font-heading); letter-spacing: .06em; text-transform: uppercase; transition: background-color .15s, color .15s; animation: fade 1s ease 1.6s both; }
 .pl-next:hover { background: var(--foreground); color: var(--background); }
 .pl-caption { position: absolute; left: clamp(20px, 4vw, 56px); bottom: 22px; margin: 0; max-width: 46ch; text-align: left; font-size: var(--t-xs); color: var(--muted); animation: fade 1s ease 3s both; }
-/* the spiral and its words: a band across the column, dark whatever the page */
+/* the spiral and its words: a band across the column */
 .hw { margin: 0 calc(-1 * var(--pad)); padding: 56px var(--pad); scroll-margin-top: 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 .hw-title { margin-bottom: 6px; }
 @media (max-width: 1100px) {

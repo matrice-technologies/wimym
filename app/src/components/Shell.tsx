@@ -6,7 +6,6 @@ import Empty from "./Empty";
 import { Mark } from "./Loading";
 import Postcard from "./Postcard";
 import { setShare, shareOn } from "../lib/share";
-import { flipTheme, useTheme } from "../lib/theme";
 
 const P = { width: 18, height: 18, viewBox: "0 0 18 18", fill: "none", stroke: "currentColor", strokeWidth: 1.5, "aria-hidden": true } as const;
 const I = {
@@ -45,7 +44,6 @@ export default function Shell() {
     document.title = name ? `${name}, Wimym` : "Wimym";
   }, [loc.pathname]);
   const busy = !!state && state.phase !== "ready" && state.phase !== "error";
-  const other = useTheme() === "dark" ? "light" : "dark";
   return (
     <div className="shell">
       <nav className="rail" aria-label="Pages">
@@ -64,7 +62,6 @@ export default function Shell() {
             <NavLink key={to} to={to} className={({ isActive }) => "nav sub" + (isActive ? " active" : "")}>{label}</NavLink>
           ))}
         </div>
-        <button className="themesw short" onClick={flipTheme}>{other === "light" ? "Light" : "Dark"}</button>
         <div className="foot">
           {update?.restart ? <Upgrade say="Wimym's code changed since it started. To run the new code:" command={update.restartCommand} />
             : update?.available ? <Upgrade say="A new version of Wimym is out. To get it, in a terminal:" command={update.command} /> : null}
@@ -74,7 +71,6 @@ export default function Shell() {
             <i aria-hidden="true" />Share mode
           </button>
           <Postcard compact />
-          <button className="themesw" onClick={flipTheme}>Press D for {other} mode</button>
         </div>
       </nav>
       <main className="page">{empty ? <Empty title={loc.pathname === "/" ? "Where is your mind?" : undefined} /> : <Outlet />}</main>

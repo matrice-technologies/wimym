@@ -69,7 +69,7 @@ export default function WeekRetro() {
   return (
     <div className="wrap retro">
       {/* the week's form: one living shape moved by its signs (lab/hero); it stays mounted and morphs between weeks */}
-      <section className="wform band dark" aria-label="This week's signs, as one form">
+      <section className="wform" aria-label="This week's signs, as one form">
         <div className="wf-stage">
           <Suspense fallback={null}>
             <WeekForm week={wk as unknown as WeekPayload} vitals={vitals && vitals !== "absent" ? vitals : undefined} share={shareOn}

@@ -1,24 +1,12 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/wimym.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="color-scheme" content="dark light" />
+    <meta name="color-scheme" content="dark" />
     <meta name="theme-color" content="#0a0a0a" />
     <title>Wimym</title>
-    <script>
-      // Matrice's theme rule (src/lib/theme.ts): dark on a first visit, else the one chosen with D. Set before the
-      // first paint, so the page never flashes the other one.
-      (() => {
-        let t = null;
-        try { t = localStorage.getItem("theme"); } catch {}
-        if (t === "light") {
-          document.documentElement.className = "light";
-          document.querySelector('meta[name="theme-color"]').content = "#ffffff";
-        }
-      })();
-    </script>
   </head>
   <body>
     <div id="root"></div>

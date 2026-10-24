@@ -77,7 +77,7 @@ export default function Portrait() {
       <section className="block">
         <header><div><h2 className="section">The projects of your weeks</h2>
           <p className="sub" style={{ margin: 0 }}>Your messages each week, layered by project. Hover a layer to follow one project.</p></div></header>
-        <div className="panel band dark"><Strata projects={core.projects} weeks={core.weeks.map(w => w.week)} eras={p.eras} /></div>
+        <div className="panel"><Strata projects={core.projects} weeks={core.weeks.map(w => w.week)} eras={p.eras} /></div>
       </section>
       <Moments p={p} />
     </div>
@@ -87,7 +87,7 @@ export default function Portrait() {
 function Hero({ p, t, focus, setFocus, hover, children }: { p: Profile; t: Record<string, number>; focus: Family | null; setFocus: (f: Family | null) => void; hover: Day | null; children: React.ReactNode }) {
   const line = useMemo(() => portraitLine(p), [p]);
   return (
-    <section className="hero band dark">
+    <section className="hero">
       <div className="hero-text">
         <p className="kicker">{fmtDay(p.since, { day: "numeric", month: "long" })} to {fmtDay(p.until, { day: "numeric", month: "long" })}: {t.days} days with Claude</p>
         <h1 className="title">{line}</h1>

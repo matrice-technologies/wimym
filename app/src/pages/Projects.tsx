@@ -29,7 +29,7 @@ export default function Projects() {
       <h1 className="title">Projects</h1>
       <p className="lede">{core.projects.length} projects since {fmtDay(core.profile.since, { day: "numeric", month: "long" })}. The top five hold {Math.round((100 * d3.sum(core.projects.slice(0, 5), p => p.n)) / d3.sum(core.projects, p => p.n))}% of your messages.</p>
       <section className="block" style={{ marginTop: 36 }}>
-        <div className="panel band dark"><Strata projects={core.projects} weeks={weeks} eras={core.profile.eras} /></div>
+        <div className="panel"><Strata projects={core.projects} weeks={weeks} eras={core.profile.eras} /></div>
       </section>
       <section className="block">
         <header>

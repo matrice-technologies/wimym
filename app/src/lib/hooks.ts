@@ -13,15 +13,12 @@ function canvasColor(css: string) {
   return a === 255 ? "#" + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1) : `rgba(${r},${g},${b},${+(a / 255).toFixed(3)})`;
 }
 
-/** The theme's colors, read from CSS, and read again when the theme changes. `dark` reads a dark band's, for a
- * piece drawn for the dark that sits in one whatever the page's theme. */
-export function useColors(scope?: "dark") {
+/** The theme's colors, read from CSS. */
+export function useColors() {
   const read = () => {
-    let el: HTMLElement = document.documentElement;
-    if (scope) { el = document.createElement("div"); el.className = scope; document.body.append(el); }
-    const s = getComputedStyle(el);
+    const s = getComputedStyle(document.documentElement);
     const g = (k: string) => canvasColor(s.getPropertyValue(k).trim());
-    const c = {
+    return {
       ground: g("--ground"), surface: g("--surface"), raised: g("--raised"), line: g("--line"), line2: g("--line-2"),
       ink: g("--ink"), ink2: g("--ink-2"), muted: g("--muted"), faint: g("--faint"), focus: g("--focus"), late: g("--late"),
       fam: {
@@ -29,17 +26,8 @@ export function useColors(scope?: "dark") {
         run: g("--f-run"), ship: g("--f-ship"), think: g("--f-think"), none: g("--f-none"),
       } as Record<string, string>,
     };
-    if (scope) el.remove();
-    return c;
   };
-  const [c, setC] = useState(read);
-  useEffect(() => {
-    if (scope) return;
-    const on = () => setC(read());
-    window.addEventListener("wimym:theme", on);
-    return () => window.removeEventListener("wimym:theme", on);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scope]);
+  const [c] = useState(read);
   return c;
 }
 export type Colors = ReturnType<typeof useColors>;

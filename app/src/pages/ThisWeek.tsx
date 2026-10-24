@@ -62,7 +62,7 @@ export default function ThisWeek() {
     // (or the first-run show) isn't restarted when the rest of the data arrives.
     return (
       <div className="wrap thisweek">
-        <section className={"planet band dark" + (firstRun ? " first" : "")} aria-label={firstRun ? "Your days, as a world" : LOOM}>
+        <section className={"planet" + (firstRun ? " first" : "")} aria-label={firstRun ? "Your days, as a world" : LOOM}>
           <div className="pl-stage">{stage}</div>
           <div className="pl-scrim" aria-hidden="true" />
           <div className="pl-words">
@@ -79,7 +79,7 @@ export default function ThisWeek() {
 
   return (
     <div className="wrap thisweek">
-      <section className="planet band dark" aria-label={firstRun ? "Your days since March, as a world" : LOOM}>
+      <section className="planet" aria-label={firstRun ? "Your days since March, as a world" : LOOM}>
         <div className="pl-stage">{stage}</div>
         <div className="pl-scrim" aria-hidden="true" />
         <div className="pl-words">
@@ -95,7 +95,7 @@ export default function ThisWeek() {
         </div>
       </section>
 
-      <section className="hw band dark" id="week">
+      <section className="hw" id="week">
         <div className="hw-art">
           {!wk ? <div className="spiral-wait"><Loading label="Drawing your week" /></div> : <WeekSpiral week={week.days} blocks={spiralBlocks(week.days, wk.days)} nowT={week.nowT} usual={usual} stopHour={vitals.limits.stopHour}
             center={<>
