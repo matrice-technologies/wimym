@@ -1,7 +1,7 @@
 """What the labels mean, how they were made and how far to trust them: the "What the labels mean" page.
 
 Haiku's exact rules come from labels.definitions() when it exists. The plain words, the pages each
-label feeds and the known biases (docs/research/opus-audit.md) are kept here. The accuracy comes
+label feeds and the known biases (the research note opus-audit.md, kept outside the repository) are kept here. The accuracy comes
 from Opus's second-judge marks in ~/.wimym/labels/audit-opus.json.
 """
 import json
@@ -96,8 +96,8 @@ FIELDS = [
      "used": ["Messages", "Your voice"]},
 ]
 
-# What Opus found on the v2 labels (docs/research/opus-audit.md), in plain words, and where each stands
-# after the v3 wording (docs/research/relabel.md): "better" measured better, "rule" the wording changed
+# What Opus found on the v2 labels (the research note opus-audit.md, kept outside the repository), in plain words, and where each stands
+# after the v3 wording (the research note relabel.md): "better" measured better, "rule" the wording changed
 # but no change measured yet, "still" still there.
 BIASES = {
     "in": [("Fix and correction blur: when Claude said something works and it doesn't, Haiku still says fix, since it sees only the end of Claude's message.", "still"),
@@ -114,7 +114,7 @@ BIASES = {
     "pl": [("A friendly smiley reads as play: 1 of 4 right, and the current wording didn't change that.", "still")],
 }
 
-# Same messages, same wording, labelled twice (docs/research/relabel.md, signals.md): how often the two runs agree.
+# Same messages, same wording, labelled twice (the research notes relabel.md and signals.md): how often the two runs agree.
 RERUN = {"in": 79, "to": 93, "sp": 75, "own": 80, "who": 80, "sc": 80, "pr": 80, "irk": 80, "pl": 80}
 RERUN_NOTE = {"categories": "two runs of the same wording on 252 messages", "signals": "about 4 labels in 20 flip between runs"}
 

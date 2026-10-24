@@ -30,7 +30,7 @@ there, and a column the engine adds later shows as "not documented yet" until it
   `gap`, `unread` and the rest. Count with `where origin = 'transcript'` when a measure needs them.
   After June, prompts moved to the desktop app, so March to June and July onward don't measure the
   same way of working either.
-- **Labels are a model's reading.** Haiku wrote them; Opus checked a sample (docs/research/opus-audit.md,
+- **Labels are a model's reading.** Haiku wrote them; Opus checked a sample (the research note opus-audit.md,
   250 marks). Accuracy on the values that matter, with a 95% interval:
   - intent: good (18/19 on random cards). `correct` 5/6, `design` 7/7, `go-ahead` 6/7, `fix` 3/5
     (the line between fix and correct is soft: Claude said it worked and it doesn't is a correction).

@@ -93,8 +93,8 @@ function Trust({ d }: { d: LabelsPage }) {
       <p className="sub" style={{ marginTop: 14 }}>
         The second judge checked the labels as they were then (version 2 of both sets), with Haiku's label in front of it, so a defensible other label counts as wrong and
         those old labels score higher than any fresh run would. The wording Haiku gets was rewritten afterwards to fix what it found. Under each label: which of its problems
-        are better now, and "Labelled again, now": how often the current label agrees with the second judge on those same messages. Compare it with a fresh run of the old wording
-        (docs/research/relabel.md), not with the old score.
+        are better now, and "Labelled again, now": how often the current label agrees with the second judge on those same messages. Compare it with a fresh run of the old wording,
+        not with the old score.
       </p>
     </section>
   );

@@ -4,7 +4,7 @@ ids stay unique.
     S=<a scratch folder>; HOME=$S/decoy CLAUDE_CONFIG_DIR=$S/decoy/.claude WIMYM_DATA=$S/decoy/data \
       WIMYM_CACHE=$S/decoy/cache python3 -m unittest discover -s engine/tests
 
-Run tests only with a decoy home (docs/sprint.md). Before importing wimym this module points HOME,
+Run tests only with a decoy home, as above. Before importing wimym this module points HOME,
 CLAUDE_CONFIG_DIR, WIMYM_DATA, WIMYM_CACHE and WIMYM_LABELS into its own temporary folder, then asserts
 that every folder wimym uses is inside a tests' temporary folder. When another test module has already
 imported wimym into its own temporary folder (test_signals, which loads first), those folders are used

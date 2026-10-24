@@ -20,8 +20,8 @@ narrates as it goes; a few dozen transcripts take a second or two, months of the
 Run it again any time: it only redoes what changed. `./install.sh --help` for the options, `--stop` to
 stop the engine.
 
-When a new version is out, the page says so. `./install.sh --update` gets it, says what changed (all of
-it in `CHANGES.md`), rebuilds the page and restarts the engine onto it.
+When a new version is out, the page says so. `./install.sh --update` gets it, says what changed,
+rebuilds the page and restarts the engine onto it.
 
 Or let Claude Code do the whole setup, a step at a time and asking before each change. Paste this
 into Claude Code:
@@ -95,7 +95,20 @@ Set a stopping hour, days off a week or a ceiling on sessions at once, on the fr
 - `WIMYM_DATA`, `WIMYM_LABELS`, `WIMYM_CACHE` and `WIMYM_PORT` move these (the older `MIRROR_*` names
   still work). The project was first called Mirror; the engine moves `~/.mirror` and
   `~/.cache/mirror` to the new names on its first run and leaves links behind.
-- `docs/research/` keeps what was learned in claude-memory-map.
+- The research notes (what was learned in claude-memory-map, the label audits) and the build sprint's
+  notes quote real messages, so they live outside this repository, with the people who wrote them.
+
+## Making changes
+
+This repository, matrice-technologies/wimym, is the one copy: everyone who runs Wimym clones it, and
+`main` is what they run. Work on a branch and open a pull request; merging it into `main` is the
+release, and the next day every page says a new version is out. Give the pull request a title that
+says the change in a sentence: `./install.sh --update` shows people those titles as what's new.
+
+Wimym was first built in a local repository whose history quotes real messages; that history stays on
+the Mac it was built on, on the branch `archive/mirror-main`, and never comes here. A branch started on
+it moves across with `git rebase --onto origin/main archive/mirror-main <branch>`; a plain merge
+refuses, because the two histories share no commit.
 
 ## Privacy
 

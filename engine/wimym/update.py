@@ -4,7 +4,7 @@ to say so (docs/contract-state.md, "update").
 Once a day the engine asks the repository this folder was cloned from which commit its branch is at
 (`git ls-remote`, with the person's own git login): one request to GitHub that carries nothing of theirs. A commit
 this folder doesn't have yet means a newer Wimym, and the page shows `./install.sh --update`. Never asked for a
-folder that isn't a clone following another (the one Wimym is made in), nor for the demo. WIMYM_UPDATES=0, or
+folder that isn't a clone following another, nor for the demo. WIMYM_UPDATES=0, or
 {"updates": false} in the data dir's settings.json, turns it off.
 """
 import os

@@ -81,10 +81,19 @@ if [ "$update" = 1 ]; then
   if [ "$(git -C "$here" rev-parse HEAD)" = "$before" ]; then
     say "This is already the latest Wimym."
   else
-    news="$(git -C "$here" diff "$before" HEAD -- CHANGES.md | sed -n 's/^+\(- .*\)/  \1/p')"
-    [ -n "$news" ] || news="$(git -C "$here" log --format='  - %s' "$before..HEAD" | head -20)"
-    say "What's new (all of it in CHANGES.md):"
-    say "$news"
+    # what landed on main, a line each: a pull request by its title, a merge by its sentence without the branch,
+    # an old "Wimym as of …" copy by the lines it listed; merges of main into a branch are nothing to tell
+    news="$(git -C "$here" log --first-parent --format='%x1e%s%x1f%b' "$before..HEAD" | awk '
+      BEGIN { RS = "\036"; FS = "\037" }
+      NF == 0 { next }
+      { s = $1; n = split($2, body, "\n") }
+      s ~ /^Wimym as of / { for (i = 1; i <= n; i++) if (body[i] ~ /^- /) print "  " body[i]; next }
+      s ~ /^Merge pull request / { for (i = 1; i <= n; i++) if (body[i] != "") { s = body[i]; break } }
+      s ~ /^Merge (branch|remote-tracking branch) / { next }
+      { sub(/^Merge /, "", s); sub(/ \([^() ]*\/[^() ]*\)$/, "", s); sub(/ \(#[0-9]+\)$/, "", s)
+        print "  - " toupper(substr(s, 1, 1)) substr(s, 2) }' | head -30)"
+    say "What's new:"
+    say "${news:-  - Small fixes.}"
   fi
   rest=()
   for a in ${args[@]+"${args[@]}"}; do [ "$a" = "--update" ] || rest+=("$a"); done

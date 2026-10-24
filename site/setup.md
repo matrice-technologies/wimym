@@ -228,7 +228,7 @@ Give the person a short summary:
   they enter, so only on purpose).
 - Day to day: `cd WIMYM && ./install.sh` starts it again after a restart and only redoes what changed;
   `./install.sh --stop` stops it. To update: `cd WIMYM && ./install.sh --update`, which says what is new
-  and restarts Wimym onto it. The page says when a new version is out; `WIMYM/CHANGES.md` lists them all.
+  and restarts Wimym onto it. The page says when a new version is out.
 - The retro is the heart of it: once a week, `/retro` (with the skills) or **The week** on the page.
 
 Wimym shows signs and diagnoses nothing; it is not a clinical tool.
