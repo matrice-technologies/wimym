@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Wimym: Where is your mind?</title>
 <meta name="description" content="Wimym reads your Claude Code transcripts on your own computer and shows, against your own usual, how your weeks with agents are going for your health and your work. A weekly retro, practices, and nothing sent anywhere.">
 <meta name="theme-color" content="#0a0a0a">
-<meta name="color-scheme" content="dark light">
+<meta name="color-scheme" content="dark">
 <link rel="canonical" href="https://wimym.matricetechnologies.com/">
 <link rel="icon" type="image/svg+xml" href="/wimym.svg">
 <meta property="og:type" content="website">
@@ -24,16 +24,6 @@
 <meta name="twitter:image" content="https://wimym.matricetechnologies.com/og.jpg">
 <link rel="preload" href="/fonts/geist-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/jetbrains-mono-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
-<script>
-// Matrice's theme rule (matrice-website-v2, theme-provider.tsx): a first visit is dark, whatever the system says;
-// D switches it, and the choice is kept. Set before the first paint, so the page never flashes the other one.
-(() => {
-  let t = null;
-  try { t = localStorage.getItem("theme"); } catch {}
-  if (t === "system") t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
-  document.documentElement.className = t === "light" ? "light" : "dark";
-})();
-</script>
 <style>
 @font-face {
   font-family: "Geist Variable"; font-style: normal; font-display: swap; font-weight: 100 900;
@@ -43,33 +33,23 @@
   font-family: "JetBrains Mono Variable"; font-style: normal; font-display: swap; font-weight: 100 800;
   src: url(/fonts/jetbrains-mono-latin-wght-normal.woff2) format("woff2-variations");
 }
-/* Matrice's tokens (matrice-website-v2, app/globals.css), so this reads as a Matrice page. .light and .dark also
-   mark a band in the other theme: the Loom and the replayed day are drawn for the dark, so they sit in dark bands
-   whatever the page's theme, the way Matrice's own drawn heroes do. */
-:root, .light {
-  color-scheme: light;
-  --background: oklch(1 0 0); --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0); --primary: oklch(0.205 0 0); --primary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.97 0 0); --muted-foreground: oklch(0.556 0 0);
-  --border: oklch(0.922 0 0); --input: oklch(0.922 0 0); --ring: oklch(0.708 0 0);
-  --brand: oklch(0.47 0.26 265);
-  /* the hour Robin meant to stop, and what ran past it: Matrice's amber */
-  --stale: oklch(0.6 0.16 55);
-  --sunk: color-mix(in oklch, var(--foreground) 4%, var(--background));
-  --font-sans: "Geist Variable", -apple-system, "Segoe UI", system-ui, sans-serif;
-  --font-heading: "JetBrains Mono Variable", ui-monospace, "SF Mono", Menlo, monospace;
-  /* the Loom types its opening line in this: the sans, as the mono runs it across the words */
-  --display: var(--font-sans);
-  --px: 16px;
-}
-.dark {
+/* Matrice's dark tokens (matrice-website-v2, app/globals.css), so this reads as a Matrice page. Dark only: the Loom,
+   the replayed day and the screenshots are all drawn for it. */
+:root {
   color-scheme: dark;
   --background: oklch(0.145 0 0); --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0); --primary: oklch(0.922 0 0); --primary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.269 0 0); --muted-foreground: oklch(0.708 0 0);
   --border: oklch(1 0 0 / 10%); --input: oklch(1 0 0 / 15%); --ring: oklch(0.556 0 0);
   --brand: oklch(0.72 0.16 265);
+  /* the hour Robin meant to stop, and what ran past it: Matrice's amber */
   --stale: oklch(0.76 0.14 65);
+  --sunk: color-mix(in oklch, var(--foreground) 4%, var(--background));
+  --font-sans: "Geist Variable", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --font-heading: "JetBrains Mono Variable", ui-monospace, "SF Mono", Menlo, monospace;
+  /* the Loom types its opening line in this: the sans, as the mono runs it across the words */
+  --display: var(--font-sans);
+  --px: 16px;
 }
 @media (min-width: 640px) { :root { --px: 24px; } }
 @media (min-width: 1024px) { :root { --px: 40px; } }
@@ -96,8 +76,7 @@ img, video { display: block; max-width: 100%; height: auto; }
 
 /* the small blue badge that names a section */
 .eyebrow { display: inline-flex; width: fit-content; align-items: center; gap: 6px; margin: 0; padding: 2px 8px; border-radius: 6px;
-  font: 500 14px/20px var(--font-sans); color: var(--brand); background: color-mix(in oklch, var(--brand) 10%, transparent); }
-.dark .eyebrow { background: color-mix(in oklch, var(--brand) 15%, transparent); }
+  font: 500 14px/20px var(--font-sans); color: var(--brand); background: color-mix(in oklch, var(--brand) 15%, transparent); }
 /* a section's label strip: ✦ the name, // a count */
 .strip { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0; padding: 20px var(--px);
   border-bottom: 1px dashed var(--border); font: 400 11px/1.3 var(--font-heading); letter-spacing: .14em; text-transform: uppercase; }
@@ -120,9 +99,8 @@ img, video { display: block; max-width: 100%; height: auto; }
 .btn.sm { height: 32px; padding: 0 10px; font-size: 11.5px; }
 .btn.icon { width: 40px; padding: 0; }
 
-/* the header: a bar across the top that takes the theme and colour of the band under it */
-.site-header { position: sticky; top: 0; z-index: 40; border-bottom: 1px solid var(--border); background: var(--background); color: var(--foreground);
-  transition: background-color .3s, color .3s; }
+/* the header: a bar across the top */
+.site-header { position: sticky; top: 0; z-index: 40; border-bottom: 1px solid var(--border); background: var(--background); color: var(--foreground); }
 .site-header .bar { max-width: 1400px; height: 64px; margin: 0 auto; padding: 0 var(--px); display: flex; align-items: center; gap: 24px; }
 .logo { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; }
 .logo img { width: 22px; height: 22px; }
@@ -358,8 +336,6 @@ pre code { background: none; border: 0; padding: 0; font: inherit; overflow-wrap
 .mx b { font: 700 13px/1 var(--font-heading); letter-spacing: .14em; }
 .foot-strip { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding: 24px 0; border-top: 1px solid var(--border);
   font: 400 11px/1.4 var(--font-heading); letter-spacing: .14em; text-transform: uppercase; color: var(--muted-foreground); }
-.foot-strip button { padding: 0; border: 0; background: none; font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; cursor: pointer; }
-.foot-strip button:hover { color: var(--foreground); }
 </style>
 </head>
 <body>
@@ -380,7 +356,7 @@ pre code { background: none; border: 0; padding: 0; font: inherit; overflow-wrap
 </header>
 
 <main>
-  <section class="hero band dark" id="loom" data-header-theme="dark" aria-label="Robin's messages as a harp of light, under an aurora of what Claude wrote for each project">
+  <section class="hero band" id="loom" aria-label="Robin's messages as a harp of light, under an aurora of what Claude wrote for each project">
     <div class="stage"><div class="live"></div></div>
     <div class="scrim" aria-hidden="true"></div>
     <div class="words">
@@ -395,7 +371,7 @@ pre code { background: none; border: 0; padding: 0; font: inherit; overflow-wrap
     <p class="cap"><span>Robin's messages since September, strummed in the order they were sent: a column for each project, a string for each session, brighter the more Claude wrote back, and above them an aurora of what Claude wrote for each project. Robin is made up. Point at a string to read it.</span></p>
   </section>
 
-  <section class="band dark" id="what" data-header-theme="dark" aria-labelledby="what-title">
+  <section class="band" id="what" aria-labelledby="what-title">
     <div class="frame">
       <p class="strip"><span><span class="star" aria-hidden="true">✦</span>A new kind of work</span><span class="count">// One of Robin's days</span></p>
       <div class="statement">
@@ -728,7 +704,7 @@ New-Item -ItemType Junction -Path $HOME\.claude\skills\wimym -Target $HOME\wimym
     </div>
     <div class="foot-strip">
       <span>© 2026 Matrice Technologies · France</span>
-      <button type="button" class="theme-switch">Press D for <span>light</span> mode</button>
+      <span>Robin Vale is made up</span>
     </div>
   </div>
 </footer>
@@ -748,45 +724,6 @@ New-Item -ItemType Junction -Path $HOME\.claude\skills\wimym -Target $HOME\wimym
     const box = document.createElement("div"); box.className = "code";
     pre.replaceWith(box); box.append(pre, b);
   }
-
-  // The theme: D, or the footer's line, switches it and keeps the choice.
-  const root = document.documentElement, meta = document.querySelector('meta[name="theme-color"]');
-  const label = document.querySelector(".theme-switch span");
-  const header = document.querySelector(".site-header");
-  const shown = () => {
-    const dark = root.classList.contains("dark");
-    label.textContent = dark ? "light" : "dark";
-    meta.content = dark ? "#0a0a0a" : "#ffffff";
-    band();
-  };
-  const flip = () => {
-    const next = root.classList.contains("dark") ? "light" : "dark";
-    root.className = next;
-    try { localStorage.setItem("theme", next); } catch {}
-    shown();
-  };
-  addEventListener("keydown", e => {
-    if (e.defaultPrevented || e.repeat || e.metaKey || e.ctrlKey || e.altKey || e.key.toLowerCase() !== "d") return;
-    const t = e.target;
-    if (t instanceof HTMLElement && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
-    flip();
-  });
-  document.querySelector(".theme-switch").addEventListener("click", flip);
-
-  // The header takes the theme and colour of the band under its bottom edge (matrice-website-v2, site-header.tsx),
-  // so over the Loom it is part of the dark, and over the light page it is light.
-  let frame = 0;
-  function band() {
-    frame = 0;
-    const line = header.getBoundingClientRect().bottom;
-    const under = [...document.querySelectorAll("[data-header-theme]")].find(s => { const b = s.getBoundingClientRect(); return b.top <= line && b.bottom > line; });
-    header.classList.toggle("dark", !!under && under.dataset.headerTheme === "dark");
-    header.style.backgroundColor = under ? getComputedStyle(under).backgroundColor : "";
-  }
-  const schedule = () => { if (!frame) frame = requestAnimationFrame(band); };
-  addEventListener("scroll", schedule, { passive: true });
-  addEventListener("resize", schedule);
-  shown();
 })();
 </script>
 <script type="module" src="/live/live.js"></script>
