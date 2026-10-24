@@ -62,11 +62,11 @@ export default function ThisWeek() {
     // (or the first-run show) isn't restarted when the rest of the data arrives.
     return (
       <div className="wrap thisweek">
-        <section className={"planet" + (firstRun ? " first" : "")} aria-label={firstRun ? "Your days, as a world" : LOOM}>
+        <section className={"planet band dark" + (firstRun ? " first" : "")} aria-label={firstRun ? "Your days, as a world" : LOOM}>
           <div className="pl-stage">{stage}</div>
           <div className="pl-scrim" aria-hidden="true" />
           <div className="pl-words">
-            <h1 className="wiym">Where is your mind?</h1>
+            <h1 className="wiym">Where is your <span className="hl">mind</span>?</h1>
             {!firstRun && <p className="pl-wait">{state && state.phase !== "ready" && state.phase !== "git" ? state.label : "\u00a0"}</p>}
           </div>
         </section>
@@ -79,11 +79,11 @@ export default function ThisWeek() {
 
   return (
     <div className="wrap thisweek">
-      <section className="planet" aria-label={firstRun ? "Your days since March, as a world" : LOOM}>
+      <section className="planet band dark" aria-label={firstRun ? "Your days since March, as a world" : LOOM}>
         <div className="pl-stage">{stage}</div>
         <div className="pl-scrim" aria-hidden="true" />
         <div className="pl-words">
-          <h1 className="wiym">Where is your mind?</h1>
+          <h1 className="wiym">Where is your <span className="hl">mind</span>?</h1>
           <p className="pl-line" key={caption?.line ? "c" : "w"}>{caption?.line || "\u00a0"}</p>
           {caption?.sub && <p className="pl-sub">{caption.sub}</p>}
           <div className="pl-week">
@@ -95,7 +95,7 @@ export default function ThisWeek() {
         </div>
       </section>
 
-      <section className="hw" id="week">
+      <section className="hw band dark" id="week">
         <div className="hw-art">
           {!wk ? <div className="spiral-wait"><Loading label="Drawing your week" /></div> : <WeekSpiral week={week.days} blocks={spiralBlocks(week.days, wk.days)} nowT={week.nowT} usual={usual} stopHour={vitals.limits.stopHour}
             center={<>

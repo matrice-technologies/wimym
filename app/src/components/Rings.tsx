@@ -16,7 +16,7 @@ export default function Rings({ messages, days, focus, onHover }: {
   const [box, width] = useWidth<HTMLDivElement>();
   const base = useRef<HTMLCanvasElement>(null);
   const over = useRef<HTMLCanvasElement>(null);
-  const C = useColors();
+  const C = useColors("dark");  // drawn for the dark, in a dark band whatever the theme
   const tip = useTip();
   const nav = useNavigate();
   const size = Math.min(width, 760);

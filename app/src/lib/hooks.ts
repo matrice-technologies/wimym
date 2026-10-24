@@ -1,11 +1,27 @@
 import { useEffect, useRef, useState } from "react";
 
-/** The theme's colors, read from CSS. */
-export function useColors() {
+/** A CSS color as canvas takes it: #rrggbb, or rgba() when it is see-through (the tokens are oklch, which alpha can't read). */
+let probe: CanvasRenderingContext2D | null = null;
+function canvasColor(css: string) {
+  probe ??= document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+  if (!probe || !css) return css;
+  probe.clearRect(0, 0, 1, 1);
+  probe.fillStyle = "#000";
+  probe.fillStyle = css;
+  probe.fillRect(0, 0, 1, 1);
+  const [r, g, b, a] = probe.getImageData(0, 0, 1, 1).data;
+  return a === 255 ? "#" + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1) : `rgba(${r},${g},${b},${+(a / 255).toFixed(3)})`;
+}
+
+/** The theme's colors, read from CSS, and read again when the theme changes. `dark` reads a dark band's, for a
+ * piece drawn for the dark that sits in one whatever the page's theme. */
+export function useColors(scope?: "dark") {
   const read = () => {
-    const s = getComputedStyle(document.documentElement);
-    const g = (k: string) => s.getPropertyValue(k).trim();
-    return {
+    let el: HTMLElement = document.documentElement;
+    if (scope) { el = document.createElement("div"); el.className = scope; document.body.append(el); }
+    const s = getComputedStyle(el);
+    const g = (k: string) => canvasColor(s.getPropertyValue(k).trim());
+    const c = {
       ground: g("--ground"), surface: g("--surface"), raised: g("--raised"), line: g("--line"), line2: g("--line-2"),
       ink: g("--ink"), ink2: g("--ink-2"), muted: g("--muted"), faint: g("--faint"), focus: g("--focus"), late: g("--late"),
       fam: {
@@ -13,8 +29,17 @@ export function useColors() {
         run: g("--f-run"), ship: g("--f-ship"), think: g("--f-think"), none: g("--f-none"),
       } as Record<string, string>,
     };
+    if (scope) el.remove();
+    return c;
   };
-  const [c] = useState(read);
+  const [c, setC] = useState(read);
+  useEffect(() => {
+    if (scope) return;
+    const on = () => setC(read());
+    window.addEventListener("wimym:theme", on);
+    return () => window.removeEventListener("wimym:theme", on);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scope]);
   return c;
 }
 export type Colors = ReturnType<typeof useColors>;
