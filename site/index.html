@@ -263,10 +263,11 @@ img, video { display: block; max-width: 100%; height: auto; }
 .shot img, .shot video { display: block; width: 100%; height: auto; }
 .shot figcaption { margin-top: 12px; font-size: 13.5px; color: var(--muted-foreground); }
 .shot.tall { max-width: 340px; }
-/* a live frame: the demo (/demo, the app on Robin's record) drawn at its own width and scaled into the row */
-.live-frame { position: relative; overflow: hidden; border: 1px solid var(--border); background: var(--background);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 18px 40px -18px rgba(0, 0, 0, .45); }
-.live-frame iframe { position: absolute; top: 0; left: 0; display: block; border: 0; transform-origin: 0 0; opacity: 0; transition: opacity .6s ease; }
+/* a live frame: the demo (/demo, the app on Robin's record) drawn at its own width and scaled into the row, with no
+   box: the app has no ground in a frame, so it sits on the row's dot grid (app/src/styles.css, html.embed) */
+.live-frame { position: relative; overflow: hidden; }
+.live-frame iframe { position: absolute; top: 0; left: 0; display: block; border: 0; background: transparent; color-scheme: dark;
+  transform-origin: 0 0; opacity: 0; transition: opacity .6s ease; }
 .live-frame.is-in iframe { opacity: 1; }
 .live-frame:not(.is-in)::after { content: "Loading Robin's record"; position: absolute; inset: 0; display: grid; place-items: center;
   font: 400 11px/1 var(--font-heading); letter-spacing: .14em; text-transform: uppercase; color: var(--muted-foreground); }

@@ -868,9 +868,13 @@ details.inside .outside { margin-top: 8px; opacity: .8; }
 .wiym .hl { color: var(--brand); }
 
 /* The demo build in a frame on the public page (lib/demo.ts): ?embed=page is one page that doesn't scroll,
-   ?embed=<id> is only that element, on the page's ground, everything around it gone. */
+   ?embed=<id> is only that element, everything around it gone. Either way it has no ground of its own: the public
+   page's dot grid shows through, so the app sits in the row rather than in a window on it. */
 html.embed, html.embed body { overflow: hidden; }
+html.embed body, html.embed .rail, html.embed .wrap, html.embed .msgs { background: transparent; }
+html.embed .wrap, html.embed .msgs { box-shadow: none; }
+html.embed main.page { background-image: none; }
 html.embed-one .rail, html.embed-one .sharechip { display: none; }
 html.embed-one .shell { display: block; }
-html.embed-one main.page { min-height: 0; background-image: none; }
+html.embed-one main.page { min-height: 0; }
 html.embed-one main.page :not(.embed-target, .embed-target *, :has(.embed-target)) { display: none; }
