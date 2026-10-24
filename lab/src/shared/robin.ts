@@ -4,14 +4,14 @@ import { mindFrom, type Mind, type RawDay, type RawMessage } from "./data";
 
 export interface RobinFile {
   dayFields: string[]; days: unknown[][]; projects: string[]; families: string[];
-  rows: [string, number, number, number, number, string][];
+  rows: [string, number, number, number, number, string, (number | null)?][];   // day, hour, project, family, words, text, all Claude wrote for the message (outAll)
 }
 
 /** The file's compact rows as the app's messages and days. */
 export function unpackRobin(r: RobinFile): { messages: RawMessage[]; days: RawDay[] } {
   const days = r.days.map(row => Object.fromEntries(r.dayFields.map((k, i) => [k, row[i]])) as unknown as RawDay);
-  const messages = r.rows.map(([day, hour, p, f, words, text], i) => ({
-    id: `robin-${i}`, project: r.projects[p], day, hour, kind: "prompt", words, family: f < 0 ? null : r.families[f], text,
+  const messages = r.rows.map(([day, hour, p, f, words, text, outAll], i) => ({
+    id: `robin-${i}`, project: r.projects[p], day, hour, kind: "prompt", words, family: f < 0 ? null : r.families[f], text, outAll,
   }));
   return { messages, days };
 }

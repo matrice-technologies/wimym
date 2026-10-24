@@ -55,6 +55,8 @@ export interface Trait {
 export interface Coverage { labelled: number; of: number; version: number | null; covered: boolean }
 
 export interface Profile {
+  /** Set alone, with none of the fields below, when there are no messages of yours yet. */
+  empty?: true;
   since: string; until: string; recentFrom: string; fullFrom?: string;
   coverage: { categories: Coverage; signals: Coverage };
   totals: Record<string, number>;
@@ -125,7 +127,8 @@ export interface LabelSet {
 }
 export interface LabelsPage {
   generated: string; sets: LabelSet[]; fields: LabelField[]; notTyped: number; covered: number;
-  audit: { by: string; model: string; at: string; marks: number; cards: number };
+  /** All null until a second judge has audited the labels. */
+  audit: { by: string | null; model: string | null; at: string | null; marks: number; cards: number };
 }
 
 // GET /api/vitals: the vital signs, as docs/contract-vitals.md sets them out.
@@ -140,7 +143,7 @@ export interface Measure {
 export interface Goal { key: string; label: string; group: "health" | "performance"; measures: string[] }
 export interface Vitals {
   asof: string;
-  coverage: { full_from: string; prompts_from: string; git: boolean };
+  coverage: { full_from: string | null; prompts_from: string; git: boolean };
   days: string[]; weeks: string[];
   limits: { stopHour: number | null; daysOffPerWeek: number | null; maxSessions: number | null; priorities?: string[] | null };
   goals: Goal[]; measures: Measure[];

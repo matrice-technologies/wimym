@@ -5,11 +5,12 @@
 import { mindFrom } from "../src/shared/data";
 import { DARK } from "../src/shared/palette";
 import { unpackRobin, type RobinFile } from "../src/shared/robin";
-import { loomHero } from "../src/pieces/loom-strum";
+import { Strum } from "../src/pieces/loom-strum";
 import { mountDay } from "./day";
 
 const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
-const robin = fetch("/media/robin.json").then(r => r.json() as Promise<RobinFile>);
+// asked of the server each time (a 304 when unchanged): /media/ is cached for a week, and a stale record would miss the page's days
+const robin = fetch("/media/robin.json", { cache: "no-cache" }).then(r => r.json() as Promise<RobinFile>);
 
 function mountLoom(hero: HTMLElement, box: HTMLElement, r: RobinFile) {
   const { messages, days } = unpackRobin(r);
@@ -19,7 +20,9 @@ function mountLoom(hero: HTMLElement, box: HTMLElement, r: RobinFile) {
   const labels = document.createElement("div"), tip = document.createElement("div");
   labels.className = "lm-labels"; labels.setAttribute("aria-hidden", "true"); tip.className = "lm-tip"; tip.hidden = true;
   box.append(canvas, labels, tip);
-  const p = loomHero(canvas, mindFrom(messages, days, () => false), DARK, { share: false, still, intro: true });
+  // loomHero's, with the loom kept to the right of the page's words: they end about half way across
+  const p = new Strum(canvas, mindFrom(messages, days, () => false), DARK, false, still,
+    { mass: true, colour: "type", keys: false, caption: false, wheel: false, intro: true, clear: 0.47 });
 
   const size = () => { const b = box.getBoundingClientRect(); if (b.width && b.height) p.resize(b.width, b.height, Math.min(devicePixelRatio || 1, 2)); };
   size();

@@ -1,7 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useData } from "../lib/data";
 import { fmtDay, fmtN } from "../lib/format";
+import Empty from "./Empty";
 import { Mark } from "./Loading";
 import Postcard from "./Postcard";
 import { setShare, shareOn } from "../lib/share";
@@ -23,10 +24,14 @@ const NAV: [string, string, keyof typeof I][] = [
   ["/practices", "Practices", "practices"], ["/their-view", "Their view of you", "memory"], ["/labels", "Labels", "labels"],
 ];
 const EXPLORE: [string, string][] = [["/portrait", "Portrait"], ["/lead", "How you lead"], ["/voice", "Your voice"], ["/projects", "Projects"]];
+// The pages that still say something before there is a message to read: what practices are, what the labels mean.
+const WITHOUT_MESSAGES = ["/practices", "/labels"];
 
 export default function Shell() {
-  const { state, core } = useData();
+  const { state, core, update } = useData();
   const loc = useLocation();
+  // the engine has read everything there is and found no message of yours: someone new to Claude Code
+  const empty = !!core?.profile.empty && !WITHOUT_MESSAGES.includes(loc.pathname);
   useEffect(() => {
     if (!loc.hash) window.scrollTo(0, 0);
     // on a phone the rail is a row that scrolls sideways: keep the current page in view
@@ -56,6 +61,8 @@ export default function Shell() {
           <NavLink key={to} to={to} className={({ isActive }) => "nav sub" + (isActive ? " active" : "")}>{label}</NavLink>
         ))}
         <div className="foot">
+          {update?.restart ? <Upgrade say="Wimym's code changed since it started. To run the new code:" command={update.restartCommand} />
+            : update?.available ? <Upgrade say="A new version of Wimym is out. To get it, in a terminal:" command={update.command} /> : null}
           <span className={"live" + (busy ? " busy" : core ? "" : " wait")}><i />{busy ? state?.label || `Reading transcripts ${fmtN(state?.done)} / ${fmtN(state?.total)}` : state?.phase === "error" ? "The engine hit an error; showing the last good data" : core ? `Up to date, ${new Date(core.generated).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}` : "Connecting…"}</span>
           <button className={"sharesw" + (shareOn ? " on" : "")} role="switch" aria-checked={shareOn} onClick={() => setShare(!shareOn)}
             title="Hide what you wrote and the names of your projects, keep the shapes and numbers, so the page can be shown">
@@ -64,8 +71,20 @@ export default function Shell() {
           <Postcard compact />
         </div>
       </nav>
-      <main className="page"><Outlet /></main>
+      <main className="page">{empty ? <Empty title={loc.pathname === "/" ? "Where is your mind?" : undefined} /> : <Outlet />}</main>
       {shareOn && <button className="sharechip" onClick={() => setShare(false)}><span className="long">Share mode: words and project names are hidden.</span><span className="short">Share mode</span> <u>Turn off</u></button>}
+    </div>
+  );
+}
+
+/** A newer Wimym, or newer code than the engine runs: what to type, copied on a click. */
+function Upgrade({ say, command }: { say: string; command: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => navigator.clipboard?.writeText(command).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }, () => {});
+  return (
+    <div className="upgrade" role="status">
+      {say}
+      <button onClick={copy} title="Copy the command"><code>{command}</code><span>{copied ? "Copied" : "Copy"}</span></button>
     </div>
   );
 }

@@ -2,34 +2,40 @@
 # Wimym in one command: check what it needs, build the page, start the engine, open the browser.
 #
 #   ./install.sh                 # the first time, and any time after: it only redoes what changed
+#   ./install.sh --update        # the latest Wimym: pull it, say what's new, rebuild and restart onto it
 #   ./install.sh --port 8990     # another port (default 8990, or $WIMYM_PORT)
 #   ./install.sh --link          # also put the `wimym` command in ~/.local/bin (it asks otherwise)
 #   ./install.sh --no-link       # don't ask
 #   ./install.sh --no-open       # don't open the browser
 #   ./install.sh --stop          # stop the engine this script started
-#   ./install.sh --demo          # show Robin, a made-up person, on port 8997: none of your data is read
+#   ./install.sh --demo          # show Robin, a made-up person, on port 8997 (or --port): none of your data is read
 #
 # It writes only inside this folder (app/node_modules, app/dist), in ~/.wimym (what you enter) and
 # ~/.cache/wimym (the index; WIMYM_DATA and WIMYM_CACHE move them), and in ~/.local/bin if you say yes.
-# No sudo. Wimym reads your Claude Code transcripts where they are and sends nothing anywhere.
+# No sudo. Wimym reads your Claude Code transcripts where they are and sends nothing of yours anywhere. Once a
+# day it asks GitHub whether a newer Wimym is out; {"updates": false} in ~/.wimym/settings.json turns that off.
 set -eu
 
 here="$(cd "$(dirname "$0")" && pwd)"
 port="${WIMYM_PORT:-8990}"
+port_given=0
+update=0
+args=("$@")
 link="ask"
 open_it=1
 stop=0
 demo=0
 while [ $# -gt 0 ]; do
   case "$1" in
-    --port) port="$2"; shift ;;
-    --port=*) port="${1#*=}" ;;
+    --port) port="$2"; port_given=1; shift ;;
+    --port=*) port="${1#*=}"; port_given=1 ;;
+    --update) update=1 ;;
     --link) link="yes" ;;
     --no-link) link="no" ;;
     --no-open) open_it=0 ;;
     --stop) stop=1 ;;
     --demo) demo=1 ;;
-    -h|--help) sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "Unknown option: $1 (see ./install.sh --help)"; exit 2 ;;
   esac
   shift
@@ -41,21 +47,48 @@ fail() { printf 'Stopped: %s\n' "$*" >&2; exit 1; }
 cache="${WIMYM_CACHE:-${MIRROR_CACHE:-$HOME/.cache/wimym}}"
 if [ "$demo" = 1 ]; then  # the demo keeps its own made-up home, data and cache, and its own port
   cache="${WIMYM_DEMO:-$HOME/.cache/wimym-demo}"
-  [ -n "${WIMYM_PORT:-}" ] || port=8997
+  [ "$port_given" = 1 ] || [ -n "${WIMYM_PORT:-}" ] || port=8997
   link="no"
 fi
 pidfile="$cache/engine.pid"
 url="http://127.0.0.1:$port/"
 
-if [ "$stop" = 1 ]; then
+# the engine this script started, while it still is that engine: a pid can be reused by something else after a restart
+ours() {
   pid="$(cat "$pidfile" 2>/dev/null || true)"
-  # only if that process is still our engine: a pid can be reused by something else after a restart
-  if [ -n "$pid" ] && ps -p "$pid" -o command= 2>/dev/null | grep -q "engine/server.py" && kill "$pid" 2>/dev/null; then
-    rm -f "$pidfile"; say "Wimym stopped."
-  else
-    say "No engine started by this script is running."
-  fi
+  [ -n "$pid" ] && ps -p "$pid" -o command= 2>/dev/null | grep -q "engine/server.py"
+}
+stop_engine() {
+  ours && kill "$pid" 2>/dev/null || return 1
+  for _ in $(seq 1 50); do ps -p "$pid" >/dev/null 2>&1 || break; sleep 0.1; done
+  rm -f "$pidfile"
+}
+
+if [ "$stop" = 1 ]; then
+  if stop_engine; then say "Wimym stopped."; else say "No engine started by this script is running."; fi
   exit 0
+fi
+
+# --- --update: the latest code, then the rest of this script as the new code has it
+if [ "$update" = 1 ]; then
+  git -C "$here" rev-parse --abbrev-ref '@{upstream}' >/dev/null 2>&1 \
+    || fail "This folder isn't a clone of Wimym's repository, so there is nothing to update it from."
+  [ -z "$(git -C "$here" status --porcelain --untracked-files=no)" ] \
+    || fail "This folder has changes of its own (git -C \"$here\" status lists them): put them aside, then run this again."
+  before="$(git -C "$here" rev-parse HEAD)"
+  say "Fetching the latest Wimym…"
+  git -C "$here" pull --ff-only --quiet || fail "The update didn't come through; what git said is above."
+  if [ "$(git -C "$here" rev-parse HEAD)" = "$before" ]; then
+    say "This is already the latest Wimym."
+  else
+    news="$(git -C "$here" diff "$before" HEAD -- CHANGES.md | sed -n 's/^+\(- .*\)/  \1/p')"
+    [ -n "$news" ] || news="$(git -C "$here" log --format='  - %s' "$before..HEAD" | head -20)"
+    say "What's new (all of it in CHANGES.md):"
+    say "$news"
+  fi
+  rest=()
+  for a in ${args[@]+"${args[@]}"}; do [ "$a" = "--update" ] || rest+=("$a"); done
+  exec "$here/install.sh" ${rest[@]+"${rest[@]}"}  # the pull may have changed this script: the new one goes on
 fi
 
 # --- Python, 3.9 or later: the engine (standard library only)
@@ -91,7 +124,7 @@ if [ "$stale" = 1 ]; then
       cd "$dir"
       if [ ! -d node_modules ] || [ package-lock.json -nt node_modules/.package-lock.json ]; then
         say "Installing the page's packages in ${dir#$here/} (once, about a minute)…"
-        npm install --no-audit --no-fund --no-update-notifier --loglevel=error
+        npm ci --no-audit --no-fund --no-update-notifier --loglevel=error  # as the lock file says, and never rewrites it
       fi
     done
     cd "$here/app"
@@ -129,6 +162,11 @@ except Exception:
     sys.exit(1)
 PY
 }
+# an engine started before this folder's code changed (an update, a pull) is restarted onto the new code
+if answers && ours && [ -n "$(find "$here/engine" -name '*.py' -newer "$pidfile" 2>/dev/null | head -1)" ]; then
+  say "Restarting Wimym on the new code…"
+  stop_engine || true
+fi
 if answers; then
   say "Wimym is already running."
 else

@@ -58,6 +58,15 @@ there, and a column the engine adds later shows as "not documented yet" until it
 - **Commits** come from the engine's reading of git (`git.json`), only for the repositories behind
   folders you worked in. The CLI never runs git itself: if the engine hasn't read git yet, the table
   is empty. `messages.commits` counts `git commit` commands Claude ran in a turn, a different thing.
+- **Tokens.** `out`, `ctx` and `inp` are the main conversation's; `outAll` adds what the message set
+  off (subagents, sessions it started). Subagents count only from 23 Oct: the transcripts before were
+  deleted, and the index never kept their tokens, so `outSub` is null there and `outAll` misses them.
+  Sessions started by a session are found by the brief it sent, or for older ones by a session
+  starting while a turn was starting one. Scheduled tasks are nobody's message: in no `outAll`. Codex
+  subagents are left out. `inp` counts the whole context again on every call, so it runs to millions
+  on a long turn; most of it is `inpRead`. For how full the context got, use `ctx`. Turns kept only in the index (their transcript
+  deleted, most of them before 23 Oct) were read before the split: they have `inp`, but `ctx` and
+  the split are null.
 - **Keyword columns are not labels.** `defer_words` matches words like later, for now, tomorrow,
   plus tard. Many hits are not putting anything off: read them.
 - **One person, one Mac.** Comparisons are with the person's own earlier weeks, never with a norm.
@@ -119,8 +128,15 @@ Every message you typed: from transcripts since 29 Jun, and from history.jsonl s
 | commits | git commit commands run in the turn |
 | pushes | git push commands run in the turn |
 | prs | gh pr create commands run in the turn |
-| out | output tokens |
-| ctx | context tokens at the end of the turn |
+| out | output tokens, all of Claude's calls in the turn added up (the main conversation only) |
+| outSub | output tokens of the subagents the turn launched; null on turns read before subagents were counted (before 23 Oct) |
+| outAuto | output tokens of the turns Claude ran without you that followed from this message: in sessions it started (and the sessions those started), and in this session when they reported back. Each such turn counts once, for your latest message it follows from |
+| outAll | everything the message set off: out + outSub + outAuto |
+| ctx | context tokens at the end of the turn: the last call's input (cached or not) plus what it wrote |
+| inp | input tokens, all of Claude's calls in the turn added up: inpFresh + inpWrite + inpRead |
+| inpFresh | of which input not read from the cache |
+| inpWrite | of which input written to the cache; null for Codex sessions too old to report it |
+| inpRead | of which input read from the cache |
 | stopped | 1 when you interrupted Claude in that turn |
 | model | the model that answered |
 | effort | the effort setting (low, medium, high, xhigh, max); empty before it was recorded |

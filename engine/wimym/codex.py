@@ -9,7 +9,7 @@ Claude) are left out. Each line is {"timestamp", "type", "payload"}:
   event_msg / item_completed         item: UserMessage (what you typed, with started_at_ms), AgentMessage
                                      (Codex's text), CommandExecution, FileChange, McpToolCall, ImageView…
   event_msg / turn_aborted           you stopped the turn
-  event_msg / token_count            info.last_token_usage: input, cached input, output tokens
+  event_msg / token_count            info.last_token_usage: input (cached part included), cached input, cache write, output tokens
 
 Kept in the cache dir (codex.json), read again only when a file changed. Codex keeps its own sessions,
 so nothing here is the only copy.
@@ -27,7 +27,7 @@ from .scan import GIT_COMMIT, GIT_PUSH, PR_CREATE, spans
 
 ROOT = os.path.join(HOME, ".codex", "sessions")
 KEPT = os.path.join(CACHE_DIR, "codex.json")
-VERSION = 2
+VERSION = 3
 WRAP = re.compile(r"^\s*<([\w-]+)\b[^>]*>.*?</\1>\s*", re.S)
 TOOLS = {"CommandExecution": "shell", "FileChange": "edit", "McpToolCall": "other", "ImageView": "read",
          "CollabAgentToolCall": "agents", "SubAgentActivity": "agents"}
@@ -94,7 +94,13 @@ def scan(path):
             if et == "token_count" and turn:
                 u = (p.get("info") or {}).get("last_token_usage") or {}
                 turn["out"] += u.get("output_tokens") or 0
-                turn["ctx"] += u.get("input_tokens") or 0
+                i, rd, w = u.get("input_tokens") or 0, u.get("cached_input_tokens") or 0, u.get("cache_write_input_tokens")
+                turn["inpFresh"] += i - rd - (w or 0)  # input counts the cached part
+                turn["inpRead"] += rd
+                if w is not None:
+                    turn["inpWrite"] = (turn["inpWrite"] or 0) + w
+                if i:
+                    turn["ctx"] = i + (u.get("output_tokens") or 0)
                 turn["msgs"] += 1
                 continue
             if et != "item_completed":
@@ -114,9 +120,9 @@ def scan(path):
                 turn = {"id": f"codex-{item.get('id') or at}", "ts": at, "end": at, "cwd": r["cwd"], "src": "desk", "kind": "prompt",
                         "text": text[:20000], "chars": len(text), "words": len(text.split()), "images": images, "mode": None,
                         "tools": 0, "cat": {}, "files": set(), "add": 0, "del": 0, "commits": 0, "pushes": 0, "prs": 0, "out": 0,
-                        "ctx": 0, "think": 0, "thinkMs": 0, "reply": "", "interrupted": False, "model": model, "msgs": 0,
-                        "first": None, "perm": {}, "fail": 0, "agents": 0, "spawn": 0, "asked": 0, "plan": 0, "skills": [],
-                        "effort": ctx.get("effort")}
+                        "ctx": 0, "inpFresh": 0, "inpWrite": None, "inpRead": 0, "think": 0, "thinkMs": 0, "reply": "",
+                        "interrupted": False, "model": model, "msgs": 0, "first": None, "perm": {}, "fail": 0, "agents": 0,
+                        "spawn": 0, "asked": 0, "plan": 0, "skills": [], "effort": ctx.get("effort")}
                 if model:
                     r["models"][model] = r["models"].get(model, 0) + 1
                 continue

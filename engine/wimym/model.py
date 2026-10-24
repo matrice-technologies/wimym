@@ -6,7 +6,7 @@ from 05:00 to 05:00, so a message at 00:30 belongs to the evening before.
 """
 import os
 import re
-from bisect import bisect_left
+from bisect import bisect_left, bisect_right
 from collections import Counter, defaultdict
 from datetime import date, datetime, timedelta, timezone
 from statistics import median
@@ -26,9 +26,10 @@ WORK = {"build", "fix", "design", "ops", "setup", "ship", "plan", "review", "cor
 COVERED = .8      # a label set speaks for you once it covers this share of your messages
 SAME = 10         # seconds: a history prompt this close to a transcript's turn of the same session is that turn
 # Message fields only a transcript gives: null on prompts from history.jsonl, never zero.
-FULL_ONLY = ("dur", "wait1", "tools", "cat", "files", "add", "del", "commits", "pushes", "prs", "out", "ctx", "stopped",
-             "model", "effort", "thinkMs", "mode", "asked", "auto", "denied", "blocked", "fail", "agents", "spawn",
-             "questions", "gap", "queued", "after", "claudeAsked", "readWords")
+FULL_ONLY = ("dur", "wait1", "tools", "cat", "files", "add", "del", "commits", "pushes", "prs", "out", "outSub", "outAuto",
+             "outAll", "ctx", "inp", "inpFresh", "inpWrite", "inpRead", "stopped", "model", "effort", "thinkMs", "mode",
+             "asked", "auto", "denied", "blocked", "fail", "agents", "spawn", "questions", "gap", "queued", "after",
+             "claudeAsked", "readWords")
 
 
 # ---------------------------------------------------------------------------
@@ -132,6 +133,7 @@ class Model:
         self.checkins = checkins
         self.generated = datetime.now().isoformat(timespec="seconds")
         self._turns(records)
+        self._leverage(records)
         self._sessions(records)
         self._messages(history)
         self._parallel()
@@ -180,6 +182,70 @@ class Model:
             for e in r.get("queue") or []:
                 if e[1] == "a":
                     self.absorbed.append((e[0], stem))
+
+    # -- what a turn of yours set off beyond its own output ------------------------------------
+    def _leverage(self, records):
+        """levSub: output of the subagents a turn launched (found by its prompt id, else the turn of their session
+        running when they started). levAuto, on your turns: output of the turns Claude ran without you that
+        followed from it, in its session or in sessions it started (found by the brief it sent, else by a session
+        starting while it was starting one), and so on down. Each turn's output lands on one turn of yours, at most."""
+        by_sid, by_pid = defaultdict(list), {}
+        for t in self.turns.values():
+            t["levSub"], t["levAuto"] = t.get("outSub", 0), 0
+            if t["ts"]:
+                by_sid[t["sid"]].append(t)
+            if t.get("pid"):
+                by_pid[t["pid"]] = t
+        for ts in by_sid.values():
+            ts.sort(key=lambda t: t["ts"])
+        stamps = {sid: [t["ts"] for t in ts] for sid, ts in by_sid.items()}
+
+        def running(sid, when):
+            i = bisect_right(stamps.get(sid) or [], when) - 1
+            return by_sid[sid][i] if i >= 0 else None
+        for path, r in records:
+            if r.get("sub") and r.get("out"):
+                t = by_pid.get(r.get("pid")) or (r.get("start") and running(path.split("/subagents/")[0].rsplit("/", 1)[-1], r["start"]))
+                if t:
+                    t["levSub"] += r["out"]
+        # the session that started each session
+        keys = {k: t for t in self.turns.values() for ks in t.get("spawnKeys") or [] for k in ks}
+        spawners = sorted((t for t in self.turns.values() if t.get("spawn") and t["ts"]), key=lambda t: t["ts"])
+        parent = {}
+        by_session = lambda x, pre=BY_SESSION: x.startswith(pre) or own_words(x).startswith(pre)
+        for sid, ts in by_sid.items():
+            for t in [t for t in ts if t["src"] not in MINE and by_session(t["text"][:300])][:5]:
+                text = " ".join(t["text"][:4000].split())
+                p = next((p for k, p in keys.items() if k in text), None)
+                if not p and by_session(text[:300], ("Background (from the session", "Task (from the session")):
+                    # a brief not kept (scanned before briefs were): a turn that started a session in the 15 minutes
+                    # before this one began, still its session's latest turn
+                    p = next((p for p in reversed(spawners) if p["ts"] <= t["ts"] and p["sid"] != sid and
+                              secs(p["ts"], t["ts"]) <= 900 and running(p["sid"], t["ts"]) is p), None)
+                if p and p["sid"] != sid:
+                    parent[sid] = p["sid"]
+                    break
+        owner = {}
+
+        def own(t):
+            k = t["key"]
+            if k not in owner:
+                if t["src"] in MINE:
+                    owner[k] = t
+                    return t
+                owner[k] = None  # no loops
+                ts = by_sid[t["sid"]]
+                i = bisect_right(stamps[t["sid"]], t["ts"]) - 1
+                mine = next((x for x in reversed(ts[:i + 1]) if x["src"] in MINE), None)
+                p = parent.get(t["sid"])
+                via = own(running(p, t["ts"])) if p and running(p, t["ts"]) else None
+                owner[k] = max((x for x in (mine, via) if x), key=lambda x: x["ts"], default=None)
+            return owner[k]
+        for t in self.turns.values():
+            if t["ts"] and t["src"] not in MINE:
+                o = own(t)
+                if o:
+                    o["levAuto"] += t["out"] + t["levSub"]
 
     # -- sessions ------------------------------------------------------------------------------
     def _sessions(self, records):
@@ -284,7 +350,14 @@ class Model:
                 "dur": max(0, round(secs(t["ts"], t["end"]))) if t["end"] else 0,
                 "wait1": max(0, round(secs(t["ts"], t["first"]))) if t.get("first") else None,
                 "tools": t["tools"], "cat": t["cat"], "files": len(t["files"]), "add": t["add"], "del": t["del"],
-                "commits": t["commits"], "pushes": t["pushes"], "prs": t["prs"], "out": t["out"], "ctx": t["ctx"],
+                "commits": t["commits"], "pushes": t["pushes"], "prs": t["prs"], "out": t["out"],
+                # subagents: unknown on turns scanned before they were counted
+                "outSub": t["levSub"] if "outSub" in t else None, "outAuto": t["levAuto"],
+                "outAll": t["out"] + t["levSub"] + t["levAuto"],
+                # a turn scanned before the split (kept in the index after its transcript went) summed its input in ctx
+                "ctx": t["ctx"] if "inpFresh" in t else None,
+                "inp": t["inpFresh"] + t["inpRead"] + (t["inpWrite"] or 0) if "inpFresh" in t else t["ctx"],
+                "inpFresh": t.get("inpFresh"), "inpWrite": t.get("inpWrite"), "inpRead": t.get("inpRead"),
                 "stopped": t["interrupted"], "model": t["model"], "effort": t.get("effort"), "thinkMs": t.get("thinkMs", 0),
                 "mode": t.get("mode"), "asked": perm.get("asked", 0) + perm.get("always", 0), "auto": perm.get("auto", 0),
                 "denied": perm.get("you-no", 0), "blocked": sum(v for k2, v in perm.items() if k2.endswith("-no") and k2 != "you-no"),

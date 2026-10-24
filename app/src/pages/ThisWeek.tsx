@@ -143,7 +143,8 @@ export default function ThisWeek() {
       })}
 
       <p className="coverage">
-        Full detail, with Claude's replies and what each message set off, from {fmtDate(vitals.coverage.full_from)}; your prompts alone from {fmtDate(vitals.coverage.prompts_from)}.
+        {vitals.coverage.full_from && <>Full detail, with Claude's replies and what each message set off, from {fmtDate(vitals.coverage.full_from)}; </>}
+        {vitals.coverage.full_from ? "your" : "Your"} prompts alone from {fmtDate(vitals.coverage.prompts_from)}.
         {" "}{vitals.coverage.git ? "Git is read." : "Git isn't read yet."}
       </p>
 

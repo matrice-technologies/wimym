@@ -3,19 +3,19 @@
 // strings: each one it touches sends a pulse of light both ways along its thread, up through the
 // session's own cloth and down to the back of the loom, that shows the thread as it passes and leaves
 // it glowing a moment before it goes dark again;
-// the string shivers where the pulse is. The message's own session rings brightest; the others it
-// passes are brushed. Pointing at a thread plucks it too. The wheel rewinds the loom, which weaves on
+// the string shivers where the pulse is. The message's own session rings brightest, as hard as all Claude wrote for it
+// (its turn, subagents, sessions it started); the others it passes are brushed. Pointing at a thread plucks it too. The wheel rewinds the loom, which weaves on
 // from there.
-import type { Mind } from "../shared/data";
+import { heft, tokensIn, type Mind } from "../shared/data";
 import { FAM_NAMES, hex, type Theme } from "../shared/palette";
-import { fmtDay, fmtHour, type PieceFactory } from "../shared/piece";
+import { fmtDay, fmtHour, fmtTokens, type PieceFactory } from "../shared/piece";
 import { EDGE, GAP, Loom, lowerBound, SHED, type LoomOptions, type Session, type Stage } from "./loom";
 import { Mass } from "./loom-mass";
 
 const SPEED = 640;            // px a second the light runs up the thread
 const DECAY = 2.4;            // seconds for a pulse to fall to a third
 const AFTER = 0.55;           // seconds the thread glows after the pulse has passed, to a third
-const OWN = 1, BRUSH = 0.45;  // how hard the message's own session is struck, and the others crossed
+const OWN = 1, BRUSH = 0.45;  // how hard the message's own session is struck (for a turn of the usual length; heft's ring scales it), and the others crossed
 const LENGTH = 26;            // px, the pulse's half length along the thread
 const SHIVER = 1.6, WAVE = 20;  // px the string moves at most, and the length of its ripple
 const MAX = 400;              // waves alive at once at most
@@ -59,6 +59,7 @@ const INTRO = SWING_AT + SWING;          // seconds before the loom weaves on
 const AURORA_AT = HORIZON_AT + HORIZON;  // the aurora coming out of the dark once the horizon is drawn, full as the loom weaves on
 const ERASE_AT = 0.15, ERASE_RATE = 24;  // the words deleted, from seconds after the loom weaves on, letters a second
 const LABELS_IN = 1.2;                   // seconds the names, the days and the legend take to come, after
+const CLEAR_TO = 0.84;                   // with clear: how far across a wide screen the loom reaches, short of the legend
 
 export const loomStrum: PieceFactory = (canvas, mind, theme, opts) => {
   const q = new URLSearchParams(location.search);
@@ -71,8 +72,11 @@ export const loomHero: PieceFactory = (canvas, mind, theme, opts) =>
 /** mass: the aurora at first; keys: C and M change the colour and the aurora; caption: a lab page's .cap spans the
  * bottom on a narrow screen, and the loom sits above it; words: the patches the days and names sit on, and the
  * legend's dots (false for a picture with no words on it); worker: the aurora painted in a worker (false for a still
- * made by running the loom on); intro: the opening plays first (?intro on the lab page). */
-export interface StrumOptions extends LoomOptions { mass?: boolean; colour?: "project" | "type"; keys?: boolean; caption?: boolean; words?: boolean; worker?: boolean; intro?: boolean }
+ * made by running the loom on); names: with words false, the columns' names alone, without the days or the legend (the
+ * postcard); intro: the opening plays first (?intro on the lab page); clear: on a wide screen, the
+ * part of the width a page's words take at the left, which the loom keeps out of (unset, it centres at 0.6 and reaches
+ * under them). */
+export interface StrumOptions extends LoomOptions { mass?: boolean; colour?: "project" | "type"; keys?: boolean; caption?: boolean; words?: boolean; names?: boolean; worker?: boolean; intro?: boolean; clear?: number }
 
 /** A strike on string s at Y; i: the message that struck it, -1 for a pluck. */
 interface Wave { s: number; Y: number; t0: number; a: number; i: number }
@@ -107,9 +111,11 @@ export class Strum extends Loom {
   widths = new Map<string, number>(); font = ""; display = "";
   rest = { x: 0, y: 0, col: "" };  // where the spark waits and its colour, for the opening's cursor to drop onto
   wordsX = 0;                   // where the opening's words start
+  pace = 1;                     // how many times faster than its own pace the loom weaves (a day in a few seconds, for the postcard); the light keeps its own
 
-  readonly keys: boolean; readonly overCaption: boolean; readonly words: boolean;
+  readonly keys: boolean; readonly overCaption: boolean; readonly words: boolean; readonly onlyNames: boolean; readonly clear: number | undefined;
   readonly wait: number;        // seconds of the opening, before the loom weaves on: its clock is below zero until then
+  readonly ring: Float32Array;  // per message, how hard it strikes its string: by how much Claude wrote on its turn
 
   constructor(canvas: HTMLCanvasElement, mind: Mind, theme: Theme, share: boolean, still: boolean, opts: StrumOptions = {}) {
     super(canvas, mind, theme, share, still, opts);
@@ -118,8 +124,9 @@ export class Strum extends Loom {
     this.colourBy = opts.colour ?? "type";
     this.mass = new Mass({ x: s => this.xAt(s, this.nowY), light: (s, i) => this.colourOf(this.sess[s], i) }, opts.worker ?? true);
     this.massOn = opts.mass ?? false;
-    this.keys = opts.keys ?? false; this.overCaption = opts.caption ?? false; this.words = opts.words ?? true;
+    this.keys = opts.keys ?? false; this.overCaption = opts.caption ?? false; this.words = opts.words ?? true; this.onlyNames = !this.words && !!opts.names; this.clear = opts.clear;
     this.wait = opts.intro && !still && mind.n ? INTRO : 0;
+    this.ring = heft(mind).ring;
     if (this.keys) addEventListener("keydown", this.key);
   }
   key = (e: KeyboardEvent) => {
@@ -136,7 +143,11 @@ export class Strum extends Loom {
   };
   dispose() { super.dispose(); if (this.keys) removeEventListener("keydown", this.key); this.mass.dispose(); }
 
-  resize(w: number, h: number, dpr: number) { super.resize(w, h, dpr); this.clearCaption(); }
+  resize(w: number, h: number, dpr: number) {
+    super.resize(w, h, dpr);
+    if (this.clear && w / h > 1.25) this.centre = (w * (this.clear + CLEAR_TO)) / 2;
+    this.clearCaption();
+  }
   /** On a narrow screen the caption spans the bottom: the fell sits above it, with room for the names between. Its
    * height is read from the page, now and then, as its text arrives after the data. */
   private clearCaption() {
@@ -154,13 +165,13 @@ export class Strum extends Loom {
     this.t = t;
     if (t - this.capRead > 0.5) this.clearCaption();
     // weave on and strike first, so the threads shiver as the cloth is drawn
-    if (!this.still && dt) this.advance(dt);
+    if (!this.still && dt) this.advance(dt * this.pace);
     this.nowY = this.woven() - this.back;
     this.fit(dt);
     this.record(t);
     if (t >= 0) this.strum(t);
     super.frame(t, 0);
-    if (this.words && this.come() > 0) { this.name(); this.date(dt); }
+    if ((this.words || this.onlyNames) && this.come() > 0) { this.name(); if (this.words) this.date(dt); }
     if (this.wait) this.opening();
   }
   /** Seconds since the opening began; for a loom with no opening, long since. */
@@ -224,8 +235,11 @@ export class Strum extends Loom {
     this.cur = this.sk = Math.max(1, n - picks - keep); this.e = 0;
     let t = dt;
     for (; this.cur < to && t < 60; t += dt) this.frame(t, dt);
-    this.sweep(t);
+    // it rings without weaving on, so the last `keep` are all still to come
+    const pace = this.pace;
+    this.sweep(t); this.pace = 0;
     for (const end = t + SWEEP_RINGS; t < end; t += dt) this.frame(t, dt);
+    this.pace = pace;
     return t;
   }
   /** A hand swept hard across the loom at t: SWEEP_RINGS later, it's at its brightest. */
@@ -246,7 +260,7 @@ export class Strum extends Loom {
     let fixed = 0, lanes = 0;
     for (const c of this.vis) { const w = this.weight(this.cols[c], now); fixed += w * (2 * EDGE + GAP); lanes += w * 2 * this.reach[c]; }
     // on a wide screen the caption is at the left: the loom keeps to the right of it
-    const room = this.w / this.h > 1.25 ? Math.min(this.room, 2 * (this.centre - this.w * 0.39)) : this.room;
+    const room = this.w / this.h > 1.25 ? Math.min(this.room, this.clear ? (CLEAR_TO - this.clear) * this.w : 2 * (this.centre - this.w * 0.39)) : this.room;
     const want = lanes > 0.01 ? Math.max(SP_MIN, Math.min(SP_MAX, (room - fixed) / lanes)) : SP_MAX;
     this.sp += (want - this.sp) * k;
     this.cols.forEach((C, c) => { C.width = 2 * this.reach[c] * this.sp + 2 * EDGE; });
@@ -296,14 +310,15 @@ export class Strum extends Loom {
       items.push({ x: this.cx[c], w: tw * alpha, text, alpha, at: this.cx[c], y });
     }
     items.sort((a, b) => a.x - b.x);
-    const total = items.reduce((a, it) => a + it.w + NAME_PAD, 0), rows = total > this.room + 160 ? 2 : 1;
+    // two rows when one would run well past the loom; on a narrow screen as soon as it would, the screen's edge being near
+    const total = items.reduce((a, it) => a + it.w + NAME_PAD, 0), rows = total > this.room + (this.w / this.h > 1.25 ? 160 : 0) ? 2 : 1;
     this.names = [];
     for (let r = 0; r < rows; r++) {
       const row = items.filter((_, i) => i % rows === r);
       dodge(row, NAME_PAD);
       for (const it of row) { it.y = y + r * 16; this.names.push({ x: it.at, y: it.y, text: it.text, alpha: it.alpha }); }
     }
-    this.drawLegend(g);
+    if (this.words) this.drawLegend(g);
     const C = this.colours(), come = this.come();
     // a faint line from a name that had to move aside up to its column
     g.save(); g.strokeStyle = C.muted; g.lineWidth = 0.6;
@@ -398,7 +413,9 @@ export class Strum extends Loom {
       if (st === "fly") this.strike(this.cur, this.flyX(this.cur, p), t);
       else if (st === "beat" || st === "ret") this.strike(this.cur, Infinity, t);
     }
-    if (this.waves.length > MAX) this.waves.splice(0, this.waves.length - MAX);
+    // woven faster than its pace, fewer at once: the strikes come thicker, and each wave sways every other on its string
+    const max = Math.round(MAX / Math.max(1, this.pace));
+    if (this.waves.length > max) this.waves.splice(0, this.waves.length - max);
     this.waves = this.waves.filter(w => t - w.t0 < DECAY * 3);
     this.births = this.births.filter(b => t - b.t0 < BIRTH);
     this.index();
@@ -414,11 +431,11 @@ export class Strum extends Loom {
       const x = this.laneX(S.col, S.lane);
       if (upTo !== Infinity && (d > 0 ? x > upTo : x < upTo)) continue;
       this.struck.add(S.lane);
-      this.waves.push({ s, Y: this.Y[k], t0: t, a: s === own ? OWN : BRUSH, i: this.order[k] });
+      this.waves.push({ s, Y: this.Y[k], t0: t, a: s === own ? OWN * this.ring[this.order[k]] : BRUSH, i: this.order[k] });
     }
     if (own >= 0 && !this.struck.has(this.sess[own].lane)) {
       const S = this.sess[own], x = this.laneX(S.col, S.lane);
-      if (upTo === Infinity || (d > 0 ? x <= upTo : x >= upTo)) { this.struck.add(S.lane); this.waves.push({ s: own, Y: this.Y[k], t0: t, a: OWN, i: this.order[k] }); }
+      if (upTo === Infinity || (d > 0 ? x <= upTo : x >= upTo)) { this.struck.add(S.lane); this.waves.push({ s: own, Y: this.Y[k], t0: t, a: OWN * this.ring[this.order[k]], i: this.order[k] }); }
     }
     // a session's very first message (not its string taken over in another column): a spark, and a string that rings harder
     const O = own >= 0 ? this.sess[own] : null;
@@ -677,11 +694,12 @@ export class Strum extends Loom {
   }
 
   caption() {
-    const c = super.caption();
+    const c = super.caption(), out = tokensIn(this.mind);
     return {
-      line: c.line,
+      line: out ? `${c.line} Claude wrote ${fmtTokens(out)} tokens back.` : c.line,
       sub: c.sub.replace("each have a column,", "each have a column, which rests while the project is quiet,")
-        .replace("each thread in a column is a session", "each thread in a column is a session, a string the shuttle strums as it passes"),
+        .replace("each thread in a column is a session", `each thread in a column is a session, a string the shuttle strums as it passes${out ? ", as hard as all Claude wrote for the message" : ""}`)
+        + (out && this.massOn ? " The aurora weighs each project by how much Claude wrote for it." : ""),
     };
   }
 }

@@ -2,6 +2,7 @@ import * as d3 from "d3";
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import CheckIn from "../components/CheckIn";
+import Postcard from "../components/Postcard";
 import { useTip } from "../components/Tip";
 import { useData, useDay, useSessions } from "../lib/data";
 import { famColor, famName, fmtDay, fmtDur, fmtHour, INTENTS, plural } from "../lib/format";
@@ -36,6 +37,7 @@ export default function DayPage() {
             {plural(row.n, "message")} from {fmtHour(row.start)} to {fmtHour(row.end)} across {plural(row.projects ?? 0, "project")} and {plural(row.sessions ?? 0, "session")}
             {row.peak && row.peak > 1 ? `, with up to ${row.peak} of yours running at once` : ""}. Claude worked {row.claudeH} hours and made {plural(row.commits ?? 0, "commit")}.
           </p>
+          <Postcard key={day} day={day} />
           <div className="vs">
             {([
               ["Day length", row.span, usual(x => x.span), (v: number) => v.toFixed(1) + " h"],

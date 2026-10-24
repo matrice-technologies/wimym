@@ -1,6 +1,7 @@
 // The mass behind the strummed loom: the weight of attention the projects carry, drawn as an aurora far behind the
 // harp, the light the sparks leave in the sky. Three speeds, each heavier than the last: a message is a spark, a
-// session a string that rings, and the aurora gathers the sessions over days. It mirrors the loom: each project has
+// session a string that rings, and the aurora gathers the sessions over days, each message weighing as much as Claude
+// wrote on its turn (one apiece where that isn't known). It mirrors the loom: each project has
 // a stretch of sky in the same order as the loom's columns, Other projects at the right, and together they span the
 // whole width, each as wide as the weight it carries; when the weights shift, the stretches slide aside, slowly, as
 // heavy things do. Weight settles over days and sinks back, so each project hangs as three curtains, near, middle
@@ -9,7 +10,7 @@
 // going out at the left and coming back in at the right, keeping their order: turned by a current that fresh weight
 // pushes like a flywheel, faster while the work goes on, coasting after, the far depths turning slower. The painting is in
 // loom-mass-paint.ts, in a worker: a picture ten times a second, each fading into the next.
-import type { Mind } from "../shared/data";
+import { heft, type Mind } from "../shared/data";
 import { hex } from "../shared/palette";
 import { CELL, CURTAIN, DEPTHS, FLARE, oklab, paintField, PROJECT, type Job, type Picture } from "./loom-mass-paint";
 
@@ -18,13 +19,13 @@ const SETTLE = 60;            // hours for a session's weight to fall to a third
 const DEEP = 30;              // hours for it to sink back into the far, to a third of the way left
 const SINK = 1.5;             // seconds what is shown of a session's depth takes to follow it, to a third: never a jump
 const GROW = 0.6;             // seconds what is shown of its weight takes to follow it, to a third
-const GULP = 1;               // a message's flare of its project's near curtain
+const GULP = 1;               // a message's flare of its project's near curtain, for a turn of the usual length
 const RISE = 0.25, GULPED = 1.3;   // seconds a flare takes to rise, and to settle, to a third
 const WIDE = 0.6;             // a stretch is as wide as its weight to this power: the small still show, the big don't swallow the sky
 const OVERLAP = 1.15;         // how far a curtain reaches past its stretch, into its neighbours'
 const FOLLOW = [0.7, 0.25, 0.09];   // per second squared, near to far: how hard a stretch is drawn to its place; the far, heavier, lag
 const U_MIN = 1.4, U_MAX = 15;   // px a second the current runs, near: at rest, and at full momentum
-const E0 = 260;               // messages of fresh weight that give it two thirds of its full speed
+const E0 = 260;               // messages of fresh weight (each the mean turn's) that give it two thirds of its full speed
 const SPIN = 7;               // seconds the current takes to follow its momentum, to a third: a heavy flywheel
 const FAR_SPEED = 0.62;       // how much slower the far turns than the near: the parallax
 const REFRESH = 10;           // pictures a second
@@ -39,8 +40,8 @@ export interface Front {
 /** What only the loom can say: where a string crosses the fell now, and the colour of the light a message sent on it. */
 export interface Strings { x(s: number): number; light(s: number, i: number): string }
 
-/** A session's string in the aurora: the weight its messages carry. w and z: its weight and depth now; e and zs: what
- * is shown of them, following; kick and gulp: a flare to come, and the flare. */
+/** A session's string in the aurora: the weight its messages carry. n: their weight, Claude's output against the mean turn;
+ * w and z: its weight and depth now; e and zs: what is shown of them, following; kick and gulp: a flare to come, and the flare. */
 interface Sess { s: number; p: number; i: number; n: number; t1: number; ca: number; cb: number; w: number; e: number; z: number; zs: number; kick: number; gulp: number }
 /** A project's stretch of sky at one depth: its middle and half width, how fast each is moving, and its weight. */
 interface Stretch { x: number; v: number; hw: number; hv: number; weight: number }
@@ -131,8 +132,9 @@ export class Mass {
     if (!S) { S = { s, p: L.mind.project[i], i, n: 0, t1: 0, ca: 0, cb: 0, w: 0, e: 0, z: 0, zs: 0, kick: 0, gulp: 0 }; this.sess.set(s, S); }
     // its colour, as a direction on the colour wheel (OKLab's a and b), so that colours average to a hue, not to grey
     const [, oa, ob] = this.ink(this.strings.light(s, i));
-    S.n++; S.t1 = L.A[k]; S.ca += oa; S.cb += ob;
-    if (!quiet) S.kick += GULP;
+    const h = heft(L.mind), w = h.weight[i];
+    S.n += w; S.t1 = L.A[k]; S.ca += oa * w; S.cb += ob * w;
+    if (!quiet) S.kick += GULP * h.ring[i];
   }
   private ink(c: string) {
     let v = this.inks.get(c);

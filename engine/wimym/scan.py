@@ -21,7 +21,7 @@ from datetime import datetime
 
 from .text import AUTO_START, EDIT_TOOLS, QUESTIONS, SR, prompt_of, source_of, tool_kind
 
-VERSION = 3
+VERSION = 5
 
 TS = re.compile(r'"timestamp":\s*"([^"]{19})')
 GIT_COMMIT = re.compile(r"\bgit\s+(?:-C\s+\S+\s+)?commit\b")
@@ -67,15 +67,22 @@ def _new_turn(o, ts, text, images, kind, src, cwd):
     return {"id": o.get("uuid"), "ts": ts, "end": ts, "cwd": cwd, "src": src, "kind": kind,
             "text": text[:20000], "chars": len(text), "words": len(text.split()), "images": images,
             "mode": o.get("permissionMode"), "tools": 0, "cat": {}, "files": set(), "add": 0, "del": 0,
-            "commits": 0, "pushes": 0, "prs": 0, "out": 0, "ctx": 0, "think": 0, "thinkMs": 0, "reply": "",
-            "interrupted": False, "model": None, "msgs": 0, "first": None, "perm": {}, "fail": 0,
-            "agents": 0, "spawn": 0, "asked": 0, "plan": 0, "skills": [], "effort": None}
+            "commits": 0, "pushes": 0, "prs": 0, "out": 0, "ctx": 0, "inpFresh": 0, "inpWrite": 0, "inpRead": 0,
+            "think": 0, "thinkMs": 0, "reply": "", "interrupted": False, "model": None, "msgs": 0, "first": None,
+            "perm": {}, "fail": 0, "agents": 0, "spawn": 0, "asked": 0, "plan": 0, "skills": [], "effort": None,
+            "outSub": 0, "pid": o.get("promptId"), "spawnKeys": []}
+
+
+def spawn_key(s):
+    """The first words of a brief one session sent another: found again in the first message of the session it started."""
+    s = " ".join(str(s or "").split())
+    return s[:100] if len(s) >= 40 else None
 
 
 def scan(path):
     r = {"v": VERSION, "sid": None, "cwd": None, "start": None, "end": None, "sub": "/subagents/" in path,
          "title": None, "entry": None, "ver": None, "models": {}, "cost": None, "turns": [], "act": {}, "xact": set(),
-         "queue": [], "docs": {"loads": [], "reads": [], "writes": []}, "api": []}
+         "queue": [], "docs": {"loads": [], "reads": [], "writes": []}, "api": [], "pid": None, "out": 0}
     turn, seen, names = None, set(), {}
     act, pend = {}, []
     last_key = None
@@ -194,6 +201,8 @@ def scan(path):
                 r["start"] = r["start"] or ts
                 r["end"] = ts
             r["sid"] = r["sid"] or o.get("sessionId")
+            if r["sub"]:  # a subagent's file: the prompt that launched it, and its output
+                r["pid"] = r["pid"] or o.get("promptId")
             cwd = o.get("cwd") or r["cwd"]
             r["cwd"] = r["cwd"] or o.get("cwd")
             r["entry"] = r["entry"] or o.get("entrypoint")
@@ -238,12 +247,24 @@ def scan(path):
                         seen.add(mid)
                         u = msg.get("usage") or {}
                         turn["out"] += u.get("output_tokens") or 0
-                        turn["ctx"] += (u.get("input_tokens") or 0) + (u.get("cache_creation_input_tokens") or 0) + (u.get("cache_read_input_tokens") or 0)
+                        i, w, rd = u.get("input_tokens") or 0, u.get("cache_creation_input_tokens") or 0, u.get("cache_read_input_tokens") or 0
+                        turn["inpFresh"] += i
+                        turn["inpWrite"] += w
+                        turn["inpRead"] += rd
+                        if i + w + rd:  # the context at the end of the turn: the last call's prompt and what it wrote
+                            turn["ctx"] = i + w + rd + (u.get("output_tokens") or 0)
                         turn["msgs"] += 1
                         turn["model"] = mdl or turn["model"]
                         turn["effort"] = o.get("effort") or turn["effort"]
                     if o.get("thinkingDurationMs"):
                         turn["thinkMs"] += o["thinkingDurationMs"]
+                elif side and mid not in seen:  # a subagent's call: inline (older Claude Code) or in its own file
+                    seen.add(mid)
+                    n = (msg.get("usage") or {}).get("output_tokens") or 0
+                    if turn:
+                        turn["outSub"] += n
+                    else:
+                        r["out"] += n
             for c in msg["content"]:
                 if not isinstance(c, dict):
                     continue
@@ -284,6 +305,9 @@ def scan(path):
                         turn["agents"] += 1
                     elif name.startswith("mcp__ccd_session__start_session"):
                         turn["spawn"] += 1
+                        keys = [k for k in (spawn_key(inp.get("background")), spawn_key(inp.get("prompt"))) if k]
+                        if keys:
+                            turn["spawnKeys"].append(keys)
                     elif name == "AskUserQuestion":
                         turn["asked"] += 1
                     elif name in ("ExitPlanMode", "EnterPlanMode"):

@@ -20,6 +20,9 @@ narrates as it goes; a few dozen transcripts take a second or two, months of the
 Run it again any time: it only redoes what changed. `./install.sh --help` for the options, `--stop` to
 stop the engine.
 
+When a new version is out, the page says so. `./install.sh --update` gets it, says what changed (all of
+it in `CHANGES.md`), rebuilds the page and restarts the engine onto it.
+
 Or let Claude Code do the whole setup, a step at a time and asking before each change. Paste this
 into Claude Code:
 
@@ -81,8 +84,8 @@ Set a stopping hour, days off a week or a ceiling on sessions at once, on the fr
   stay there: they're the only history of those sessions), `history.py` and `codex.py` add prompts
   from `~/.claude/history.jsonl` and Codex, the index also reads Cowork sessions, `gitlog.py` reads the
   repositories behind your working folders, `model.py` builds messages, sessions, days and weeks,
-  `vitals.py` the vital signs and the week, and `server.py` serves the page and `/api/*` on 127.0.0.1
-  only. Tests: `python3 -m unittest discover -s engine/tests`.
+  `vitals.py` the vital signs and the week, `update.py` whether a newer Wimym is out, and `server.py`
+  serves the page and `/api/*` on 127.0.0.1 only. Tests: `python3 -m unittest discover -s engine/tests`.
 - `app/`: Vite, React and TypeScript, d3. `lab/`: the hero (three.js) and its prototypes.
 - `labeller/`: model labels through your logged-in `claude` CLI: what each message asks for and does,
   an account of each session and each day, and repeated instructions. Their wording, versions and
@@ -96,12 +99,17 @@ Set a stopping hour, days off a week or a ceiling on sessions at once, on the fr
 
 ## Privacy
 
-Wimym reads everything where it is, and sends nothing anywhere itself. The server listens on
+Wimym reads everything where it is, and sends nothing of yours anywhere itself. The server listens on
 127.0.0.1, answers only requests whose `Host` is this machine, and takes input only as JSON from its
 own page. Text leaves the Mac only when you run the labeller or ask Claude through the skills, and then
 it goes to Claude, which saw it the first time. Pull requests and reviews are read from GitHub, through
 your `gh` login, only if you turn it on (`{"github": true}` in `~/.wimym/settings.json`, or
 `WIMYM_GITHUB=1`); it is off by default.
+
+Once a day the engine asks the repository it was cloned from which version is the latest (`git ls-remote`,
+with your own git login, and nothing of yours in the question), so the page can say when a newer one is
+out. `{"updates": false}` in `~/.wimym/settings.json`, or `WIMYM_UPDATES=0`, turns that off; the demo
+never asks, nor does a folder that isn't a clone.
 
 `./install.sh --demo` runs Wimym on a made-up person (Robin Vale, on port 8997), with its own folders
 under `~/.cache/wimym-demo`, so the whole page can be shown without anyone's real data. The share switch

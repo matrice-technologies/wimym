@@ -16,6 +16,9 @@ export interface Mind {
   project: Uint8Array;       // rank of the project by messages, 0 is the biggest
   family: Int8Array;         // index in FAMILIES, -1 when not labelled
   words: Uint16Array;
+  /** Claude's output tokens over all each message set off (outAll: its turn, subagents, sessions it started), NaN when
+   * unknown (prompts from history.jsonl, data without tokens). */
+  out?: Float32Array;
   /** The session each message was sent in, as an index (-1 unknown), when the data carries sessions (/api/messages does, points don't). */
   session?: Int32Array;
   projects: number;          // distinct projects
@@ -63,7 +66,7 @@ function mondays(days: string[]) {
 }
 
 /** The fields read from the app's Message (engine /api/messages); the app's own type fits as is. */
-export interface RawMessage { id: string; project: string; day: string; hour: number; kind: string; words: number; family: string | null; text: string; sid?: string | null }
+export interface RawMessage { id: string; project: string; day: string; hour: number; kind: string; words: number; family: string | null; text: string; sid?: string | null; outAll?: number | null }
 /** The fields read from the app's Day (engine /api/core days). */
 export interface RawDay { day: string; n: number; start?: number; end?: number; active?: number; rest?: number | null; projects?: number; switchH?: number | null; frustrated?: number | null }
 
@@ -94,6 +97,7 @@ export function mindFrom(messages: readonly RawMessage[], coreDays: readonly Raw
   const n = msgs.length;
   const day = new Uint16Array(n), hour = new Float32Array(n), project = new Uint8Array(n);
   const family = new Int8Array(n), words = new Uint16Array(n), session = new Int32Array(n).fill(-1), sids = new Map<string, number>();
+  const out = new Float32Array(n);
   let fullFrom = days.length;
   msgs.forEach((x, i) => {
     if (x.sid) { if (!sids.has(x.sid)) sids.set(x.sid, sids.size); session[i] = sids.get(x.sid)!; }
@@ -103,6 +107,7 @@ export function mindFrom(messages: readonly RawMessage[], coreDays: readonly Raw
     family[i] = x.family ? FAMILIES.indexOf(x.family as Family) : -1;
     if (family[i] >= 0 && day[i] < fullFrom) fullFrom = day[i];
     words[i] = Math.min(65535, x.words || 0);
+    out[i] = x.outAll ?? NaN;
   });
 
   const byDay = new Map(coreDays.map(d => [d.day, d]));
@@ -117,7 +122,7 @@ export function mindFrom(messages: readonly RawMessage[], coreDays: readonly Raw
 
   return {
     synthetic: false, days, weeks: mondays(days), fullFrom, n, day, hour, project, family, words, projects: ranked.length, perDay,
-    session: sids.size ? session : undefined,
+    session: sids.size ? session : undefined, out: out.some(x => !Number.isNaN(x)) ? out : undefined,
     detail: i => (isShared() ? null : { text: msgs[i].text, project: msgs[i].project }),
     name: p => (isShared() || p >= 254 ? null : ranked[p] ?? null),
   };
@@ -130,7 +135,7 @@ export function mindFrom(messages: readonly RawMessage[], coreDays: readonly Raw
  */
 export function mindFromPoints(pts: PointsPayload, coreDays?: readonly RawDay[] | null, isShared: () => boolean = () => share.on, base = ""): Mind {
   const F = (name: string) => pts.fields.indexOf(name);
-  const fDay = F("day"), fHour = F("hour"), fIntent = F("intent"), fProject = F("project");
+  const fDay = F("day"), fHour = F("hour"), fIntent = F("intent"), fProject = F("project"), fOut = F("outAll");
   const rows = pts.rows, n = rows.length;
   let last = 0;
   for (const r of rows) last = Math.max(last, r[fDay] as number);
@@ -147,6 +152,7 @@ export function mindFromPoints(pts: PointsPayload, coreDays?: readonly RawDay[] 
 
   const day = new Uint16Array(n), hour = new Float32Array(n), project = new Uint8Array(n);
   const family = new Int8Array(n), words = new Uint16Array(n).fill(12);   // points carry no length; every star the same weight
+  const out = fOut < 0 ? undefined : new Float32Array(n);
   let fullFrom = days.length;
   rows.forEach((r, i) => {
     day[i] = r[fDay] as number;
@@ -155,6 +161,7 @@ export function mindFromPoints(pts: PointsPayload, coreDays?: readonly RawDay[] 
     const intent = r[fIntent] == null ? null : pts.intents[r[fIntent] as number];
     family[i] = intent && FAMILY_OF[intent] ? FAMILIES.indexOf(FAMILY_OF[intent]) : -1;
     if (family[i] >= 0 && day[i] < fullFrom) fullFrom = day[i];
+    if (out) out[i] = (r[fOut] as number | null) ?? NaN;
   });
 
   const late = new Uint16Array(days.length);
@@ -198,7 +205,7 @@ export function mindFromPoints(pts: PointsPayload, coreDays?: readonly RawDay[] 
       .catch(() => asked.delete(i));
   };
   return {
-    synthetic: false, days, weeks: mondays(days), fullFrom, n, day, hour, project, family, words, projects: ranked.length, perDay,
+    synthetic: false, days, weeks: mondays(days), fullFrom, n, day, hour, project, family, words, projects: ranked.length, perDay, out,
     detail: i => {
       if (isShared()) return null;
       const t = text.get(i);
@@ -212,6 +219,35 @@ export function mindFromPoints(pts: PointsPayload, coreDays?: readonly RawDay[] 
 
 /** Share mode, read by detail() and by every piece's captions. Set from ?share=1 or the P key. */
 export const share = { on: new URLSearchParams(location.search).has("share") };
+
+/** How much Claude wrote on each message's turn, against the record's own: ring, how hard it strikes its string (1 for
+ * the median turn, on a log scale, from 0.55 for a word or two to 1.6 for a turn ten times the median); weight, what it
+ * adds to its project's aurora (1 for the mean turn, in proportion, never quite nothing). Both 1 where the tokens aren't known. */
+export function heft(m: Mind): { ring: Float32Array; weight: Float32Array } {
+  let h = hefts.get(m);
+  if (h) return h;
+  const ring = new Float32Array(m.n).fill(1), weight = new Float32Array(m.n).fill(1), o = m.out;
+  const known = o ? Array.from(o).filter(x => x > 0).sort((a, b) => a - b) : [];
+  if (o && known.length) {
+    const median = known[known.length >> 1], mean = known.reduce((a, b) => a + b, 0) / known.length;
+    for (let i = 0; i < m.n; i++) {
+      if (Number.isNaN(o[i])) continue;
+      ring[i] = Math.max(0.55, Math.min(1.6, 1 + 0.6 * Math.log10(Math.max(1, o[i]) / median)));
+      weight[i] = Math.max(0.05, o[i] / mean);
+    }
+  }
+  hefts.set(m, h = { ring, weight });
+  return h;
+}
+const hefts = new WeakMap<Mind, { ring: Float32Array; weight: Float32Array }>();
+
+/** The output tokens Claude wrote for messages [from, to), all each set off; null when none of them is known. */
+export function tokensIn(m: Mind, from = 0, to = m.n): number | null {
+  if (!m.out) return null;
+  let sum = 0, any = false;
+  for (let i = from; i < to; i++) { const x = m.out[i]; if (!Number.isNaN(x)) { sum += x; any = true; } }
+  return any ? sum : null;
+}
 
 // ---------- synthetic: a believable person who never existed ----------
 

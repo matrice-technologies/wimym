@@ -649,10 +649,10 @@ class Vitals:
         for m in S.msgs:
             rows.append([int((m["_t"] - t0) // 60), (date.fromisoformat(m["day"]) - d0).days, round(m["hour"], 2),
                          code(intents, m["intent"]), code(origins, m["origin"]), code(projects, m["project"]),
-                         None if m["stopped"] is None else int(bool(m["stopped"]))])
+                         None if m["stopped"] is None else int(bool(m["stopped"])), m.get("outAll")])
             ids.append(m["id"])
         return {"generated": self.asof, "t0": t0, "day0": d0.isoformat(),
-                "fields": ["minute", "day", "hour", "intent", "origin", "project", "stopped"],
+                "fields": ["minute", "day", "hour", "intent", "origin", "project", "stopped", "outAll"],
                 "rows": rows, "intents": intents, "origins": origins, "projects": projects}, \
             {"generated": self.asof, "ids": ids}
 

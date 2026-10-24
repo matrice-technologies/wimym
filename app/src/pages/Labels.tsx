@@ -78,6 +78,7 @@ function SetCard({ s }: { s: LabelSet }) {
 }
 
 function Trust({ d }: { d: LabelsPage }) {
+  if (!d.audit.at || !d.audit.model) return null;
   return (
     <section className="block">
       <header><div><h2 className="section">How far to trust them</h2>

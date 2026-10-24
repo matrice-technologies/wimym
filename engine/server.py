@@ -29,7 +29,7 @@ if __name__ == "__main__" and "--demo" not in sys.argv:
     # demo, which runs this file again with its own folders set (its own HOME and WIMYM_* make this a no-op)
     paths.migrate()
 
-from wimym import guide, labels, store, vitals  # noqa: E402
+from wimym import guide, labels, store, update, vitals  # noqa: E402
 from wimym.codex import Codex  # noqa: E402
 from wimym.gitlog import Git  # noqa: E402
 from wimym.history import History  # noqa: E402
@@ -179,6 +179,11 @@ class Engine:
                 self.error = f"{type(e).__name__}: {e}"
                 import traceback
                 traceback.print_exc()
+            try:
+                update.check()  # asks GitHub once a day at most, and not at all when turned off
+            except Exception:
+                import traceback
+                traceback.print_exc()
             time.sleep(30)
 
 
@@ -244,7 +249,7 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/state":
             with ENGINE.lock:
                 gen = ENGINE.model.generated if ENGINE.model else None
-            return self.json({"state": ENGINE.state(), "generated": gen})
+            return self.json({"state": ENGINE.state(), "generated": gen, "update": update.status()})
         if path in ("/api/core", "/api/messages", "/api/sessions", "/api/labels", "/api/vitals"):
             return self.payload(path[5:])
         if path == "/api/points":
@@ -371,14 +376,16 @@ def main():
 
 def demo(args):
     """Write the demo once a day into ~/.cache/wimym-demo, then run this server on it, and only on it: its own
-    home, Claude folder, data and cache. GitHub tokens are left out, so nothing asks GitHub who you are."""
+    home, Claude folder, data and cache. GitHub tokens are left out, so nothing asks GitHub who you are, and the
+    check for a newer Wimym is off."""
     from wimym import demo as made_up
     root = os.environ.get("WIMYM_DEMO") or os.path.join(os.path.expanduser("~"), ".cache", "wimym-demo")
     print("Writing the demo (Robin, a made-up person)…" if not os.path.exists(os.path.join(root, "demo.json")) else "", end="", flush=True)
     made_up.ensure(root)
     env = {k: v for k, v in os.environ.items() if not k.startswith(("WIMYM_", "MIRROR_", "GH_", "GITHUB_", "CLAUDE_CONFIG_DIR"))}
     env.update(HOME=os.path.join(root, "home"), CLAUDE_CONFIG_DIR=os.path.join(root, "home", ".claude"),
-               WIMYM_DATA=os.path.join(root, "data"), WIMYM_CACHE=os.path.join(root, "cache"), GIT_CONFIG_NOSYSTEM="1")
+               WIMYM_DATA=os.path.join(root, "data"), WIMYM_CACHE=os.path.join(root, "cache"), GIT_CONFIG_NOSYSTEM="1",
+               WIMYM_UPDATES="0")  # Robin's page never asks GitHub anything
     port = args.port if "--port" in " ".join(sys.argv) or os.environ.get("WIMYM_PORT") else 8997
     argv = [sys.executable, os.path.abspath(__file__), "--port", str(port)] + (["--no-open"] if args.no_open else [])
     print(f"\nDemo: {root}", flush=True)

@@ -12,15 +12,15 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Wimym">
 <meta property="og:title" content="Where is your mind?">
-<meta property="og:description" content="For people who work with agents on ambitious projects: your days as a planet, vital signs against your own usual, and a weekly retro. It runs on your Mac and sends nothing.">
+<meta property="og:description" content="For people who work with agents on ambitious projects: your attention woven as one thread, vital signs against your own usual, and a weekly retro. It runs on your Mac and sends nothing.">
 <meta property="og:url" content="https://wimym.matricetechnologies.com/">
 <meta property="og:image" content="https://wimym.matricetechnologies.com/og.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="A planet made of a made-up person's messages to AI agents, with the words Where is your mind?">
+<meta property="og:image:alt" content="A made-up person's messages to AI agents as strings of light under a green aurora, with the words Where is your mind? and three lines from the record.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Where is your mind?">
-<meta name="twitter:description" content="Your days with agents as a planet, vital signs against your own usual, and a weekly retro. Local, and it sends nothing.">
+<meta name="twitter:description" content="Your attention with agents woven as one thread, vital signs against your own usual, and a weekly retro. Local, and it sends nothing.">
 <meta name="twitter:image" content="https://wimym.matricetechnologies.com/og.jpg">
 <link rel="preload" href="/fonts/bricolage-grotesque-latin-standard-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/instrument-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
@@ -67,28 +67,33 @@ img, video { display: block; max-width: 100%; height: auto; }
 .wrap { width: 100%; max-width: 1180px; margin: 0 auto; padding: 0 16px; }
 @media (min-width: 720px) { .wrap { padding: 0 32px; } }
 
-/* top bar */
-.top { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--ground) 86%, transparent);
-  backdrop-filter: saturate(1.4) blur(10px); -webkit-backdrop-filter: saturate(1.4) blur(10px); border-bottom: 1px solid transparent; }
-.top.scrolled { border-bottom-color: var(--line); }
-.top .wrap { display: flex; align-items: center; gap: 20px; height: 60px; }
-.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-.brand img { width: 26px; height: 26px; border-radius: 7px; }
-.brand b { font: 650 19px/1 var(--display); letter-spacing: -.01em; }
-.top nav { margin-left: auto; display: flex; gap: 22px; align-items: center; font-size: 14.5px; }
-.top nav a { text-decoration: none; color: var(--ink-2); }
-.top nav a:hover { color: var(--ink); }
+/* buttons: smooth glass pills, floating over whatever is behind them: no sheen, no bevel */
+.glass { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 16px;
+  border-radius: 999px; text-decoration: none; white-space: nowrap; cursor: pointer; font: 560 14.5px/1 var(--text); color: var(--ink);
+  background: rgba(22, 27, 39, .58); border: 1px solid rgba(255, 255, 255, .1);
+  box-shadow: 0 12px 32px -12px rgba(0, 0, 0, .7);
+  backdrop-filter: blur(18px) saturate(1.6); -webkit-backdrop-filter: blur(18px) saturate(1.6);
+  transition: transform .2s ease, border-color .2s, background-color .2s, box-shadow .2s; }
+.glass:hover { transform: translateY(-1px); border-color: rgba(255, 255, 255, .18); background-color: rgba(30, 36, 50, .66); }
+.glass:active { transform: translateY(0); }
+.glass.primary { color: var(--ground); background: var(--ink); border-color: var(--ink); box-shadow: 0 12px 34px -10px rgba(255, 210, 140, .32); }
+.glass.primary:hover { background: #fff; border-color: #fff; box-shadow: 0 16px 40px -10px rgba(255, 210, 140, .48); }
+.glass.lg { height: 50px; padding: 0 24px; font-size: 16px; font-weight: 600; }
+.glass.sm { height: 32px; padding: 0 13px; font-size: 13px; font-weight: 500; }
+
+/* the top: no bar, only the buttons, floating */
+.top { position: fixed; top: 0; left: 0; right: 0; z-index: 20; pointer-events: none; padding-top: max(14px, env(safe-area-inset-top)); }
+.top .wrap { display: flex; align-items: center; gap: 8px; }
+.top .wrap > * { pointer-events: auto; }
+.brand { padding: 0 16px 0 8px; gap: 9px; }
+.brand img { width: 26px; height: 26px; border-radius: 50%; }
+.brand b { font: 650 17px/1 var(--display); letter-spacing: -.01em; }
+.top nav { margin-left: auto; display: flex; gap: 8px; align-items: center; }
 .top nav .hide-s { display: none; }
-@media (min-width: 720px) { .top nav .hide-s { display: inline; } }
-.btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 999px; text-decoration: none;
-  font: 600 15px/1 var(--text); background: var(--ink); color: var(--ground) !important; border: 1px solid var(--ink); }
-.btn:hover { opacity: .9; }
-.btn.ghost { background: transparent; color: var(--ink) !important; border-color: var(--line-2); }
-.btn.ghost:hover { border-color: var(--ink-2); opacity: 1; }
-.top .btn { padding: 8px 14px; font-size: 14px; }
+@media (min-width: 720px) { .top nav .hide-s { display: inline-flex; } }
 
 /* hero: the strummed Loom and its aurora across the first screen (live/live.js), the words over its left side */
-.hero { position: relative; height: clamp(600px, calc(100svh - 60px), 940px); overflow: hidden; }
+.hero { position: relative; height: clamp(640px, 100svh, 980px); overflow: hidden; }
 .hero .stage { position: absolute; inset: 0; }
 .hero .live { position: absolute; inset: 0; opacity: 0; transition: opacity 1.2s ease; }
 .hero.is-live .live { opacity: 1; }
@@ -112,7 +117,7 @@ img, video { display: block; max-width: 100%; height: auto; }
 .hero .cap span { display: block; max-width: 46ch; }
 @media (max-width: 959px) {
   .hero { height: auto; display: flex; flex-direction: column; }
-  .hero .words { order: -1; height: auto; padding-top: 28px; }
+  .hero .words { order: -1; height: auto; padding-top: 96px; }
   .hero .stage { position: relative; height: min(118vw, 640px); margin-top: 8px; }
   .hero .live canvas { -webkit-mask-image: linear-gradient(to bottom, transparent, #000 60px, #000 calc(100% - 120px), transparent); mask-image: linear-gradient(to bottom, transparent, #000 60px, #000 calc(100% - 120px), transparent); }
   .hero .scrim { display: none; }
@@ -128,46 +133,72 @@ h3 { font: 620 21px/1.25 var(--display); letter-spacing: -.012em; margin: 0; }
 .intro { color: var(--ink-2); font-size: 18px; max-width: 60ch; margin: 18px 0 0; text-wrap: pretty; }
 p { text-wrap: pretty; }
 
-/* one of Robin's days as a score (live/live.js) */
-.day { position: relative; margin: 36px 0 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-l); box-shadow: var(--shadow); padding: 20px 0 0; }
-.dy-top { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between; padding: 0 20px; }
-.dy-head { margin: 0; font: 560 17px/1.35 var(--display); letter-spacing: -.01em; min-height: 1.35em; }
+/* A new kind of work: one of Robin's days, replayed (live/live.js) */
+section.loop { padding-top: 72px; overflow: hidden; }
+@media (min-width: 960px) { section.loop { padding-top: 120px; } }
+.loop-h { font: 650 clamp(34px, 4.8vw, 58px)/1.04 var(--display); letter-spacing: -.034em; max-width: 20ch; }
+.loop-h em { font-style: normal; color: var(--muted); }
+
+.replay { position: relative; margin: 64px 0 0; }
+.rp-hud { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 20px 40px; }
+.rp-label { margin: 0 0 6px; font: 500 13.5px/1.3 var(--text); color: var(--muted); }
+.rp-time { display: block; font: 650 clamp(68px, 12vw, 148px)/.86 var(--display); letter-spacing: -.045em; font-variant-numeric: tabular-nums;
+  color: var(--ink); transition: color 1.2s ease, text-shadow 1.2s ease; }
+.replay.is-night .rp-time { color: #cfd0ff; text-shadow: 0 0 60px rgba(141, 143, 245, .45); }
+.rp-date { margin: 14px 0 0; color: var(--muted); font-size: 15px; }
+.rp-counts { display: grid; grid-template-columns: repeat(2, minmax(120px, auto)); align-items: end; gap: 18px 36px; margin: 0; }
+@media (min-width: 720px) { .rp-counts { grid-template-columns: repeat(4, auto); } }
+.rp-counts dt { font: 500 12.5px/1.3 var(--text); color: var(--muted); max-width: 16ch; }
+.rp-counts dd { margin: 4px 0 0; font: 620 clamp(30px, 3.4vw, 42px)/1 var(--display); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.rp-counts dd.tick { animation: tick .7s ease-out; }
+@keyframes tick { from { color: #fff3d6; text-shadow: 0 0 22px rgba(255, 243, 214, .7); } }
+.rp-strings { position: relative; height: 250px; margin-top: 36px; touch-action: pan-y; }
+.rp-strings::before { content: ""; position: absolute; inset: -160px 0; pointer-events: none; opacity: 0; transition: opacity 1.6s ease;
+  background: radial-gradient(34% 50% at 86% 50%, rgba(141, 143, 245, .12), rgba(141, 143, 245, 0) 100%); }
+.replay.is-night .rp-strings::before { opacity: 1; }
+.rp-strings canvas { position: absolute; inset: 0; display: block; }
+.rp-names span { position: absolute; font: 500 12.5px/1 var(--text); color: var(--ink-2); white-space: nowrap; pointer-events: none; }
+.rp-bar { display: grid; gap: 18px 40px; margin-top: 10px; align-items: center; }
+@media (min-width: 960px) { .rp-bar { grid-template-columns: 1fr auto; min-height: 76px; } }
+.rp-caption { margin: 0; min-height: 3.2em; max-width: 62ch; }
+.rp-caption b { display: block; font: 620 19px/1.3 var(--display); letter-spacing: -.012em; }
+.rp-caption[data-key="late"] b { color: var(--late); }
+.rp-caption span { display: block; margin-top: 4px; color: var(--ink-2); font-size: 16px; }
+.rp-caption.in { animation: rise .5s ease-out; }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+.rp-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; }
+.rp-play { width: 44px; height: 44px; padding: 0; }
+.rp-play svg { width: 16px; height: 16px; display: none; fill: currentColor; }
+.rp-play[data-state="play"] .i-play, .rp-play[data-state="pause"] .i-pause, .rp-play[data-state="again"] .i-again { display: block; }
+.rp-scrub { -webkit-appearance: none; appearance: none; width: 160px; height: 22px; margin: 0; background: transparent; cursor: pointer; }
+.rp-scrub::-webkit-slider-runnable-track { height: 4px; border-radius: 4px; background: linear-gradient(90deg, rgba(233, 237, 245, .35), rgba(141, 143, 245, .45)); }
+.rp-scrub::-moz-range-track { height: 4px; border-radius: 4px; background: linear-gradient(90deg, rgba(233, 237, 245, .35), rgba(141, 143, 245, .45)); }
+.rp-scrub::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; margin-top: -6px; border-radius: 50%; border: 0;
+  background: var(--ink); box-shadow: 0 2px 10px rgba(255, 220, 160, .45); }
+.rp-scrub::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; border: 0; background: #eef1f7; box-shadow: 0 2px 10px rgba(255, 220, 160, .45); }
 .dy-days { display: flex; flex-wrap: wrap; gap: 6px; }
-.dy-days button, .dy-moments button { font: inherit; color: inherit; background: none; cursor: pointer; }
-.dy-days button { font-size: 13px; color: var(--ink-2); border: 1px solid var(--line-2); border-radius: 999px; padding: 5px 11px; }
-.dy-days button:hover { border-color: var(--ink-2); }
-.dy-days button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--ground); }
-.dy-score { overflow-x: auto; margin-top: 18px; padding: 0 4px; min-height: 230px; -webkit-overflow-scrolling: touch; }
-.dy-score svg { display: block; touch-action: pan-x pan-y; }
-.dy-score text { font: 500 12px var(--text); fill: var(--muted); }
-.dy-score .dy-name { font-size: 13px; fill: var(--ink-2); }
-.dy-score .dy-hour-t { text-anchor: middle; font-variant-numeric: tabular-nums; fill: var(--faint); }
-.dy-hour { stroke: var(--line); stroke-width: 1; }
-.dy-lane { stroke: var(--line-2); stroke-width: 1; }
-.dy-night { fill: color-mix(in srgb, var(--night) 9%, transparent); }
-.dy-stop { stroke: var(--late); stroke-width: 1.5; stroke-dasharray: 3 4; }
-.dy-score .dy-stop-t { fill: var(--late); }
-.dy-thread { fill: none; stroke: var(--ink-2); stroke-width: 1; opacity: .16; transition: opacity .25s; }
-.dy-thread.on { opacity: .55; }
-.dy-span { fill: var(--glow); stroke: var(--focus); stroke-width: 1; }
-.dy-m { transition: opacity .25s; }
-.dy-m.dim { opacity: .13; }
-.dy-moments { list-style: none; margin: 4px 0 0; padding: 0; display: grid; grid-template-columns: 1fr; border-top: 1px solid var(--line); }
-@media (min-width: 640px) { .dy-moments { grid-template-columns: 1fr 1fr; } }
-@media (min-width: 960px) { .dy-moments { grid-template-columns: repeat(3, 1fr); } }
-.dy-moments li { border-bottom: 1px solid var(--line); }
-@media (min-width: 640px) and (max-width: 959px) { .dy-moments li:nth-child(odd) { border-right: 1px solid var(--line); } }
-@media (min-width: 960px) { .dy-moments li { border-right: 1px solid var(--line); } .dy-moments li:nth-child(3n) { border-right: 0; } }
-.dy-moments button { display: block; width: 100%; height: 100%; text-align: left; padding: 16px 20px 18px; border: 0; transition: background .2s; }
-.dy-moments button:hover, .dy-moments button[aria-pressed="true"] { background: var(--raised); }
-.dy-moments button[data-quiet] { cursor: default; }
-.dy-moments b { display: block; font: 620 17px/1.25 var(--display); letter-spacing: -.012em; }
-.dy-moments button[aria-pressed="true"] b { color: var(--late); }
-.dy-moments span { display: block; margin-top: 5px; color: var(--muted); font-size: 15px; line-height: 1.5; }
+.dy-days .glass[aria-pressed="true"] { color: var(--ground); border-color: var(--ink); background: var(--ink); }
+.replay:not(.is-live) .rp-hud, .replay:not(.is-live) .rp-strings, .replay:not(.is-live) .rp-bar { display: none; }
+
+.rp-moments { list-style: none; margin: 40px 0 0; padding: 0; display: grid; gap: 12px; grid-template-columns: 1fr; }
+@media (min-width: 640px) { .rp-moments { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 960px) { .rp-moments { grid-template-columns: repeat(3, 1fr); } }
+.rp-moments button { display: flex; flex-direction: column; justify-content: flex-start; width: 100%; height: 100%; text-align: left; padding: 18px 20px 20px; font: inherit; color: inherit; cursor: pointer;
+  border-radius: var(--r-l); border: 1px solid var(--line);
+  background: var(--surface); transition: border-color .2s, background-color .2s, transform .2s; }
+.rp-moments button:hover { border-color: var(--line-2); transform: translateY(-1px); }
+.rp-moments button[aria-pressed="true"] { border-color: color-mix(in srgb, var(--late) 55%, transparent); background-color: color-mix(in srgb, var(--late) 6%, var(--surface)); }
+.rp-moments button[data-quiet] { cursor: default; }
+.mo-name { display: block; font: 500 13.5px/1.3 var(--text); color: var(--muted); }
+.mo-num { display: block; margin-top: 8px; color: var(--ink-2); font-size: 15px; }
+.mo-num b { font: 650 38px/1 var(--display); letter-spacing: -.03em; color: var(--ink); margin-right: 2px; }
+.rp-moments button[aria-pressed="true"] .mo-num b { color: var(--late); }
+.mo-fact { display: block; margin-top: 8px; color: var(--muted); font-size: 14.5px; line-height: 1.5; }
 .dy-tip .m { display: block; }
 .dy-tip .q { display: block; margin-top: 4px; color: var(--ink); }
-.day figcaption { margin: -1px 0 0; padding: 12px 20px 14px; font-size: 13.5px; color: var(--muted); border-top: 1px solid var(--line); }
-.day:not(.is-live) .dy-score { display: none; }
+.replay figcaption { margin: 18px 0 0; font-size: 13.5px; color: var(--muted); max-width: 80ch; }
+.loop-end { margin: 72px 0 0; font: 620 clamp(24px, 2.8vw, 34px)/1.22 var(--display); letter-spacing: -.02em; max-width: 30ch; text-wrap: balance; }
+.loop-end span { color: var(--muted); }
 
 .feature { display: grid; gap: 28px; align-items: center; margin-top: 8px; }
 @media (min-width: 960px) { .feature { grid-template-columns: 5fr 7fr; gap: 56px; } .feature.flip { grid-template-columns: 7fr 5fr; } .feature.flip .shot { order: -1; } }
@@ -179,7 +210,7 @@ p { text-wrap: pretty; }
 .feature li::before { content: ""; position: absolute; left: 2px; top: 16px; width: 7px; height: 7px; border-radius: 50%; background: var(--late); }
 .shot { margin: 0; }
 .shot a { display: block; border-radius: var(--r-m); overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); background: var(--surface); }
-.shot img { width: 100%; }
+.shot img, .shot video { display: block; width: 100%; height: auto; }
 .shot figcaption { margin-top: 10px; font-size: 13.5px; color: var(--muted); }
 .quote { margin: 18px 0 0; padding: 12px 14px; border-left: 3px solid var(--late); background: var(--raised); border-radius: 0 var(--r-s) var(--r-s) 0;
   font: 500 14px/1.5 var(--mono); color: var(--ink-2); max-width: 56ch; overflow-wrap: anywhere; }
@@ -233,17 +264,17 @@ footer p { margin: 0; max-width: 70ch; }
 
 <header class="top" id="top">
   <div class="wrap">
-    <a class="brand" href="#"><img src="/wimym.svg" alt="" width="26" height="26"><b>Wimym</b></a>
+    <a class="glass brand" href="#"><img src="/wimym.svg" alt="" width="26" height="26"><b>Wimym</b></a>
     <nav>
-      <a class="hide-s" href="#what">What it does</a>
-      <a class="hide-s" href="#privacy">Privacy</a>
-      <a class="btn" href="#setup">Set it up</a>
+      <a class="glass hide-s" href="#what">What it does</a>
+      <a class="glass hide-s" href="#privacy">Privacy</a>
+      <a class="glass primary" href="#setup">Set it up</a>
     </nav>
   </div>
 </header>
 
 <main>
-  <section class="hero" id="loom" aria-label="Robin's messages as a harp of light, under an aurora of the weight each project carries">
+  <section class="hero" id="loom" aria-label="Robin's messages as a harp of light, under an aurora of what Claude wrote for each project">
     <div class="stage"><div class="live"></div></div>
     <div class="scrim" aria-hidden="true"></div>
     <div class="wrap words">
@@ -251,40 +282,66 @@ footer p { margin: 0; max-width: 70ch; }
       <p class="lede">For people who work with agents on ambitious projects, and want to look after their mind while they do it.</p>
       <p class="sub">Wimym reads your Claude Code transcripts on your own Mac and shows, against your own usual, how your weeks are going for your health and your work. A weekly retro then helps you decide what to change, and the next weeks show whether it held.</p>
       <div class="ctas">
-        <a class="btn" href="#setup">Set it up on your Mac</a>
-        <a class="btn ghost" href="#what">See what it shows</a>
+        <a class="glass primary lg" href="#setup">Set it up on your Mac</a>
+        <a class="glass lg" href="#what">See what it shows</a>
       </div>
     </div>
-    <p class="wrap cap"><span>Robin's messages since July, strummed in the order they were sent: a column for each project, a string for each session, and above them an aurora of the weight each one carries. Robin is made up. Point at a string to read it.</span></p>
+    <p class="wrap cap"><span>Robin's messages since September, strummed in the order they were sent: a column for each project, a string for each session, rung as hard as all Claude wrote for the message, and above them an aurora of what Claude wrote for each project. Robin is made up. Point at a string to read it.</span></p>
   </section>
 
-  <section class="block" id="what">
+  <section class="block loop" id="what">
     <div class="wrap">
       <p class="kicker">A new kind of work</p>
-      <h2>Fast, impressive, never quite predictable, and nothing in it says stop.</h2>
-      <p class="intro">You state what you want, answer, choose, correct and approve, often in several sessions at once, while the agents do the making. Another session is always waiting, and the agent never tires. The days are full and the output is real, but it is hard to tell whether you are getting better, or only busier. Here is one day of it, as Claude Code wrote it down.</p>
-      <figure class="day" id="day">
-        <div class="dy-top">
-          <p class="dy-head">Wednesday 14 October: 133 messages from 08:55 to 23:11, in 3 projects.</p>
+      <h2 class="loop-h">A message goes out, and minutes later something exists. <em>Nothing in it says stop.</em></h2>
+      <p class="intro">You ask and approve across several sessions while the agents build, at any hour. Here is one day of it, as Claude Code wrote it down.</p>
+    </div>
+    <figure class="replay" id="day">
+      <div class="wrap rp-hud">
+        <div class="rp-clock">
+          <p class="rp-label">One of Robin's days, replayed</p>
+          <b class="rp-time">23:38</b>
+          <p class="rp-date">Thursday 22 October · 216 messages · 7 projects</p>
+        </div>
+        <dl class="rp-counts">
+          <div><dt>Messages</dt><dd data-c="msgs">216</dd></div>
+          <div><dt>Project switches</dt><dd data-c="sw">118</dd></div>
+          <div><dt>Go-aheads, three words or fewer</dt><dd data-c="quick">21</dd></div>
+          <div><dt>Agent sent back</dt><dd data-c="steer">18</dd></div>
+        </dl>
+      </div>
+      <div class="rp-strings"></div>
+      <div class="wrap rp-bar">
+        <p class="rp-caption" aria-live="polite"></p>
+        <div class="rp-controls">
+          <button type="button" class="glass rp-play" data-state="play" aria-label="Play the day">
+            <svg class="i-play" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9.5-5.5z"/></svg>
+            <svg class="i-pause" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 2.5h3.2v11H3.5zM9.3 2.5h3.2v11H9.3z"/></svg>
+            <svg class="i-again" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.6 8A5.6 5.6 0 1 1 8 2.4c1.5 0 2.9.6 3.9 1.6V2h1.6v4.6H8.9V5h2.1A4 4 0 1 0 12 8z"/></svg>
+          </button>
+          <input class="rp-scrub" type="range" min="0" max="1000" value="1000" aria-label="Time of day">
           <div class="dy-days" role="group" aria-label="Another of Robin's days">
-            <button type="button" data-day="2026-10-14" aria-pressed="true">Wed 14 Oct</button>
-            <button type="button" data-day="2026-08-20" aria-pressed="false">Thu 20 Aug</button>
-            <button type="button" data-day="2026-07-29" aria-pressed="false">Wed 29 Jul</button>
+            <button type="button" class="glass sm" data-day="2026-10-22" aria-pressed="true">Thu 22 Oct</button>
+            <button type="button" class="glass sm" data-day="2026-10-21" aria-pressed="false">Wed 21 Oct</button>
+            <button type="button" class="glass sm" data-day="2026-10-04" aria-pressed="false">Sun 4 Oct</button>
           </div>
         </div>
-        <div class="dy-score"></div>
-        <ol class="dy-moments">
-          <li><button type="button" data-key="late" aria-pressed="false"><b>Losing the hours</b><span>13 messages after 21:30, the hour Robin meant to stop. The last at 23:11.</span></button></li>
-          <li><button type="button" data-key="streak" aria-pressed="false"><b>No end of day</b><span>Day 35 in a row without a day off, from 08:55 to 23:11.</span></button></li>
-          <li><button type="button" data-key="switch" aria-pressed="false"><b>Dispersion</b><span>77 switches between 3 projects: one every 11 minutes.</span></button></li>
-          <li><button type="button" data-key="deep" aria-pressed="false"><b>Loss of depth</b><span>Before 18:00, the longest stretch on one project was 54 minutes, from 11:02.</span></button></li>
-          <li><button type="button" data-key="quick" aria-pressed="false"><b>Rubber-stamping</b><span>21 go-aheads of three words or fewer: “yes”, “sounds good, go”, “perfect, thank you”.</span></button></li>
-          <li><button type="button" data-key="steer" aria-pressed="false"><b>Strain</b><span>16 times the agent was sent back. At 13:21: “This is the third try at the retry queue; slow down and read…”</span></button></li>
+      </div>
+      <div class="wrap">
+        <ol class="rp-moments">
+          <li><button type="button" data-key="late" aria-pressed="false"><span class="mo-name">Losing the hours</span><span class="mo-num"><b>47</b> messages</span><span class="mo-fact">after 21:30, the hour Robin meant to stop. The last at 23:38.</span></button></li>
+          <li><button type="button" data-key="streak" aria-pressed="false"><span class="mo-name">No end of day</span><span class="mo-num"><b>36</b> days in a row</span><span class="mo-fact">without a day off, this one from 08:53 to 23:38.</span></button></li>
+          <li><button type="button" data-key="switch" aria-pressed="false"><span class="mo-name">Dispersion</span><span class="mo-num"><b>118</b> switches</span><span class="mo-fact">between 7 projects: one every 8 minutes.</span></button></li>
+          <li><button type="button" data-key="deep" aria-pressed="false"><span class="mo-name">Loss of depth</span><span class="mo-num"><b>30</b> minutes</span><span class="mo-fact">the longest stretch on one project before 18:00, from 14:04.</span></button></li>
+          <li><button type="button" data-key="quick" aria-pressed="false"><span class="mo-name">Rubber-stamping</span><span class="mo-num"><b>21</b> go-aheads</span><span class="mo-fact">of three words or fewer: “great, keep going”, “go for it”, “ok”.</span></button></li>
+          <li><button type="button" data-key="steer" aria-pressed="false"><span class="mo-name">Strain</span><span class="mo-num"><b>18</b> times sent back</span><span class="mo-fact">At 09:33: “This is the third try at the home screen widget; slow…”</span></button></li>
         </ol>
-        <div class="dy-tip" hidden></div>
-        <figcaption>One of Robin's days, as Wimym reads it: a lane for each project, a mark for each message, as long as it is wordy and in the colour of its type, and a thread at every switch. Point at a moment to see it in the day.</figcaption>
-      </figure>
-      <p class="note">Two more show over weeks rather than in a day: isolation, when asking, reviewing and deciding happen alone, and crowding out, when sleep, rest and family get whatever time is left. Wimym shows signs like these against your own usual. It diagnoses nothing, and how you say you are comes first.</p>
+        <figcaption>Each project is a string, plucked by every message at the hour it was sent. Point at a mark to read it. Robin is made up.</figcaption>
+      </div>
+      <div class="dy-tip" hidden></div>
+    </figure>
+    <div class="wrap">
+      <p class="loop-end">All of this is already in the transcripts on your Mac. <span>Wimym reads it back to you.</span></p>
+      <p class="note">It compares you only with your own usual, and diagnoses nothing.</p>
     </div>
   </section>
 
@@ -294,13 +351,13 @@ footer p { margin: 0; max-width: 70ch; }
         <div>
           <p class="kicker">This week</p>
           <h2>Your attention as one thread.</h2>
-          <p>The front page opens on a loom woven from your messages, in the order you sent them. The projects you worked on most each have a column, which rests while the project is quiet; each session is a string the shuttle strums as it passes, lit in the colour of what the message asked for. Above it, an aurora shows the weight each project carries. Point at a string to read the message. Below it, the week so far, one turn of a spiral per day, against your usual day and the hour you meant to stop.</p>
+          <p>The front page opens on a loom woven from your messages, in the order you sent them. The projects you worked on most each have a column, which rests while the project is quiet; each session is a string the shuttle strums as it passes, lit in the colour of what the message asked for and rung as hard as all Claude wrote for it, subagents and the sessions it started included. Above it, an aurora shows how much Claude wrote for each project. Point at a string to read the message. Below it, the week so far, one turn of a spiral per day, against your usual day and the hour you meant to stop.</p>
         </div>
         <figure class="shot">
-          <a href="/media/front-dark-1440.webp">
-            <img src="/media/front-dark-1440.webp" srcset="/media/front-dark-800.webp 800w, /media/front-dark-1440.webp 1440w" sizes="(min-width: 960px) 640px, 100vw" width="1440" height="900" loading="lazy" decoding="async" alt="Wimym's front page in share mode: Where is your mind? beside the loom, its strings lit under a golden aurora, the projects named Project 1 and Project 3, and a line saying the person has worked 44 days in a row.">
+          <a href="/media/front-dark-1440.webp?v=1024">
+            <img src="/media/front-dark-1440.webp?v=1024" srcset="/media/front-dark-800.webp?v=1024 800w, /media/front-dark-1440.webp?v=1024 1440w" sizes="(min-width: 960px) 640px, 100vw" width="1440" height="900" loading="lazy" decoding="async" alt="Wimym's front page in share mode: Where is your mind? beside the loom, its strings lit under a green aurora, columns named Project 1 to Project 8 and Other projects, and a line saying the week is fuller than usual.">
           </a>
-          <figcaption>The front page, with share mode on: the projects go by Project 1, 2 and 3.</figcaption>
+          <figcaption>The front page, with share mode on: the projects go by Project 1, 2, 3 and on.</figcaption>
         </figure>
       </div>
 
@@ -319,10 +376,10 @@ footer p { margin: 0; max-width: 70ch; }
           </ul>
         </div>
         <figure class="shot">
-          <a href="/media/vitals-dark-1440.webp">
-            <img src="/media/vitals-dark-1440.webp" srcset="/media/vitals-dark-800.webp 800w, /media/vitals-dark-1440.webp 1440w" sizes="(min-width: 960px) 640px, 100vw" width="1440" height="622" loading="lazy" decoding="async" alt="Eight vital signs, each a twelve-week line with a shaded band for the person's usual range, such as days in a row, active hours, longest stretch, switches and strain.">
+          <a href="/media/vitals-dark-1440.webp?v=1024">
+            <img src="/media/vitals-dark-1440.webp?v=1024" srcset="/media/vitals-dark-800.webp?v=1024 800w, /media/vitals-dark-1440.webp?v=1024 1440w" sizes="(min-width: 960px) 640px, 100vw" width="1440" height="566" loading="lazy" decoding="async" alt="Eight vital signs, each a line over the weeks so far with a shaded band for the person's usual range: late minutes, nights, days off, days in a row, active hours, sessions at once, longest stretch and switches.">
           </a>
-          <figcaption>Health signs for Robin: 44 days in a row, the longest run on record.</figcaption>
+          <figcaption>Health signs for Robin: 37 days in a row, the longest run on record.</figcaption>
         </figure>
       </div>
 
@@ -334,10 +391,10 @@ footer p { margin: 0; max-width: 70ch; }
           <p>The week's page opens on a living form moved by your signs: split into lobes when you ran many sessions at once, frayed when nights were short, pulsing slowly after a long run of days.</p>
         </div>
         <figure class="shot">
-          <a href="/media/week-dark-1440.webp">
-            <img src="/media/week-dark-1440.webp" srcset="/media/week-dark-800.webp 800w, /media/week-dark-1440.webp 1440w" sizes="(min-width: 960px) 640px, 100vw" width="1440" height="900" loading="lazy" decoding="async" alt="The week page: the week of 19 October, an orange organic form, and the signs outside the usual range listed as chips.">
+          <a href="/media/week-dark-1440.webp?v=1024">
+            <img src="/media/week-dark-1440.webp?v=1024" srcset="/media/week-dark-800.webp?v=1024 800w, /media/week-dark-1440.webp?v=1024 1440w" sizes="(min-width: 960px) 640px, 100vw" width="1440" height="900" loading="lazy" decoding="async" alt="The week page: the week of 19 October, an orange organic form beside the word Frayed, and below, the signs outside the usual range as chips against their usual values.">
           </a>
-          <figcaption>The week of 19 October, for Robin: frayed, restless, a slow heavy pulse.</figcaption>
+          <figcaption>The week of 19 October, for Robin: frayed, a slow heavy pulse, light.</figcaption>
         </figure>
       </div>
 
@@ -350,8 +407,8 @@ footer p { margin: 0; max-width: 70ch; }
           <p class="quote">Wimym: It's 23:30, past the 21:30 you set. 7 sessions running, more than the 4 you set.</p>
         </div>
         <figure class="shot">
-          <a href="/media/spiral-dark-1440.webp">
-            <img src="/media/spiral-dark-1440.webp" srcset="/media/spiral-dark-800.webp 800w, /media/spiral-dark-1440.webp 1440w" sizes="(min-width: 960px) 640px, 100vw" width="1440" height="909" loading="lazy" decoding="async" alt="A spiral with one turn per day of the week: dark arcs for working time, blue for nights, an orange mark where work ran past the stopping hour.">
+          <a href="/media/spiral-dark-1440.webp?v=1024">
+            <img src="/media/spiral-dark-1440.webp?v=1024" srcset="/media/spiral-dark-800.webp?v=1024 800w, /media/spiral-dark-1440.webp?v=1024 1440w" sizes="(min-width: 960px) 640px, 100vw" width="1440" height="909" loading="lazy" decoding="async" alt="A spiral with one turn per day of the week: white arcs for working time, blue for nights, orange where work ran past the stopping hour every evening, and 51.7 hours active this week at its centre.">
           </a>
           <figcaption>The week turn by turn, with the stopping hour Robin set.</figcaption>
         </figure>
@@ -364,8 +421,8 @@ footer p { margin: 0; max-width: 70ch; }
           <p>Every day as a score of its sessions, every message you sent, filtered by what it asks for, its tone or its project, and opened whole with Claude's reply and the command to resume it. Claude Code deletes old transcripts. Wimym keeps what it has read, so your history only grows.</p>
         </div>
         <figure class="shot">
-          <a href="/media/day-dark-1440.webp">
-            <img src="/media/day-dark-1440.webp" srcset="/media/day-dark-800.webp 800w, /media/day-dark-1440.webp 1440w" sizes="(min-width: 960px) 640px, 100vw" width="1440" height="900" loading="lazy" decoding="async" alt="A day page: Tuesday 20 October, 86 messages from 09:28 to 22:09, figures against the usual, and the day as a score of sessions grouped by project.">
+          <a href="/media/day-dark-1440.webp?v=1024">
+            <img src="/media/day-dark-1440.webp?v=1024" srcset="/media/day-dark-800.webp?v=1024 800w, /media/day-dark-1440.webp?v=1024 1440w" sizes="(min-width: 960px) 640px, 100vw" width="1440" height="900" loading="lazy" decoding="async" alt="A day page: Tuesday 20 October, 126 messages from 09:01 to 23:58 across 6 projects, figures against the usual, and the day as a score of sessions grouped by project.">
           </a>
           <figcaption>One of Robin's days, as a score.</figcaption>
         </figure>
@@ -378,11 +435,11 @@ footer p { margin: 0; max-width: 70ch; }
       <div>
         <p class="kicker">Share mode</p>
         <h2>Show it without showing your work.</h2>
-        <p class="intro">One switch hides every word you wrote, every project name and every person's name, everywhere, so the page can be shown or screenshotted safely. The postcard is the planet with three true lines from your record: shapes and counts only.</p>
+        <p class="intro">One switch hides every word you wrote, every project name and every person's name, everywhere, so the page can be shown or screenshotted safely. The postcard is six seconds of your Loom, its strings ringing as the last messages are woven, with three true lines from your record: shapes and counts only, as a video that loops.</p>
       </div>
       <figure class="shot">
-        <a href="/media/postcard-wide.webp"><img src="/media/postcard-tall.webp" width="800" height="1000" loading="lazy" decoding="async" alt="A tall postcard: Where is your mind? above the planet, with 6,703 messages to AI agents since July, 44 days in a row, 127 sent after 9 pm."></a>
-        <figcaption>Robin's postcard.</figcaption>
+        <a href="/media/postcard-wide.mp4?v=1024"><video src="/media/postcard-tall.mp4?v=1024" poster="/media/postcard-tall.webp?v=1024" width="720" height="900" autoplay muted loop playsinline preload="none" aria-label="A tall postcard, six seconds long: Where is your mind? over the Loom's strings under a green and amber aurora, with 4,521 messages to AI agents since September, 37 days in a row, 757 sent after 9 pm, the latest at 00:27."></video></a>
+        <figcaption>Robin's postcard, tall for a phone. The wide one is for a link or a post.</figcaption>
       </figure>
     </div>
   </section>
@@ -509,11 +566,6 @@ python3 labeller/label.py --all</code></pre>
 
 <script>
 (() => {
-  // The bar gets its line once the page scrolls.
-  const top = document.getElementById("top");
-  const onScroll = () => top.classList.toggle("scrolled", scrollY > 8);
-  addEventListener("scroll", onScroll, { passive: true }); onScroll();
-
   // Copy buttons on the commands.
   for (const pre of document.querySelectorAll("pre")) {
     const b = document.createElement("button");

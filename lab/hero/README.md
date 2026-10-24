@@ -18,7 +18,7 @@ shows in the planet's place. See them in the lab (`npm --prefix lab run dev`, th
 import { Hero } from "@wimym/hero";
 
 <Hero
-  points={points}                // GET /api/points as is (96 KB gzipped): the light way in
+  points={points}                // GET /api/points as is (130 KB gzipped): the light way in
   days={core.days}               // the app's Core.days from /api/core, as is (optional with points)
   share={shareMode}              // shapes only: tooltips give a time, never text or a project name
   shift={wide ? 0.17 : 0}        // move the planet right of centre to leave room for the headline
@@ -97,26 +97,49 @@ for a new person's quick build, `?seconds=34` for Alex's from nothing, `?real` t
 
 ## The postcard
 
-`savePostcard` makes the film Alex will post: six seconds of the strummed Loom in share mode under its
-aurora, "Where is your mind?", three true lines computed from the record, and a small Wimym mark. No
-project names, no message text: counts and times only. It opens on every string lit, the last messages
-are woven and ring their strings, and a hand sweeps across again so the last frame is the first: it loops.
+A postcard tells one day: the last day with a message on it (or `opts.day`). The strummed Loom in share
+mode weaves that day from its first message to its last, each message striking its string, under its
+aurora, with "Where is your mind?", the date, three true lines about the day, a clock at the corner
+keeping the time of the last message woven, and a small Wimym mark. No project names, no message text:
+counts and times only. It opens on the morning, the strings of the day before lit; a day takes 4 to 10
+seconds to weave however full it was (the loom's `pace`, the light keeping its own); then a hand sweeps
+across and it ends with every string ringing.
 
-- 1200x630 (`format: "landscape"`, link previews, X, LinkedIn) or 1080x1350 (`"portrait"`, Instagram).
-- An MP4 (H.264, 30 fps, about 2-3 MB) encoded with WebCodecs through mediabunny, a few seconds to make,
-  `onProgress` telling how far along. Where the browser can't encode it, the picture as a PNG instead.
-- Saves the file (unless `download: false`) and returns `{ kind: "film" | "picture", blob }`.
-- `makePostcard(mind)` is the picture alone (it returns the canvas), as is `HeroHandle.savePostcard`;
-  `makePostcardFilm(mind)` the film alone, or null.
+Three ways to keep it:
 
-The lines, from `postcardLines(mind)`, read like "15,476 messages to AI agents since March.",
-"85 days in a row, and counting." and "2,575 sent after 9 pm, the latest at 01:52.". A run under
-seven days becomes "At most N days in a row."; no late messages becomes "Not one sent after 9 pm."
+- **A page** (`savePostcardPage`, `makePostcardPage`): one HTML file of about 60 KB that weaves the day
+  live in any browser, wide or tall as the window is, the words as text. It carries the shapes of the day
+  and the two before it (minute, project rank and type per message) and the Loom that draws them, so
+  nothing is fetched; once woven, a hand sweeps across every eight seconds, pointing at a string plucks
+  it, and a button weaves the day again. Reduced motion shows the day woven, still.
+- **A film** (`savePostcard`, `makePostcardFilm`): 1200x630 (`format: "landscape"`, link previews, X,
+  LinkedIn) or 1080x1350 (`"portrait"`, Instagram), an MP4 (H.264, 30 fps, 8 to 14 seconds, about 5 to
+  8 MB) encoded with WebCodecs through mediabunny, a few seconds to make, `onProgress` telling how far
+  along. Where the browser can't encode it, the picture as a PNG instead.
+- **A picture** (`makePostcard`, and `HeroHandle.savePostcard`): the day woven, every string lit.
+
+Two choices go with it, in `opts`: `names`, what the columns under the loom are called (`"hidden"`, the
+default; `"anonymous"`, Project A, B, C by how busy each was on the day; or `"shown"`, their own names,
+the only way a project's name gets onto a postcard), and `who`, whose mind it asks about (`"Alex"` makes
+it "Where is Alex's mind?", set smaller when a long name needs it; `postcardQuestion(who)` gives the two lines).
+
+Each saves the file (unless `download: false`), named for the day (`wimym-postcard-2026-10-22.html`).
+`postcardDays(points, days)` lists the days a postcard can tell (every day with a message), each with its
+date as the postcard writes it and whether it is today, still going; the last is the default.
+
+The lines, from `postcardLines(mind, d)`, read like "214 messages to AI agents, in one day.",
+"From 09:11 to 23:29: 10.2 hours at it, across 11 projects." and "The 86th day in a row."; a run
+under seven days becomes "41 sent after 9 pm." (or "Not one sent after 9 pm."). `postcardFacts(mind)`
+still gives the whole record's numbers.
 
 ```ts
-heroRef.current.savePostcard({ format: "portrait" });     // from a Hero on screen
-savePostcard(points, core.days, { format: "landscape" });   // or straight from /api/points (days optional), or messages and days
+heroRef.current.savePostcard({ format: "portrait" });        // the picture, from a Hero on screen
+savePostcardPage(points, core.days);                          // the page, straight from /api/points (days optional)
+savePostcard(points, core.days, { format: "landscape" });     // the film; or from messages and days
 ```
+
+The page's script is `hero/postcard-player.ts`, bundled into one string by `postcardPlayer(build)`
+(`hero/player-plugin.ts`), which both Vite configs load, each with its own esbuild.
 
 ## The week's form
 
@@ -158,7 +181,7 @@ exported on their own. Watch it at `lab/hero/week.html` (`?week=2026-10-12`, arr
 
 - `Hero` (default too), with `HeroProps`, `HeroHandle` (`savePNG`, `recordLoop`, `savePostcard`), `HeroPiece`
 - `FirstRun`, `FirstRunProps`, `EngineState`, `narration`, `mockEngineState`
-- `savePostcard`, `makePostcard`, `makePostcardFilm`, `postcardFacts`, `postcardLines`, `PostcardOptions`, `PostcardFormat`
+- `savePostcard`, `savePostcardPage`, `makePostcard`, `makePostcardFilm`, `makePostcardPage`, `postcardDays`, `postcardFacts`, `postcardLines`, `postcardQuestion`, `PostcardOptions`, `PostcardFormat`, `PostcardNames`
 - `WeekForm`, `WeekFormProps`, `WeekFormHandle`, `WeekPayload`, `weekShape`, `weekCaption`
 - `syntheticData`, `RawMessage`, `RawDay`, `PointsPayload`, `shapesOf`
 
@@ -197,7 +220,7 @@ use; the component itself needs only `three` and `react`, both taken from the ap
 - `hero/Hero.tsx`, `hero/index.ts`: the component.
 - `hero/demo.html`, `hero/demo.tsx`: the component in a mock of the first screen, with postcard buttons.
 - `hero/FirstRun.tsx`, `hero/mockState.ts`, `hero/first-run.html`: the first run, its stand-in engine state, and a page to watch it.
-- `hero/postcard.ts`: the postcard.
+- `hero/postcard.ts`: the postcard; `hero/postcard-day.ts` the day it tells, shared with the page's own script, `hero/postcard-player.ts`, and `hero/player-plugin.ts` that bundles it.
 - `src/pieces/*.ts`: the four pictures, each a plain class behind one interface (`src/shared/piece.ts`).
 - `src/shared/data.ts`: the shapes drawn, as typed arrays; text stays out of them and is read only for a tooltip.
 - `src/shared/vitals.ts`: the week's signs against your own range, for the organism.

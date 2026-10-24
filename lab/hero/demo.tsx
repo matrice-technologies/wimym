@@ -4,7 +4,7 @@ import "@fontsource-variable/bricolage-grotesque/standard.css";
 import "@fontsource-variable/instrument-sans/index.css";
 import { StrictMode, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { Hero, syntheticData, type HeroHandle, type HeroPiece, type PointsPayload, type RawDay, type RawMessage } from "./index";
+import { Hero, savePostcard, savePostcardPage, syntheticData, type HeroHandle, type HeroPiece, type PointsPayload, type RawDay, type RawMessage } from "./index";
 
 const q = new URLSearchParams(location.search);
 
@@ -43,8 +43,10 @@ function Demo() {
         <span style={{ width: 12 }} />
         <button style={btn(share)} onClick={() => setShare(s => !s)}>Shapes only</button>
         <button style={btn(false)} onClick={() => hero.current?.savePNG()}>Save a still</button>
-        <button style={btn(false)} onClick={() => hero.current?.savePostcard({ format: "landscape" })}>Postcard</button>
-        <button style={btn(false)} onClick={() => hero.current?.savePostcard({ format: "portrait" })}>Postcard, tall</button>
+        <button style={btn(false)} onClick={() => data && savePostcardPage(data.points ?? data.messages ?? [], data.days)}>Postcard page</button>
+        <button style={btn(false)} onClick={() => data && savePostcard(data.points ?? data.messages ?? [], data.days, { format: "landscape" })}>Postcard film</button>
+        <button style={btn(false)} onClick={() => data && savePostcard(data.points ?? data.messages ?? [], data.days, { format: "portrait" })}>Film, tall</button>
+        <button style={btn(false)} onClick={() => hero.current?.savePostcard({ format: "landscape" })}>Postcard picture</button>
       </nav>
       {picked && <div style={{ position: "absolute", right: 24, bottom: 28, color: C.muted, fontSize: 13 }}>The app would open {picked}</div>}
     </div>

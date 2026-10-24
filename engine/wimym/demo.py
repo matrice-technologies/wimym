@@ -3,16 +3,19 @@
     python3 engine/wimym/demo.py <folder>      # write the demo into folder (home/, data/, cache/)
     python3 engine/server.py --demo            # write it once into ~/.cache/wimym-demo, then serve it on 8997
 
-Robin, a fictional founder, works with coding agents for about three months on four projects: loom (the
-product), loom-web (its site and app), field-notes (a side project) and ledger-tools (a small tool that goes
-quiet). Before the transcripts begin there are three weeks of prompts only (history.jsonl), as when Claude Code
-had already deleted the older transcripts. There is a week off in the middle, a run of days without one since,
-and a crunch in the last two weeks with late nights and more sessions at once.
+Robin, a fictional founder, works with coding agents for a month, every day, on nine projects, four to seven
+of them on a given day with three to six sessions running at once: loom (the product), loom-web (its site and
+app), loom-ios, loom-infra and loom-docs, then field-notes (a side project, busier at weekends), ledger-tools
+(a small tool that goes quiet), talk-slides (a talk in the second half) and recipe-box (weekends). Before the
+transcripts begin there is a week of prompts only (history.jsonl), as when Claude Code had already deleted the
+older transcripts. Days run from about 08:40 to 22:40, with a dip at dinner and an evening stretch; one Sunday
+mid-month is quiet, and the last five days are a crunch with later nights and more sessions at once. The
+volumes, hours, pauses, message types and lengths follow the aggregate shape of a real month of agent work.
 
 Written under folder:
   home/.claude/projects/<folder>/<session>.jsonl   Claude Code transcripts (the lines scan.py reads)
   home/.claude/projects/<folder>/memory/*.md       a few memory notes
-  home/.claude/history.jsonl                       the prompts-only weeks
+  home/.claude/history.jsonl                       the prompts-only week
   home/<project>/                                  small git repositories, with Claude as co-author and a teammate
   home/.gitconfig                                  who Robin is in git
   data/                                            labels (categories, signals, acts, sessions, days, weeks),
@@ -21,6 +24,7 @@ Everything is invented and kind; nothing comes from anyone's real record. The da
 always looks current. Same seed, same person.
 """
 import json
+import math
 import os
 import random
 import subprocess
@@ -31,44 +35,115 @@ from datetime import date, datetime, timedelta, timezone
 
 PERSON, EMAIL = "Robin Vale", "robin@loom.example"
 TEAMMATE = ("Jordan Pike", "jordan@loom.example")
-PROJECTS = ["loom", "loom-web", "field-notes", "ledger-tools"]
-DAYS = 91           # days shown, ending today
-PROMPTS_ONLY = 21   # the first days: history.jsonl only
-OFF = (44, 50)      # days ago: the week off
-CRUNCH = 14         # the last days: later, busier
+DAYS = 37           # days shown, ending today
+PROMPTS_ONLY = 7    # the first days: history.jsonl only
+QUIET = 15          # days ago, about: the quiet Sunday (the nearest one before)
+CRUNCH = 5          # the last days: later, busier
 
 THINGS = ["export to CSV", "search box", "invite flow", "rate limiter", "settings page", "weekly digest email",
           "offline mode", "onboarding checklist", "audit log", "dark theme", "billing webhook", "sync worker",
           "share link", "keyboard shortcuts", "import from files", "usage chart", "empty states", "retry queue"]
 AREAS = ["importer", "sign-up page", "API", "dashboard", "sync job", "CLI", "editor", "billing page", "search",
          "notifications", "settings", "mobile layout"]
-FILES = {"loom": ["src/sync/worker.ts", "src/api/routes.ts", "src/core/notes.ts", "src/core/search.ts", "test/sync.test.ts"],
-         "loom-web": ["app/page.tsx", "app/pricing/page.tsx", "components/Hero.tsx", "components/Nav.tsx", "styles/site.css"],
-         "field-notes": ["notes/cli.py", "notes/store.py", "notes/render.py", "tests/test_store.py", "README.md"],
-         "ledger-tools": ["ledger/parse.py", "ledger/report.py", "ledger/cli.py", "tests/test_parse.py"]}
+# per project: files, its own areas and things (with the shared ones), and how its tests run
+PROJ = {
+    "loom": (["src/sync/worker.ts", "src/api/routes.ts", "src/core/notes.ts", "src/core/search.ts", "test/sync.test.ts"],
+             ["sync job", "API", "search", "editor", "importer"], [], "npm test"),
+    "loom-web": (["app/page.tsx", "app/pricing/page.tsx", "components/Hero.tsx", "components/Nav.tsx", "styles/site.css"],
+                 ["pricing page", "landing page", "sign-up page", "dashboard", "mobile layout"], ["changelog page", "launch banner"], "npm test"),
+    "loom-ios": (["Loom/NotesView.swift", "Loom/SyncClient.swift", "Loom/ShareSheet.swift", "LoomTests/SyncTests.swift"],
+                 ["share sheet", "notes list", "offline cache", "widget", "settings screen"], ["push notifications", "home screen widget"],
+                 "xcodebuild test -scheme Loom"),
+    "loom-infra": (["deploy/staging.tf", "deploy/prod.tf", "scripts/deploy.sh", "scripts/backup.sh", ".github/workflows/ci.yml"],
+                   ["deploy script", "staging cluster", "backups", "CI pipeline", "alerts"], ["nightly backup", "preview deploys"], "make check"),
+    "loom-docs": (["docs/getting-started.md", "docs/sync.md", "docs/api.md", "docs/teams.md", "mkdocs.yml"],
+                  ["getting-started guide", "API reference", "sync guide", "teams page"], ["migration guide", "FAQ"], "mkdocs build --strict"),
+    "field-notes": (["notes/cli.py", "notes/store.py", "notes/render.py", "tests/test_store.py", "README.md"],
+                    ["CLI", "store", "renderer"], ["tag filter", "markdown export"], "pytest -q"),
+    "ledger-tools": (["ledger/parse.py", "ledger/report.py", "ledger/cli.py", "tests/test_parse.py"],
+                     ["parser", "monthly report", "CLI"], ["CSV import", "currency totals"], "pytest -q"),
+    "talk-slides": (["slides/talk.md", "slides/demo.md", "slides/theme.css", "notes/speaker.md"],
+                    ["intro slides", "demo section", "speaker notes", "closing slide"], ["live demo script", "timing table"], "npm run build"),
+    "recipe-box": (["box/app.py", "box/recipes.py", "box/templates/recipe.html", "tests/test_recipes.py"],
+                   ["recipe page", "shopping list", "search"], ["scaling servings", "weekly menu"], "pytest -q"),
+}
+PROJECTS = list(PROJ)
+FILES = {p: v[0] for p, v in PROJ.items()}
+# how strongly each project pulls, before weights() shifts it with the week and the month
+PULL = {"loom": 8.5, "loom-web": 4, "loom-ios": 3.5, "loom-infra": 2.2, "loom-docs": 2, "field-notes": 2,
+        "ledger-tools": 1.5, "talk-slides": 2, "recipe-box": .4}
+# hours of the day: how much of the work falls in each (a dip at dinner, an evening stretch)
+HOURLY = {7: .7, 8: .85, 9: .95, 10: 1, 11: 1.15, 12: 1.05, 13: 1.05, 14: 1.2, 15: 1.4, 16: 1.25, 17: 1.1, 18: .7,
+          19: .5, 20: .8, 21: 1.25, 22: 1.3, 23: 1, 24: .7, 25: .6}
+# what Robin asks for, as a share of messages; a session's first message is drawn from FIRST
+INTENTS = {"question": 28, "go-ahead": 15.5, "answer": 8, "build": 8, "design": 3.5, "fix": 1.5, "plan": 6, "review": 2,
+           "ship": 11, "ops": 5.5, "setup": 1, "correct": 6.5}
+CRUNCH_INTENTS = {**INTENTS, "question": 23, "go-ahead": 18, "correct": 8.5, "ship": 12, "fix": 4}
+FIRST = {"question": 5, "build": 4, "plan": 2.5, "fix": 1.5, "design": 1, "ops": 1.5, "review": .5}
+# how many words, per intent: (median, spread) of a log-normal
+WORDS = {"build": (20, .85), "fix": (19, .8), "go-ahead": (2.6, .9), "correct": (17, .8), "question": (13, .6),
+         "plan": (30, .85), "answer": (10, 1.05), "review": (21, .85), "ship": (5, .9), "design": (22, .85),
+         "setup": (16, .55), "ops": (11, .7)}
 
 ASK = {
     "build": ["Add a {thing} to the {area}, with tests.", "Let's build the {thing}. Done means it works on a phone and has tests.",
-              "Can you add a {thing}? Keep it small; we can grow it later.", "Next: the {thing} for the {area}. Follow the pattern in the {area2}."],
+              "Can you add a {thing}? Keep it small; we can grow it later.", "Next: the {thing} for the {area}. Follow the pattern in the {area2}.",
+              "Add the {thing}.", "Build a first version of the {thing} in the {area}.", "Wire the {thing} into the {area}.",
+              "Let's do the {thing} now.", "Start on the {thing} for the {area}; a rough version is fine for today."],
     "fix": ["The {area} breaks when the list is empty. Can you find out why and fix it?", "The {thing} shows the wrong date after midnight. Fix it, with a test.",
-            "Something in the {area} got slow this week. Find it and make it fast again.", "Fix the flaky test in the {area}."],
+            "Something in the {area} got slow this week. Find it and make it fast again.", "Fix the flaky test in the {area}.",
+            "The {area} crashes on a fresh install. Find out why.", "The {thing} sends twice when you click fast. Fix it."],
     "question": ["How does the {area} decide what to show first?", "What would it take to support the {thing} offline?",
                  "Is there a simpler way to do the {thing}?", "Why did we keep two versions of the {area}?",
-                 "What are the risks if we ship the {thing} this week?"],
-    "go-ahead": ["yes", "ok, go ahead", "sounds good, go", "continue", "yes please", "do it", "great, keep going", "option 2"],
+                 "What are the risks if we ship the {thing} this week?", "Where does the {area} get its data from?",
+                 "Which tests cover the {area}?", "What changed in the {area} since last week?", "Why is this one so slow?",
+                 "Can the {thing} and the {area} share code?", "What happens to the {thing} when the network drops?",
+                 "Does anything else call this?", "How big is the change for the {thing}, roughly?", "What do you think?"],
+    "go-ahead": ["yes", "ok", "go", "do it", "yes please", "ok, go ahead", "sounds good, go", "continue", "great, keep going",
+                 "option 2", "yes, both", "go for it", "perfect, ship it", "yes, and add a test for the empty case too",
+                 "ok, go with the simpler one", "looks right, carry on with the next step", "yes, but keep the old one behind a flag",
+                 "yes, go ahead, and tell me when the tests are green", "ok, do the first two and leave the third for tomorrow"],
     "correct": ["No, that's not it: the {thing} should keep what people typed.", "That broke the {area}. Undo the last change and try again more carefully.",
                 "Not quite. Keep the old {thing} and only change the wording.", "Wait, you changed the API too. Leave the API alone.",
-                "This is the third try at the {thing}; slow down and read how the {area} works first."],
+                "This is the third try at the {thing}; slow down and read how the {area} works first.",
+                "No. The {area} should not know about the {thing} at all.", "That's the wrong file: the {thing} lives in the {area2}."],
     "review": ["Review the diff before we merge, especially the {area}.", "Run the tests and tell me what fails.",
-               "Check the {thing} on a small screen and tell me what looks off."],
+               "Check the {thing} on a small screen and tell me what looks off.", "Read through the {area} and list what you'd clean up."],
     "plan": ["Before writing code, let's plan the {thing}. What are the options?", "Write a short plan for the {thing}, then wait for me.",
-             "Think through how the {area} should work for teams. No code yet."],
+             "Think through how the {area} should work for teams. No code yet.", "Plan the next two days of work on the {area}.",
+             "Let's think about the {thing} before touching the {area}."],
     "design": ["Make the {area} calmer: more space, fewer borders.", "The {thing} looks crowded on a phone. Give it room.",
-               "The headings on the {area} are too loud. Tone them down."],
-    "ship": ["Commit and push.", "Open a PR for this.", "Merge it and deploy to staging.", "Ship it."],
+               "The headings on the {area} are too loud. Tone them down.", "Try a quieter colour for the {thing}.",
+               "The {area} needs a clearer empty state."],
+    "ship": ["Ship it.", "Commit and push.", "Open a PR for this.", "Merge it and deploy to staging.", "commit", "push",
+             "Commit and push, then deploy it to staging so I can try it on my phone tonight.",
+             "Open a PR, and in the description say what we left out on purpose and why.",
+             "Merge it.", "Commit this and open a PR against main.", "Deploy to staging and tell me when it's up.",
+             "Commit with a clear message, push, and open a PR for Jordan to review in the morning."],
     "answer": ["It's the staging database.", "Use the second option.", "The deadline is Friday.", "Teams of up to ten people.",
-               "Keep both for now; we'll decide next week."],
-    "setup": ["Remember that I want tests with every change.", "Add a note to CLAUDE.md: run the linter before committing."],
+               "Keep both for now; we'll decide next week.", "staging", "the second one", "Friday", "no", "both",
+               "The first one, it's simpler to explain to people.", "Ten people at most, and most teams are three or four.",
+               "Yes, the old one can go once the new one has been on staging for a day."],
+    "setup": ["Remember that I want tests with every change.", "Add a note to CLAUDE.md: run the linter before committing.",
+              "Add to CLAUDE.md that the {area} has its own test helpers and should use them."],
+    "ops": ["Restart the staging server and check the logs.", "Why is CI failing on main? Check the logs.", "Bump the node version in CI.",
+            "Run the backup by hand and check it restores.", "Clean up the old preview deploys.", "Check the error rate on staging since the deploy."],
+}
+# what Robin adds to an ask to say more: for work, and for asking or planning
+MORE = {
+    "make": ["Keep it small; we can grow it later.", "Follow the pattern in the {area2}.", "Don't touch the API.", "It has to work on a phone too.",
+             "Add tests for the empty case and a long list.", "Run the linter before you commit.", "Jordan will review it tomorrow, so keep the diff readable.",
+             "If something is unclear, ask before guessing.", "We ship on Friday, so nothing risky.", "Use the existing helpers rather than new ones.",
+             "Keep the old behaviour behind a flag.", "Write any decision you make in the PR description.", "Check how the {area2} handles the same case first.",
+             "Keep the copy short and plain.", "No new dependencies.", "When you're done, tell me what you'd do next.", "Make sure it still works offline.",
+             "Measure before and after, so we know it helped.", "Leave the database schema as it is.", "I'd rather have two small commits than one big one.",
+             "People mentioned this twice this week.", "Start with the simplest version that works.", "Keep the naming in line with the {area2}.",
+             "The error only happens after a fresh install.", "It started after yesterday's deploy.", "The screenshots are in the issue.",
+             "Think about teams of up to ten people.", "Keyboard and screen readers matter here."],
+    "ask": ["I want to understand it before we change anything.", "A short answer is fine.", "Point me to the files.", "Compare it with how the {area2} does it.",
+            "Is that written down anywhere?", "What would you change first?", "No code yet.", "Be honest about the risks.",
+            "Think about what happens with ten people on one team.", "I'm asking because the {thing} is next on the list.",
+            "Explain the trade-offs in a few lines.", "Assume we ship on Friday.", "Keep it to the {area} for now."],
 }
 THANKS = ["Thanks, that's exactly it.", "Nice, this is much better.", "Perfect, thank you."]
 SAYS = ["I read the {area} first to see how it fits together.", "The change is small and stays inside the {area}.",
@@ -96,81 +171,139 @@ class Writer:
         self.history = []
 
     # -- shapes -------------------------------------------------------------------------------
-    def weights(self, ago):
+    def weights(self, d, ago):
+        """Each project's pull on day d: the side projects at weekends, ledger-tools fading, the talk in the second
+        half, and the crunch on the launch (loom, its site, its app and its docs)."""
+        w = dict(PULL)
+        if d.weekday() >= 5:
+            w["field-notes"] *= 2.5
+            w["recipe-box"] = 3
+            w["loom-infra"] *= .5
+        if ago <= 22:
+            w["ledger-tools"] *= .25
+        w["talk-slides"] *= 0 if ago > 18 else .4 if ago < CRUNCH else 1
         if ago < CRUNCH:
-            return [5, 6, 1, 0]
-        if ago < 30:
-            return [6, 3, 2, 0.3]
-        if ago < 60:
-            return [6, 2, 3, 2]
-        return [7, 1, 2, 3]
+            for p, x in {"loom": 1.2, "loom-web": 1.5, "loom-ios": 1.3, "loom-docs": 1.6, "field-notes": .4}.items():
+                w[p] *= x
+        return w
 
-    def day_shape(self, d, ago):
-        """None for a day off, else (start hour, end hour, blocks, sessions at once)."""
+    def day_shape(self, d, ago, quiet):
+        """(start hour, end hour, messages, sessions at once, the day's projects)."""
         r = self.r
-        if OFF[0] <= ago <= OFF[1]:
-            return None
-        if ago > OFF[1] and d.weekday() == 6 and r.random() < .7:
-            return None
-        weekend = d.weekday() >= 5
-        start = r.uniform(7.5, 9.5) + (1.5 if weekend else 0)
-        end = r.uniform(19, 22) - (3 if weekend else 0)
+        if quiet:
+            return r.uniform(10, 11), r.uniform(16, 17.5), r.randint(26, 36), 2, ["field-notes", "recipe-box"]
+        start = min(max(r.gauss(8.6, .45), 7.5), 10.2) + (.4 if d.weekday() >= 5 else 0)
+        end = min(max(r.gauss(22.95, .45), 21.6), 23.8)
+        n = r.lognormvariate(math.log(118), .28) * [.95, .95, 1, 1.05, 1.15, .95, .8][d.weekday()]
+        at_once = r.choices([3, 4, 5, 6], weights=[3, 5, 3, 1])[0]
         if ago < CRUNCH:
-            end += r.uniform(1, 3.5)
-        elif r.random() < .1:
-            end += r.uniform(2, 4)
-        at_once = 4 if ago < CRUNCH else 3
-        return start, min(end, 25.5), r.randint(3, 6) - (2 if weekend else 0), at_once
+            end, n, at_once = end + r.uniform(.4, 1.6), n * 1.2, at_once + 1
+        w = self.weights(d, ago)
+        names, chosen = [p for p in PROJECTS if w[p] > 0], []
+        for _ in range(r.choices([4, 5, 6, 7], weights=[2, 3, 3, 2])[0]):  # weighted, without replacement
+            p = r.choices(names, weights=[w[x] for x in names])[0]
+            chosen.append(p)
+            names.remove(p)
+        return start, end, int(min(max(n, 55), 215)), at_once, chosen
 
     # -- one day ----------------------------------------------------------------------------------
-    def day(self, d, ago, prompts_only):
-        shape = self.day_shape(d, ago)
-        if not shape:
-            return
-        start, end, blocks, at_once = shape
+    def day(self, d, ago, prompts_only, quiet=False):
+        """Stretches of work with breaks between them; in each, a few sessions at once, Robin mostly staying with the one
+        at hand, else going to whichever has waited longest; a session runs its course of messages and another opens,
+        on one of the day's projects."""
         r = self.r
-        t = start
-        span = (end - start) / max(1, blocks)
-        for b in range(max(1, blocks)):
-            b_start = start + b * span + r.uniform(0, .3)
-            b_len = min(span * r.uniform(.5, .9), 2.5)
-            projects = r.choices(PROJECTS, weights=self.weights(ago), k=r.choices(range(1, at_once + 1), weights=[2, 4, 3, 2][:at_once])[0] + 1)
-            projects = list(dict.fromkeys(projects))
-            sids = {p: str(uuid.UUID(int=r.getrandbits(128))) for p in projects}
-            t = b_start
-            convo = {p: [] for p in projects}
-            while t < b_start + b_len:
-                p = r.choice(projects)
-                convo[p].append(t)
-                t += r.uniform(1.5, 9) / 60
-            for p in projects:
-                if convo[p]:
-                    self.session(d, p, sids[p], convo[p], prompts_only, ago)
+        start, end, n, at_once, chosen = self.day_shape(d, ago, quiet)
+        w = self.weights(d, ago)
+        stretches, t = [], start
+        while t < end - .15:
+            ln = min(r.lognormvariate(math.log(1.1), .45), end - t)
+            stretches.append((t, t + ln))
+            t += ln + r.lognormvariate(math.log(.55), .6)
+        stretches[-1] = (stretches[-1][0], end)
+        mass = [(b - a) * HOURLY.get(int((a + b) / 2), .6) for a, b in stretches]
+        counts = Counter(r.choices(range(len(stretches)), weights=mass, k=n))
+        counts[0] = max(counts[0], 1)                        # the day starts and ends where it should
+        counts[len(stretches) - 1] = max(counts[len(stretches) - 1], 1)
+        sessions, got, live = [], Counter(), []
+
+        def open_one():
+            p = r.choices(chosen, weights=[w[x] * (3 if got[x] < 5 else 1) for x in chosen])[0]
+            s = {"p": p, "sid": str(uuid.UUID(int=r.getrandbits(128))), "hours": [],
+                 "left": max(1, min(60, round(r.lognormvariate(math.log(7), .95))))}
+            sessions.append(s)
+            return s
+        for i, (a, b) in enumerate(stretches):
+            if not counts[i]:
+                continue
+            hours = sorted(r.uniform(a, b) for _ in range(counts[i]))
+            if i == 0:
+                hours[0] = a
+            if i == len(stretches) - 1:
+                hours[-1] = b
+            live = [s for s in live if r.random() < .7]      # most sessions carry on after the break
+            while len(live) < max(1, min(at_once + r.choice([-1, 0, 0, 1]), counts[i])):
+                live.append(open_one())
+            last = None
+            for h in hours:
+                ready = [s for s in live if not s["hours"] or h - s["hours"][-1] >= 1 / 60]
+                x = r.random()
+                s = (last if last in ready and x < .55 else r.choice(ready) if ready and x > .85
+                     else min(ready or live, key=lambda s: s["hours"][-1] if s["hours"] else 0))
+                last = s
+                s["hours"].append(h)
+                got[s["p"]] += 1
+                s["left"] -= 1
+                if s["left"] <= 0:
+                    live.remove(s)
+                    live.append(open_one())
+        others = [p for p in PROJECTS if p not in chosen and w[p] > 0]
+        if others and not quiet and r.random() < .5:         # a quick look at one more project
+            a, b = r.choice(stretches)
+            sessions.append({"p": r.choices(others, weights=[w[x] for x in others])[0], "sid": str(uuid.UUID(int=r.getrandbits(128))),
+                             "hours": sorted(r.uniform(a, b) for _ in range(r.randint(1, 3)))})
+        for s in sessions:
+            if s["hours"]:
+                self.session(d, s["p"], s["sid"], s["hours"], prompts_only, ago)
 
     def stamp(self, d, hour, secs=0):
         local = datetime(d.year, d.month, d.day) + timedelta(hours=hour, seconds=secs)
         return local.astimezone(timezone.utc)
 
+    def text(self, intent, project):
+        """What Robin types: one of the intent's asks, nearest the length drawn for it, with more said when it runs long."""
+        r = self.r
+        _, areas, things, _ = PROJ[project]
+        loomish = project in ("loom", "loom-web")
+        area_pool = sorted(set(areas + (AREAS if loomish else [])))
+        thing_pool = things * 2 + (THINGS if loomish else ["empty states", "keyboard shortcuts", "dark theme", "search box", "settings page"])
+        def fill(s):
+            area, area2 = r.sample(area_pool, 2)
+            return s.format(thing=r.choice(thing_pool), area=area, area2=area2)
+        med, spread = WORDS[intent]
+        target = max(1, round(r.lognormvariate(math.log(med), spread)))
+        text = min(r.sample(ASK[intent], min(4, len(ASK[intent]))), key=lambda s: abs(len(s.split()) - target))
+        if intent == "go-ahead" and r.random() < .1:
+            return r.choice(THANKS)
+        text = fill(text)
+        more = (MORE["make"] + MORE["ask"] if intent == "plan" else MORE["ask"] if intent in ("question", "review")
+                else MORE["make"] if intent not in ("go-ahead", "ship") else [])
+        for extra in r.sample(more, len(more)):
+            if len(text.split()) >= target - 2:
+                break
+            text += " " + fill(extra)
+        return text
+
     def session(self, d, project, sid, hours, prompts_only, ago):
         r = self.r
         cwd = os.path.join(self.home, project)
-        lines, last_reply_words, prev_end = [], 0, None
-        intents = ["build", "fix", "question", "go-ahead", "correct", "review", "plan", "design", "ship", "answer", "setup"]
-        base = [14, 8, 9, 16, 6, 5, 5, 4, 5, 4, 1]
-        if ago < CRUNCH:
-            base = [12, 12, 6, 20, 10, 4, 3, 4, 7, 3, 1]
-        n = 0
-        for h in hours:
-            intent = "build" if n == 0 and r.random() < .6 else r.choices(intents, weights=base)[0]
-            if n == 0 and intent in ("go-ahead", "correct", "answer"):
-                intent = "plan"
-            text = r.choice(ASK[intent]).format(thing=r.choice(THINGS), area=r.choice(AREAS), area2=r.choice(AREAS))
-            if intent == "go-ahead" and r.random() < .15:
-                text = r.choice(THANKS)
+        mix = CRUNCH_INTENTS if ago < CRUNCH else INTENTS
+        intents = [r.choices(list(FIRST), weights=list(FIRST.values()))[0]] + r.choices(list(mix), weights=list(mix.values()), k=len(hours) - 1)
+        quick_p = .45 if ago < CRUNCH else .25
+        lines = []
+        for i, h in enumerate(hours):
+            intent = intents[i]
+            text = self.text(intent, project)
             at = self.stamp(d, h)
-            if prev_end:  # after Claude's reply: sometimes a quick yes before it could be read
-                quick = intent == "go-ahead" and last_reply_words > 60 and r.random() < (.45 if ago < CRUNCH else .25)
-                at = max(at, prev_end + timedelta(seconds=r.randint(4, 25) if quick else r.randint(40, 300)))
             if at > self.now:
                 break
             hour = at.astimezone().hour + at.astimezone().minute / 60
@@ -181,21 +314,28 @@ class Writer:
                                      "project": cwd, "sessionId": sid})
                 hid = f"h-{int(at.timestamp() * 1000)}-{sid[:8]}"
                 self.label(hid, intent, text, project, d, hour)
-                n += 1
                 continue
+            # how long Claude works: drawn, and over before Robin's next message here; sometimes a quick yes follows
+            # a long reply, sent before it could be read
+            dur = min(r.lognormvariate(math.log(75), 1.6), 2700)
+            quick = False
+            if i + 1 < len(hours):
+                gap = (hours[i + 1] - h) * 3600
+                quick = intents[i + 1] == "go-ahead" and gap < 1800 and r.random() < quick_p
+                read = r.randint(4, 25) if quick else r.randint(15, 120)
+                dur = max(3, gap - read) if quick else max(3, min(dur, gap - read))
             lines.append(self.user(mid, sid, cwd, at, text))
-            reply, end, k = self.turn(lines, sid, cwd, at, intent, project, text, ago)
-            last_reply_words, prev_end = len(reply.split()), end
+            self.turn(lines, sid, cwd, at, intent, project, ago, dur, quick)
             self.label(mid, intent, text, project, d, hour)
-            n += 1
         if prompts_only or not lines:
             return
         folder = os.path.join(self.claude, "projects", cwd.replace("/", "-"))
         os.makedirs(folder, exist_ok=True)
         with open(os.path.join(folder, sid + ".jsonl"), "a", encoding="utf-8") as f:
             f.writelines(lines)
+        _, areas, things, _ = PROJ[project]
         goal = self.r.choice(["Add the {thing}", "Fix the {area}", "Plan the {thing}", "Tidy the {area}"]).format(
-            thing=self.r.choice(THINGS), area=self.r.choice(AREAS))
+            thing=self.r.choice(things + THINGS), area=self.r.choice(areas))
         outcome = self.r.choices(["landed", "partial", "answered", "abandoned"], weights=[6, 3, 2, 1])[0]
         self.sessions[sid] = {"h": "demo", "v": 2, "goal": goal + ".", "outcome": outcome, "decisions": [], "open": [],
                               "rework": outcome == "partial" and self.r.random() < .4, "rw": "", "people": [],
@@ -207,13 +347,11 @@ class Writer:
                            "permissionMode": "default", "message": {"role": "user", "content": text}},
                           separators=(",", ":")) + "\n"
 
-    def turn(self, lines, sid, cwd, at, intent, project, text, ago):
-        """Claude's side of one turn: tools for work, a commit for shipping, a reply. Returns (reply, end, tools)."""
+    def turn(self, lines, sid, cwd, at, intent, project, ago, dur, long_reply=False):
+        """Claude's side of one turn, over dur seconds: tools for work, a commit for shipping, a reply."""
         r = self.r
         model = "claude-opus-5-5" if r.random() < .7 else "claude-sonnet-5-5"
         effort = r.choice(["high", "high", "xhigh", "medium"])
-        t = at + timedelta(seconds=r.randint(3, 15))
-        k = 0
 
         def a(content, when):
             return json.dumps({"type": "assistant", "uuid": str(uuid.UUID(int=r.getrandbits(128))), "sessionId": sid, "cwd": cwd,
@@ -229,10 +367,16 @@ class Writer:
                                "timestamp": when.strftime("%Y-%m-%dT%H:%M:%S.000Z"),
                                "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": tid, "content": out}]}},
                               separators=(",", ":")) + "\n"
-        work = intent in ("build", "fix", "design", "correct")
+        work = intent in ("build", "fix", "design", "correct", "ops")
         steps = r.randint(3, 14) if work else (r.randint(1, 4) if intent in ("question", "review", "plan") else r.randint(0, 3))
         if intent == "go-ahead":
             steps = r.randint(2, 10)
+        steps = 0 if dur < 20 else min(steps, 2) if dur < 60 else steps + r.randint(5, 25) if dur > 600 else steps
+        committed = intent == "ship" or (work and steps > 1 and r.random() < .35) or (intent == "go-ahead" and steps > 1 and r.random() < .3)
+        # the turn's moments, spread over its length: the first call, each result and the next call, a commit, the reply
+        slots = [r.uniform(.5, 1.5) for _ in range(2 * steps + 2 + committed)]
+        unit, clock = timedelta(seconds=dur / sum(slots)), iter(slots)
+        t = at + unit * next(clock)
         edited = []
         for i in range(steps):
             tid = "toolu_" + uuid.UUID(int=r.getrandbits(128)).hex[:20]
@@ -243,39 +387,35 @@ class Writer:
                         "input": {"file_path": f, "old_string": "  old\n  old", "new_string": new}}
                 edited.append(f)
             elif i % 3 == 2:
-                tool = {"type": "tool_use", "id": tid, "name": "Bash", "input": {"command": "npm test" if project.startswith("loom") else "pytest -q"}}
+                tool = {"type": "tool_use", "id": tid, "name": "Bash", "input": {"command": PROJ[project][3]}}
             else:
                 tool = {"type": "tool_use", "id": tid, "name": "Read", "input": {"file_path": f}}
             lines.append(a([tool], t))
-            t += timedelta(seconds=r.randint(10, 90))
+            t += unit * next(clock)
             lines.append(result(tid, t))
-            k += 1
-        committed = intent == "ship" or (work and edited and r.random() < .35) or (intent == "go-ahead" and edited and r.random() < .3)
-        if intent == "ship" and not edited:
-            edited = [os.path.join(cwd, r.choice(FILES[project]))]
+            t += unit * next(clock)
         if committed:
+            edited = edited or [os.path.join(cwd, r.choice(FILES[project]))]
             tid = "toolu_" + uuid.UUID(int=r.getrandbits(128)).hex[:20]
-            msg = r.choice(["Add", "Fix", "Tidy", "Speed up", "Test"]) + " " + r.choice(THINGS + AREAS)
+            msg = r.choice(["Add", "Fix", "Tidy", "Speed up", "Test"]) + " " + r.choice(PROJ[project][2] + PROJ[project][1] + THINGS[:6])
             lines.append(a([{"type": "tool_use", "id": tid, "name": "Bash",
                              "input": {"command": f'git add -A && git commit -m "{msg}"'}}], t))
-            t += timedelta(seconds=r.randint(2, 8))
+            t += unit * next(clock)
             lines.append(result(tid, t, "[main 1a2b3c4] " + msg))
-            self.commits[project].append((t.timestamp(), msg, [os.path.relpath(f, cwd) for f in edited] or [FILES[project][0]],
-                                          r.random() < .85))
+            self.commits[project].append((t.timestamp(), msg, [os.path.relpath(f, cwd) for f in edited], r.random() < .85))
         if r.random() < (.08 if ago < CRUNCH else .04) and steps > 2:
             lines.append(json.dumps({"type": "user", "uuid": str(uuid.UUID(int=r.getrandbits(128))), "sessionId": sid, "cwd": cwd,
                                      "timestamp": t.strftime("%Y-%m-%dT%H:%M:%S.000Z"),
                                      "message": {"role": "user", "content": [{"type": "text", "text": "[Request interrupted by user]"}]}},
                                     separators=(",", ":")) + "\n")
-            return "", t, k
+            return
         n = r.choice([1, 2, 3, 5, 8, 12, 18]) if intent != "question" else r.choice([6, 10, 16, 24])
-        thing, area = r.choice(THINGS), r.choice(AREAS)
+        n = max(n, 8) if long_reply else n
+        thing, area = r.choice(PROJ[project][2] + THINGS), r.choice(PROJ[project][1])
         reply = " ".join(r.choice(SAYS).format(thing=thing, area=area) for _ in range(n))
         if intent == "plan":
             reply = "Here is a plan in three steps. " + reply + " Shall I start with the first step?"
-        t += timedelta(seconds=r.randint(5, 40))
-        lines.append(a([{"type": "text", "text": reply}], t))
-        return reply, t, k
+        lines.append(a([{"type": "text", "text": reply}], at + timedelta(seconds=dur)))
 
     # -- labels -------------------------------------------------------------------------------
     def label(self, mid, intent, text, project, d, hour):
@@ -384,9 +524,11 @@ class Writer:
 
     def write(self):
         start = self.today - timedelta(days=DAYS - 1)
+        quiet = self.today - timedelta(days=QUIET)
+        quiet -= timedelta(days=(quiet.weekday() + 1) % 7)   # the Sunday before
         for i in range(DAYS):
             d = start + timedelta(days=i)
-            self.day(d, (self.today - d).days, prompts_only=i < PROMPTS_ONLY)
+            self.day(d, (self.today - d).days, prompts_only=i < PROMPTS_ONLY, quiet=d == quiet)
         os.makedirs(self.claude, exist_ok=True)
         with open(os.path.join(self.claude, "history.jsonl"), "w", encoding="utf-8") as f:
             for e in sorted(self.history, key=lambda e: e["timestamp"]):
@@ -420,7 +562,7 @@ class Writer:
         os.makedirs(self.data, exist_ok=True)
         start = (self.today - timedelta(days=10)).isoformat()
         with open(os.path.join(self.data, "limits.json"), "w") as f:
-            json.dump({"stopHour": 22, "daysOffPerWeek": 1, "maxSessions": 3, "at": start + "T09:00:00"}, f, indent=1)
+            json.dump({"stopHour": 22, "daysOffPerWeek": 1, "maxSessions": 5, "at": start + "T09:00:00"}, f, indent=1)
         with open(os.path.join(self.data, "practices.json"), "w") as f:
             json.dump({"practices": [{"id": "stop-at-22", "text": "Stop by 22:00 on weekdays, and write tomorrow's first step before stopping.",
                                       "owner": "person", "measure": "late", "target": "<= 30", "start": start, "trial": 14,

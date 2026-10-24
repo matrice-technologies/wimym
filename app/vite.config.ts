@@ -1,6 +1,8 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { fileURLToPath } from "node:url";
+import { build } from "esbuild";
+import { postcardPlayer } from "../lab/hero/player-plugin";
 
 // In development the engine (python3 engine/server.py) answers /api on 8990.
 // WIMYM_API points Vite at another engine (a port or a URL), WIMYM_VITE_PORT moves Vite itself,
@@ -11,7 +13,7 @@ const target = /^\d+$/.test(api) ? `http://127.0.0.1:${api}` : api;
 
 // The front page's hero comes from the lab (lab/hero/README.md), with one copy of React and three.
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), postcardPlayer(build)],
   resolve: {
     alias: [
       { find: "@wimym/hero", replacement: here("../lab/hero/index.ts") },

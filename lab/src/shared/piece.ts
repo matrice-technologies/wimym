@@ -33,6 +33,8 @@ export function fmtHour(h: number) { const m = Math.round(((h % 24) + 24) % 24 *
 /** Two significant figures, so a round number stays close to the true one: 15,476 → 15,000, 2,575 → 2,600. */
 export const roundN = (n: number) => { if (n < 100) return String(n); const p = 10 ** (Math.floor(Math.log10(n)) - 1); return (Math.round(n / p) * p).toLocaleString("en"); };
 export const fmtN =(n: number) => n.toLocaleString("en");
+/** Tokens, rounded as roundN does, in millions from what rounds to a million: 870,000, 1 million, 1.7 million, 98 million. */
+export const fmtTokens = (n: number) => (n < 995_000 ? roundN(Math.round(n)) : `${n < 1e7 ? (n / 1e6).toFixed(1).replace(/\.0$/, "") : Math.round(n / 1e6)} million`);
 export const esc = (s: string) => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
 
 /** A tooltip line for message i: always when it was sent, and what it said only outside share mode. */

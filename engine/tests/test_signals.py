@@ -38,13 +38,14 @@ def line(o):
 
 
 def transcript(sid, turns, project="proj-a"):
-    """A transcript file: turns are (time "YYYY-MM-DD HH:MM:SS" UTC, your text, Claude's reply, seconds Claude took)."""
+    """A transcript file: turns are (time "YYYY-MM-DD HH:MM:SS" UTC, your text, Claude's reply, seconds Claude took),
+    and optionally Claude's output tokens on the reply."""
     d = os.path.join(PROJECTS, "-fixture-" + project)
     os.makedirs(d, exist_ok=True)
     path = os.path.join(d, sid + ".jsonl")
     cwd = os.path.join(HOME, project)
     with open(path, "w", encoding="utf-8") as f:
-        for at, text, reply, took in turns:
+        for at, text, reply, took, *out in turns:
             t0 = datetime.fromisoformat(at)
             t1 = datetime.fromtimestamp(t0.timestamp() + took)
             mid = str(uuid.uuid5(uuid.NAMESPACE_URL, f"{sid}/{at}/{text}"))  # stable, as Claude Code's own ids are
@@ -54,7 +55,8 @@ def transcript(sid, turns, project="proj-a"):
             f.write(line({"type": "assistant", "uuid": str(uuid.uuid4()), "sessionId": sid, "cwd": cwd,
                           "timestamp": t1.strftime("%Y-%m-%dT%H:%M:%S.000Z"),
                           "message": {"id": str(uuid.uuid4()), "role": "assistant", "model": "claude-test",
-                                      "content": [{"type": "text", "text": reply}]}}))
+                                      "content": [{"type": "text", "text": reply}],
+                                      **({"usage": {"input_tokens": 10, "output_tokens": out[0]}} if out else {})}}))
     return path
 
 
@@ -216,6 +218,16 @@ class Hook(unittest.TestCase):
         self.assertEqual(limits.status(now, pulse), "2h30 today · 21 days in a row")
 
 
+class Points(unittest.TestCase):
+    def test_each_point_carries_the_output_tokens_of_its_turn(self):
+        reset()
+        p = transcript("s1", [("2026-10-14 09:00:00", "a", "ok", 5, 1200), ("2026-10-14 09:10:00", "b", "ok", 5, 300)])
+        _, v = build(p, today=date(2026, 10, 14))
+        pts, _ = v.points()
+        self.assertEqual(pts["fields"][-1], "outAll")
+        self.assertEqual([r[-1] for r in pts["rows"]], [1200, 300])
+
+
 class IndexKeepsTurns(unittest.TestCase):
     def test_a_transcript_written_again_shorter_keeps_its_old_turns(self):
         from wimym import index
@@ -232,6 +244,108 @@ class IndexKeepsTurns(unittest.TestCase):
                           ("2026-10-14 11:06:00", "a long one " * 200, "ok " * 200, 5)])
         ix._keep(p, os.stat(p), scan.scan(p))
         self.assertEqual([t["text"][:10] for t in ix.files[p]["r"]["turns"]], ["first", "second", "after the ", "and more", "a long one"])
+
+
+class Tokens(unittest.TestCase):
+    def test_a_turns_tokens(self):
+        reset()
+        d = os.path.join(PROJECTS, "-fixture-proj-a")
+        os.makedirs(d, exist_ok=True)
+        p = os.path.join(d, "s1.jsonl")
+        base = {"sessionId": "s1", "cwd": os.path.join(HOME, "proj-a")}
+
+        def call(mid, at, usage, side=False):
+            return line({**base, "type": "assistant", "uuid": str(uuid.uuid4()), "timestamp": at, "isSidechain": side,
+                         "message": {"id": mid, "role": "assistant", "model": "claude-test", "usage": usage,
+                                     "content": [{"type": "text", "text": "ok"}]}})
+        a = {"input_tokens": 3, "cache_creation_input_tokens": 1000, "cache_read_input_tokens": 5000, "output_tokens": 200}
+        b = {"input_tokens": 2, "cache_creation_input_tokens": 300, "cache_read_input_tokens": 6000, "output_tokens": 50}
+        with open(p, "w", encoding="utf-8") as f:
+            f.write(line({**base, "type": "user", "uuid": str(uuid.uuid4()), "timestamp": "2026-10-14T09:00:00.000Z",
+                          "origin": {"kind": "human"}, "message": {"role": "user", "content": "go"}}))
+            f.write(call("A", "2026-10-14T09:00:05.000Z", a))
+            f.write(call("A", "2026-10-14T09:00:06.000Z", a))  # one call written over two lines counts once
+            f.write(call("S", "2026-10-14T09:00:07.000Z", {"input_tokens": 9999, "output_tokens": 9999}, side=True))
+            f.write(call("B", "2026-10-14T09:00:10.000Z", b))
+        m, _ = build(p, today=date(2026, 10, 14))
+        x = m.messages[0]
+        self.assertEqual((x["out"], x["inpFresh"], x["inpWrite"], x["inpRead"], x["inp"]), (250, 5, 1300, 11000, 12305))
+        self.assertEqual(x["ctx"], 2 + 300 + 6000 + 50)  # the last call's context, not the turn's sum
+
+    def test_codex_tokens(self):
+        from wimym import codex
+        p = os.path.join(TMP, "codex", "rollout-t1.jsonl")
+        os.makedirs(os.path.dirname(p), exist_ok=True)
+        at = "2026-10-14T09:00:00.000Z"
+        ms = int(datetime(2026, 10, 14, 9).timestamp() * 1000)
+
+        def tokens(i, cached, out, **more):
+            return {"timestamp": at, "type": "event_msg", "payload": {"type": "token_count", "info": {"last_token_usage":
+                    {"input_tokens": i, "cached_input_tokens": cached, "output_tokens": out, **more}}}}
+        with open(p, "w", encoding="utf-8") as f:
+            for o in ({"timestamp": at, "type": "session_meta", "payload": {"source": "vscode", "cwd": os.path.join(HOME, "proj-a")}},
+                      {"timestamp": at, "type": "turn_context", "payload": {"model": "gpt-test"}},
+                      {"timestamp": at, "type": "event_msg", "payload": {"type": "item_completed", "started_at_ms": ms,
+                       "item": {"type": "UserMessage", "id": "u1", "content": [{"type": "text", "text": "go"}]}}},
+                      tokens(1000, 800, 100), tokens(1500, 1200, 40, cache_write_input_tokens=100)):
+                f.write(line(o))
+        t = codex.scan(p)["turns"][0]
+        self.assertEqual((t["out"], t["inpFresh"], t["inpWrite"], t["inpRead"], t["ctx"]), (140, 400, 100, 2000, 1540))
+
+
+class Leverage(unittest.TestCase):
+    """Output a message set off beyond its own turn: subagents, sessions it started, the turns that followed."""
+
+    def write(self, path, lines):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w", encoding="utf-8") as f:
+            f.writelines(line(o) for o in lines)
+        return path
+
+    def user(self, sid, at, text, pid, human=True, **more):
+        o = {"type": "user", "uuid": str(uuid.uuid4()), "sessionId": sid, "cwd": os.path.join(HOME, "proj-a"),
+             "timestamp": at, "promptId": pid, "message": {"role": "user", "content": text}, **more}
+        return {**o, "origin": {"kind": "human"}} if human else {**o, "promptSource": "sdk", "turnOrigin": "sdk"}
+
+    def call(self, sid, at, out, side=False, tool=None):
+        content = [{"type": "text", "text": "ok"}] + ([{"type": "tool_use", "id": "t1", **tool}] if tool else [])
+        return {"type": "assistant", "uuid": str(uuid.uuid4()), "sessionId": sid, "timestamp": at, "isSidechain": side,
+                "message": {"id": str(uuid.uuid4()), "role": "assistant", "model": "claude-test",
+                            "usage": {"output_tokens": out}, "content": content}}
+
+    def test_subagents_and_started_sessions(self):
+        reset()
+        d = os.path.join(PROJECTS, "-fixture-proj-a")
+        brief = "Work out how token counts can feed the hero and the postcard, then build the version picked."
+        start = {"name": "mcp__ccd_session__start_session", "input": {"prompt": brief, "background": "x"}}
+        parent = self.write(os.path.join(d, "p1.jsonl"), [
+            self.user("p1", "2026-10-14T09:00:00.000Z", "go", "P1"),
+            self.call("p1", "2026-10-14T09:00:05.000Z", 100, tool={"name": "Agent", "input": {}}),
+            self.call("p1", "2026-10-14T09:00:06.000Z", 7, side=True),  # inline, as older Claude Code wrote them
+            self.call("p1", "2026-10-14T09:00:20.000Z", 50, tool=start),
+            self.user("p1", "2026-10-14T09:30:00.000Z", "<side-sessions-event>done</side-sessions-event>", "P2", human=False),
+            self.call("p1", "2026-10-14T09:30:05.000Z", 30),
+            self.user("p1", "2026-10-14T10:00:00.000Z", "next", "P3"),
+            self.call("p1", "2026-10-14T10:00:05.000Z", 10)])
+        by_pid = self.write(os.path.join(d, "p1", "subagents", "agent-a.jsonl"), [
+            {**self.user("p1", "2026-10-14T09:00:05.000Z", "dig", "P1", isSidechain=True)},
+            self.call("p1", "2026-10-14T09:00:09.000Z", 400, side=True)])
+        by_time = self.write(os.path.join(d, "p1", "subagents", "agent-b.jsonl"), [
+            {**self.user("p1", "2026-10-14T10:00:02.000Z", "dig", None, isSidechain=True)},
+            self.call("p1", "2026-10-14T10:00:04.000Z", 60, side=True)])
+        child = self.write(os.path.join(d, "c1.jsonl"), [
+            self.user("c1", "2026-10-14T09:00:21.000Z",
+                      "Background (from the session that started this one):\nx\n\n" + brief, "C1", human=False),
+            self.call("c1", "2026-10-14T09:20:00.000Z", 2000),
+            self.user("c1", "2026-10-14T09:40:00.000Z", "<cross-session-message>and this</cross-session-message>", "C2", human=False),
+            self.call("c1", "2026-10-14T09:45:00.000Z", 300)])
+        m, _ = build(parent, by_pid, by_time, child, today=date(2026, 10, 14))
+        go, nxt = m.messages
+        self.assertEqual((go["out"], go["outSub"]), (150, 407))
+        # the started session's turns, and the turn its report started in this session
+        self.assertEqual(go["outAuto"], 2000 + 300 + 30)
+        self.assertEqual(go["outAll"], 150 + 407 + 2330)
+        self.assertEqual((nxt["outSub"], nxt["outAuto"], nxt["outAll"]), (60, 0, 70))
 
 
 class KeptFiles(unittest.TestCase):

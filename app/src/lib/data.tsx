@@ -8,12 +8,16 @@ export interface EngineState {
   found?: { conversations?: number; messages?: number; firstDay?: string | null; history?: number; repos?: number; commits?: number };
 }
 
+/** Whether a newer Wimym is out, or the engine runs older code than its folder (docs/contract-state.md). */
+export interface Update { available: boolean; restart: boolean; checked: string | null; command: string; restartCommand: string }
+
 interface Data {
   core: Core | null;
   /** Every message (19 MB raw): null until a page asks for it with useMessages(). */
   messages: Message[] | null;
   sessions: Session[] | null;
   state: EngineState | null;
+  update: Update | null;
   byId: Map<string, Message>;
   reload: () => void;
   want: (what: "messages" | "sessions") => void;
@@ -39,6 +43,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState<Message[] | null>(null);
   const [sessions, setSessions] = useState<Session[] | null>(null);
   const [state, setState] = useState<EngineState | null>(null);
+  const [update, setUpdate] = useState<Update | null>(null);
   const [gen, setGen] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
   const [wanted, setWanted] = useState({ messages: false, sessions: false });
@@ -48,9 +53,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const poll = async () => {
       try {
         const r = await fetch("/api/state", { cache: "no-store" });
-        const s = (await r.json()) as { state: EngineState; generated: string | null };
+        const s = (await r.json()) as { state: EngineState; generated: string | null; update?: Update };
         if (stop) return;
         setState(s.state);
+        setUpdate(u => (JSON.stringify(u) === JSON.stringify(s.update ?? null) ? u : s.update ?? null));
         if (s.generated && s.generated !== gen) setGen(s.generated);
       } catch { /* engine restarting */ }
     };
@@ -73,7 +79,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const byId = useMemo(() => new Map((messages || []).map(m => [m.id, m])), [messages]);
   const want = useCallback((what: "messages" | "sessions") => setWanted(w => (w[what] ? w : { ...w, [what]: true })), []);
-  const value = useMemo(() => ({ core, messages, sessions, state, byId, reload: () => setTick(t => t + 1), want }), [core, messages, sessions, state, byId, want]);
+  const value = useMemo(() => ({ core, messages, sessions, state, update, byId, reload: () => setTick(t => t + 1), want }), [core, messages, sessions, state, update, byId, want]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

@@ -5,7 +5,9 @@ their Mac. This page is that setup, written for you. Read all of it before you s
 
 Wimym, short for Where is your mind, reads the person's Claude Code transcripts, prompt history and git
 history on their Mac, and shows them, against their own usual, how their weeks are going for their
-health and their work. It runs a small local engine on 127.0.0.1 and sends nothing anywhere itself.
+health and their work. It runs a small local engine on 127.0.0.1 and sends nothing of theirs anywhere
+itself. Once a day it asks GitHub whether a newer Wimym is out, with nothing of theirs in the question;
+`{"updates": false}` in `~/.wimym/settings.json` turns that off.
 What it shows: https://wimym.matricetechnologies.com
 
 ## How to work
@@ -225,7 +227,8 @@ Give the person a short summary:
   restore `~/.claude/settings.json.before-wimym`, delete `~/.cache/wimym`; `~/.wimym` holds what
   they enter, so only on purpose).
 - Day to day: `cd WIMYM && ./install.sh` starts it again after a restart and only redoes what changed;
-  `./install.sh --stop` stops it. To update: `git -C WIMYM pull`, then `./install.sh`.
+  `./install.sh --stop` stops it. To update: `cd WIMYM && ./install.sh --update`, which says what is new
+  and restarts Wimym onto it. The page says when a new version is out; `WIMYM/CHANGES.md` lists them all.
 - The retro is the heart of it: once a week, `/retro` (with the skills) or **The week** on the page.
 
 Wimym shows signs and diagnoses nothing; it is not a clinical tool.

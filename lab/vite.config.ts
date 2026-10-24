@@ -1,6 +1,8 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { resolve } from "node:path";
+import { build } from "esbuild";
+import { postcardPlayer } from "./hero/player-plugin";
 
 // The lab reads the engine's /api like the app does, but from its own engine (8994 by default).
 // WIMYM_API points it at another port or URL. No personal data is ever copied into lab/.
@@ -10,7 +12,7 @@ const target = /^\d+$/.test(api) ? `http://127.0.0.1:${api}` : api;
 const page = (p: string) => resolve(__dirname, p);
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), postcardPlayer(build)],
   // the lab may read Robin, the public page's made-up person, from site/media
   server: { port: Number(process.env.LAB_PORT) || 5194, proxy: { "/api": target }, fs: { allow: [__dirname, page("../site/media")] } },
   build: {

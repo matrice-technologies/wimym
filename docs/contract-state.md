@@ -22,6 +22,13 @@ two while `first` is true, then every 30 seconds. The engine session owns this; 
     },
     "updated": "2026-10-22T23:52:10",       // last time new transcripts were read
     "error": null                           // the last error, when phase is "error"; the last good data stays served
+  },
+  "update": {                               // engine/wimym/update.py
+    "available": false,                     // a newer Wimym is out: show `command`
+    "restart": false,                       // the engine's code changed on disk since it started: show `restartCommand`
+    "checked": "2026-10-24T11:40:02",       // when GitHub was last asked; null when the check is off or this folder isn't a clone
+    "command": "cd ~/wimym && ./install.sh --update",
+    "restartCommand": "cd ~/wimym && ./install.sh"
   }
 }
 ```

@@ -367,6 +367,12 @@ export class Loom implements Piece {
     }
     return ["ret", 1];
   }
+  /** Seconds the weaving takes from pick `from` to the end, at its own pace. */
+  weaveTime(from = 0) {
+    let s = 0;
+    for (let k = Math.max(0, from); k < this.A.length; k++) { const T = this.timing(k); s += T.rest + T.cross + T.fly + T.beat + T.ret; }
+    return s;
+  }
   protected advance(dt: number) {
     const n = this.A.length;
     while (dt > 0 && this.cur < n) {
