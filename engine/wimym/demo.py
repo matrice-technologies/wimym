@@ -404,7 +404,7 @@ class Writer:
                              "input": {"command": f'git add -A && git commit -m "{msg}"'}}], t))
             t += unit * next(clock)
             lines.append(result(tid, t, "[main 1a2b3c4] " + msg))
-            self.commits[project].append((t.timestamp(), msg, [os.path.relpath(f, cwd).replace(os.sep, "/") for f in edited]  # git wants /, on Windows too, r.random() < .85))
+            self.commits[project].append((t.timestamp(), msg, [os.path.relpath(f, cwd).replace(os.sep, "/") for f in edited], r.random() < .85))  # git wants /, on Windows too
         if r.random() < (.08 if ago < CRUNCH else .04) and steps > 2:
             lines.append(json.dumps({"type": "user", "uuid": str(uuid.UUID(int=r.getrandbits(128))), "sessionId": sid, "cwd": cwd,
                                      "timestamp": t.strftime("%Y-%m-%dT%H:%M:%S.000Z"),
