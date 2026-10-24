@@ -382,7 +382,7 @@ class Writer:
         edited = []
         for i in range(steps):
             tid = "toolu_" + uuid.UUID(int=r.getrandbits(128)).hex[:20]
-            f = os.path.join(cwd, r.choice(FILES[project]))
+            f = os.path.join(cwd, *r.choice(FILES[project]).split("/"))
             if work and i % 2 == 1:
                 new = "\n".join(f"  line {j}" for j in range(r.randint(2, 30)))
                 tool = {"type": "tool_use", "id": tid, "name": "Edit",
@@ -397,14 +397,14 @@ class Writer:
             lines.append(result(tid, t))
             t += unit * next(clock)
         if committed:
-            edited = edited or [os.path.join(cwd, r.choice(FILES[project]))]
+            edited = edited or [os.path.join(cwd, *r.choice(FILES[project]).split("/"))]
             tid = "toolu_" + uuid.UUID(int=r.getrandbits(128)).hex[:20]
             msg = r.choice(["Add", "Fix", "Tidy", "Speed up", "Test"]) + " " + r.choice(PROJ[project][2] + PROJ[project][1] + THINGS[:6])
             lines.append(a([{"type": "tool_use", "id": tid, "name": "Bash",
                              "input": {"command": f'git add -A && git commit -m "{msg}"'}}], t))
             t += unit * next(clock)
             lines.append(result(tid, t, "[main 1a2b3c4] " + msg))
-            self.commits[project].append((t.timestamp(), msg, [os.path.relpath(f, cwd) for f in edited], r.random() < .85))
+            self.commits[project].append((t.timestamp(), msg, [os.path.relpath(f, cwd).replace(os.sep, "/") for f in edited]  # git wants /, on Windows too, r.random() < .85))
         if r.random() < (.08 if ago < CRUNCH else .04) and steps > 2:
             lines.append(json.dumps({"type": "user", "uuid": str(uuid.UUID(int=r.getrandbits(128))), "sessionId": sid, "cwd": cwd,
                                      "timestamp": t.strftime("%Y-%m-%dT%H:%M:%S.000Z"),
