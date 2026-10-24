@@ -81,6 +81,64 @@ since June, 2 from April and May): decided, postponed and low 6/6; dropped, high
 too long, one with a mistyped id). `dropped` stays checked: 36 of 38 right across every days sample since v2. The judges' cards and marks are in `judge/` next to the files,
 and the run logs in `logs/`.
 
+## Jev: the message sets without Claude (24 Oct)
+
+`label.py --engine jev` labels categories, signals and acts with TypeSafe's Jev instead of Haiku, through its
+API (`TYPESAFE_API_KEY`), not your Claude subscription. One request per message: the state is the message,
+Claude's message before it and, for acts, the project; each choice field is a Choice question and each yes/no
+field a Noul, in the same words as `definitions.json` (`--engine jev --prompt` prints them). A Noul over 0.5
+is true, and each label keeps the probabilities behind it in `p`, so a threshold can be set against a judge.
+
+```sh
+python3 labeller/label.py --engine jev --set acts --dry-run   # what a full run would cost; nothing sent
+python3 labeller/label.py --engine jev --set acts --check     # the stored sample and the Opus-marked messages,
+                                                              # against the Opus marks and Haiku's labels
+```
+
+What differs from Haiku:
+
+- **Text and list fields stay empty.** Jev picks and weighs; it doesn't write. So `dw`, `fw`, `names` and
+  `rule` in acts are always empty, and `rules.json`, which groups `rule`, has nothing to group. None of them is
+  checked. Sessions, days, weeks and rules are accounts, not choices, and stay with Opus.
+- **Its own version and folder.** Labels carry the version `<n>-jev` (`acts` v`4-jev`), so no mark a judge gave
+  Haiku's labels counts for them: every field is a reading until a judge checks Jev's. Runs go to
+  `<labels>/jev/` by default, which the engine doesn't read, and `label.py` refuses to write them over the
+  labels folder; `--promote --engine jev --dir <labels>/jev` moves them in once a full run is complete.
+- **Cost and speed.** About 2,000 tokens in per message for categories, 1,800 for signals and 3,500 for acts,
+  at $0.042 a million (output is free), about 0.2 s a request. A dry run on 24 Oct put a full run of all three
+  sets at about $2.30 at list price, against about $56 for the last Haiku runs (the table under "Wording for
+  anyone").
+- **Messages go to TypeSafe.** Its docs say Jev isn't trained on requests; zero retention is for enterprise
+  accounts only.
+
+**Against the Opus marks (24 Oct, jev-1.14.0, Alex's messages, into `labels/jev/`).** Categories and signals by
+`--check` (the stored sample and every message in `audit-opus.json`); acts by `--ids` on the 453 messages of the
+two acts judges (`judge/acts-v3`, `judge/acts-v3-heldout`), scored where Opus gave or confirmed a value. 902
+requests, $0.11, under a minute in all.
+
+| Field | Marks | Haiku | Jev |
+|---|---|---|---|
+| intent (`in`) | 38 | 33 judged labels; 25–26 on a rerun | 27 |
+| tone (`to`) | 29 | 22 | 29 |
+| says what done looks like (`sp`) | 21 | 16 | 17 |
+| `own`, `who`, `sc`, `pr`, `irk`, `pl` | 24–29 each | 22, 24, 19, 21, 20, 19 | 22, 25, 20, 22, 26, 20 |
+| acts `dfr`, random / held-out / keyword | 197 / 150 / 101 | 99% / 98% / 95% | 99% / 99% / 98% |
+| acts `off` | 194 / 147 / 98 | 88% / 85% / 85% | 92% / 85% / 87% |
+| acts `dom` | 187 / 142 / 100 | 98% / 99% / 97% | 96% / 96% / 97% |
+| acts `ppl` none against any | 199 / 149 / 101 | 96% / 93% / 93% | 96% / 93% / 85% |
+| acts `dec` | 197 / 148 / 102 | 95% / 90% / 89% | 96% / 91% / 91% |
+| acts `st`, `nd` | about 150–200 each | 97–100% | 97–99% |
+
+How to read it: the Haiku column is the labels Opus marked, and Opus saw them as it judged, so a mark of "right"
+is Haiku's own value. That favours Haiku, and acts v3's wording was tuned on the 303-message sample before its
+judge. The held-out 150 are the fairest acts column. Even so, Jev matches or beats Haiku on every checked field,
+except `dom` (two to four points lower) and `ppl` on the keyword picks (people named in passing). Tone is the
+clearest gain: Jev never inflated pleased or frustrated. Its intent misses lean towards build for design feedback
+and towards plan or ship for "what's next?" questions. A Noul threshold of 0.5 was best or near best for `dec`,
+`dfr` and `nd`; 0.7 gained one or two on `dfr` and `nd`.
+
+None of this marks a Jev field checked: that needs a judge of Jev's own labels, blind to Haiku's.
+
 ## Wording for anyone (23 Oct)
 
 Up to categories v3, signals v3, acts v3, sessions v5, days v5, rules v2 and weeks v3, every prompt named Alex
