@@ -251,7 +251,9 @@ def build(cache):
     with open(log, "wb") as f:
         code = run(npm, "run", "build", "--silent", cwd=os.path.join(HERE, "app"), stdout=f, stderr=subprocess.STDOUT)
     if code != 0:
-        fail(f"The page didn't build; what went wrong is in {log}")
+        with open(log, encoding="utf-8", errors="replace") as f:
+            say("".join(f.readlines()[-20:]).rstrip())
+        fail(f"The page didn't build; what went wrong is above, and all of it in {log}")
 
 
 # --- the wimym command, for asking your own record questions in any terminal (optional)
@@ -345,9 +347,11 @@ def open_page(url):
 
 
 def main(argv):
-    if hasattr(sys.stdout, "reconfigure"):  # a Windows console or log in another code page: never stop on a character
-        sys.stdout.reconfigure(errors="replace")
-        sys.stderr.reconfigure(errors="replace")
+    for stream in (sys.stdout, sys.stderr):
+        if WINDOWS and not stream.isatty():  # read through a pipe (Claude Code, a log): UTF-8, not Windows' code page
+            stream.reconfigure(encoding="utf-8")
+        else:  # a console in another code page: never stop on a character
+            stream.reconfigure(errors="replace")
     o = options(argv)
     cache = os.environ.get("WIMYM_CACHE") or os.environ.get("MIRROR_CACHE") or os.path.join(HOME, ".cache", "wimym")
     if o["demo"]:  # the demo keeps its own made-up home, data and cache, and its own port

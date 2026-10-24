@@ -5,8 +5,9 @@ setlocal
 set "PYTHONPATH=%~dp0..\engine;%PYTHONPATH%"
 set "PYTHONUTF8=1"
 where py >nul 2>nul
-if not errorlevel 1 (
-  py -3 -m wimym.cli %*
-  exit /b
-)
+if errorlevel 1 goto python
+py -3 -m wimym.cli %*
+exit /b %errorlevel%
+:python
 python -m wimym.cli %*
+exit /b %errorlevel%

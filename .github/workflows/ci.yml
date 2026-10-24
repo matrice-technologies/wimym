@@ -40,4 +40,4 @@ jobs:
       - name: The engine's log, when something failed
         if: failure()
         shell: bash
-        run: tail -n 80 "$RUNNER_WORKSPACE"/robin-demo/cache/engine.log "$RUNNER_WORKSPACE"/robin-demo/engine.log 2>/dev/null || true
+        run: tail -n 80 "$RUNNER_WORKSPACE"/robin-demo/build.log "$RUNNER_WORKSPACE"/robin-demo/engine.log 2>/dev/null || true
