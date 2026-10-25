@@ -14,7 +14,8 @@ in definitions.json next to this file (what each field and value means, and the 
     python3 labeller/label.py --report                  # what the labels say so far, and what they cost
     python3 labeller/label.py --promote --dir D         # move complete label files from D into the labels folder
     python3 labeller/label.py --prompt                  # print the instruction Haiku gets
-    python3 labeller/label.py --engine jev --check      # the same with Jev (TypeSafe's API, TYPESAFE_API_KEY)
+    python3 labeller/label.py --key                     # keep your TypeSafe key: from then on, Jev labels
+    python3 labeller/label.py --engine jev --check      # the same with Jev (TypeSafe's API)
 
 Reads your messages from Wimym's index (~/.cache/wimym/index.json; run the engine once to
 build it, this never writes it) and writes ~/.wimym/labels/<set>.json (or --dir), keyed by
@@ -29,10 +30,13 @@ servers, no customizations, no slash commands, no session saved, run in an empty
 --engine jev asks TypeSafe's Jev instead, one message per request: each choice field is a Choice
 question, each yes/no field a Noul, with the same words. Jev picks and weighs but doesn't write, so
 text and list fields (what was decided, names, a rule) stay empty. Its labels carry the version
-"<n>-jev", so no second judge's mark on the Haiku labels counts for them, and they go to
-<labels>/jev unless --dir says otherwise; --promote moves them in once a full run is complete.
+"<n>-jev", so no second judge's mark on the Haiku labels counts for them. The key is yours: --key
+keeps it in ~/.wimym/typesafe.key (yours only to read), and while that file exists Jev is the
+default engine; TYPESAFE_API_KEY works too but chooses nothing. One label file holds one engine's
+labels: a run that would set the other's aside stops, and says to use --dir, then --promote.
 """
 import argparse
+import getpass
 import hashlib
 import json
 import os
@@ -54,7 +58,7 @@ from datetime import datetime, timezone
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), "engine"))
 from wimym.index import Index  # noqa: E402
-from wimym.paths import HOME, LABELS_DIR, scratch, tmp_name  # noqa: E402
+from wimym.paths import DATA_DIR, HOME, LABELS_DIR, scratch, tmp_name  # noqa: E402
 from wimym.text import not_typed, own_words, project_of  # noqa: E402
 
 CLAUDE_BIN = os.environ.get("CLAUDE_BIN") or os.path.join(HOME, ".local", "bin", "claude.exe" if os.name == "nt" else "claude")
@@ -62,6 +66,7 @@ MINE = ("desk", "massistant")
 MAX_JOBS = 16  # calls at once; failed calls back off for a minute when the error says rate limit or overload
 AUDIT = "audit-opus.json"
 JEV_URL = os.environ.get("TYPESAFE_URL") or "https://api.typesafe.ai/v1/systemone"
+KEY_FILE = os.path.join(DATA_DIR, "typesafe.key")  # the person's own TypeSafe key, given with --key
 JEV_USD = 0.042 / 1e6  # list price per input token, jev-1.13 and 1.14; output is free
 
 with open(os.path.join(HERE, "definitions.json"), encoding="utf-8") as _f:
@@ -390,11 +395,45 @@ def tls():
 TLS = tls()
 
 
+def typesafe_key():
+    """TYPESAFE_API_KEY, else the key kept by --key, else None."""
+    if os.environ.get("TYPESAFE_API_KEY"):
+        return os.environ["TYPESAFE_API_KEY"].strip()
+    try:
+        with open(KEY_FILE, encoding="utf-8") as f:
+            return f.read().strip() or None
+    except OSError:
+        return None
+
+
+def keep_key():
+    """Ask for the person's TypeSafe key without showing it (or read it from stdin when that isn't a terminal),
+    check it with TypeSafe, and keep it in KEY_FILE, readable by them only. Never prints the key."""
+    key = (getpass.getpass("TypeSafe API key (from console.typesafe.ai; not shown): ") if sys.stdin.isatty()
+           else sys.stdin.readline()).strip()
+    if not key:
+        sys.exit("no key given; nothing kept")
+    req = urllib.request.Request(JEV_URL.rsplit("/", 1)[0] + "/models", headers={"Authorization": f"Bearer {key}"})
+    try:
+        with urllib.request.urlopen(req, timeout=30, context=TLS) as r:
+            r.read()
+    except urllib.error.HTTPError as e:
+        sys.exit(f"TypeSafe refused the key ({e.code}); nothing kept")
+    except OSError as e:
+        sys.exit(f"couldn't reach TypeSafe to check the key ({e}); nothing kept")
+    os.makedirs(DATA_DIR, exist_ok=True)
+    tmp = tmp_name(KEY_FILE)
+    with open(os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w", encoding="utf-8") as f:
+        f.write(key + "\n")
+    os.replace(tmp, KEY_FILE)
+    print(f"key checked and kept in {KEY_FILE}; the labeller now uses Jev (delete the file to go back to Haiku)")
+
+
 def jev_ask(body, timeout, tries=5):
     """One System One request; a rate limit or overload waits (retry-after, else 2, 4, 8… seconds) and tries again."""
-    key = os.environ.get("TYPESAFE_API_KEY")
+    key = typesafe_key()
     if not key:
-        raise RuntimeError("TYPESAFE_API_KEY is not set")
+        raise RuntimeError("no TypeSafe key: run label.py --key, or set TYPESAFE_API_KEY")
     data = json.dumps(body, ensure_ascii=False).encode()
     for n in range(tries):
         req = urllib.request.Request(JEV_URL, data=data, method="POST",
@@ -644,30 +683,40 @@ def main():
     g.add_argument("--report", action="store_true", help="what the labels say so far")
     g.add_argument("--promote", action="store_true", help="move complete label files from --dir into the labels folder")
     g.add_argument("--prompt", action="store_true", help="print the instruction Haiku gets (with --engine jev, the questions)")
+    g.add_argument("--key", action="store_true", help=f"keep your TypeSafe key in {KEY_FILE}, so Jev labels from then on")
     ap.add_argument("--history", action="store_true",
                     help="the March to June prompts from history.jsonl instead, into <set>-history.json")
     ap.add_argument("--set", choices=list(MESSAGE_SETS), default="categories")
-    ap.add_argument("--engine", choices=("claude", "jev"), default="claude",
-                    help="claude: `claude -p` on your subscription (default); jev: TypeSafe's API with TYPESAFE_API_KEY")
-    ap.add_argument("--dir", help=f"labels folder to read and write (default {LABELS_DIR}, with --engine jev {os.path.join(LABELS_DIR, 'jev')})")
+    ap.add_argument("--engine", choices=("claude", "jev"),
+                    help="claude: Haiku through `claude -p` on your plan; jev: TypeSafe's API with your key. "
+                         "Default: jev when --key has kept a key, else claude")
+    ap.add_argument("--dir", default=LABELS_DIR, help=f"labels folder to read and write (default {LABELS_DIR})")
     ap.add_argument("--model", help="default: the set's model, else haiku; with --engine jev, jev-latest")
     ap.add_argument("--per-call", type=int, help="messages per call (default: the set's per_call, else 50)")
     ap.add_argument("--jobs", "--workers", dest="jobs", type=int, default=3, help=f"calls at once (at most {MAX_JOBS})")
     ap.add_argument("--timeout", type=int, default=600)
     ap.add_argument("--no-think", action="store_true", help="no extended thinking: about 5x fewer tokens out")
     args = ap.parse_args()
+    if args.key:
+        return keep_key()
+    args.engine = args.engine or ("jev" if os.path.exists(KEY_FILE) else "claude")
     name, jev = args.set, args.engine == "jev"
     if args.prompt:
         return print(json.dumps(jev_questions(name), ensure_ascii=False, indent=1) if jev else system_prompt(name))
-    folder = os.path.expanduser(args.dir or (os.path.join(LABELS_DIR, "jev") if jev else LABELS_DIR))
-    if jev and os.path.abspath(folder) == os.path.abspath(LABELS_DIR) and not args.promote:
-        sys.exit("Jev labels go to their own folder, then --promote; writing them over the labels folder would set aside every label it counts")
+    folder = os.path.expanduser(args.dir)
+    if jev and not typesafe_key() and not (args.report or args.dry_run):
+        sys.exit("no TypeSafe key: run label.py --key first (or set TYPESAFE_API_KEY)")
     prompts, skipped = load_prompts()
     if args.history:
         prompts, skipped = load_history(prompts), []
     if args.promote:
         return promote(folder, prompts, args.engine)
-    store = Store(os.path.join(folder, file_of(name, args.history)), name, args.engine)
+    path = os.path.join(folder, file_of(name, args.history))
+    was = load_json(path)
+    if was.get("labels") and str(was.get("version")).endswith("-jev") != jev and not (args.report or args.dry_run):
+        sys.exit(f"{path} holds {'Jev' if not jev else 'Haiku'}'s labels (v{was.get('version')}), and a run with "
+                 f"{args.engine} would set them aside: use --dir for another folder, then --promote when it is complete")
+    store = Store(path, name, args.engine)
     store.d["skipped"] = skipped  # so the app doesn't count them as waiting for a label
     if name == "categories":
         for p in prompts:  # the start of your own words, for examples (no call needed)

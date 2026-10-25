@@ -84,7 +84,10 @@ and the run logs in `logs/`.
 ## Jev: the message sets without Claude (24 Oct)
 
 `label.py --engine jev` labels categories, signals and acts with TypeSafe's Jev instead of Haiku, through its
-API (`TYPESAFE_API_KEY`), not your Claude subscription. One request per message: the state is the message,
+API with the person's own key, not their Claude plan. The key is optional: `label.py --key` asks for it
+without showing it, checks it with TypeSafe and keeps it in `~/.wimym/typesafe.key` (mode 600), and while
+that file exists Jev is the default engine; setup offers it in step 9 (`site/setup.md`). `TYPESAFE_API_KEY`
+works too but doesn't change the default, so a key in the environment never switches a run by surprise. One request per message: the state is the message,
 Claude's message before it and, for acts, the project; each choice field is a Choice question and each yes/no
 field a Noul, in the same words as `definitions.json` (`--engine jev --prompt` prints them). A Noul over 0.5
 is true, and each label keeps the probabilities behind it in `p`, so a threshold can be set against a judge.
@@ -100,10 +103,12 @@ What differs from Haiku:
 - **Text and list fields stay empty.** Jev picks and weighs; it doesn't write. So `dw`, `fw`, `names` and
   `rule` in acts are always empty, and `rules.json`, which groups `rule`, has nothing to group. None of them is
   checked. Sessions, days, weeks and rules are accounts, not choices, and stay with Opus.
-- **Its own version and folder.** Labels carry the version `<n>-jev` (`acts` v`4-jev`), so no mark a judge gave
-  Haiku's labels counts for them: every field is a reading until a judge checks Jev's. Runs go to
-  `<labels>/jev/` by default, which the engine doesn't read, and `label.py` refuses to write them over the
-  labels folder; `--promote --engine jev --dir <labels>/jev` moves them in once a full run is complete.
+- **Its own version.** Labels carry the version `<n>-jev` (`acts` v`4-jev`), so no mark a judge gave
+  Haiku's labels counts for them: every field is a reading until a judge checks Jev's. One label file holds
+  one engine's labels: a new person's Jev run writes straight into the labels folder, but a run that would
+  set the other engine's labels aside stops. To try Jev beside Haiku's labels, run it with
+  `--dir <labels>/jev` (which the engine doesn't read), and `--promote --engine jev --dir <labels>/jev` moves
+  it in once a full run is complete.
 - **Cost and speed.** About 2,000 tokens in per message for categories, 1,800 for signals and 3,500 for acts,
   at $0.042 a million (output is free), about 0.2 s a request. A dry run on 24 Oct put a full run of all three
   sets at about $2.30 at list price, against about $56 for the last Haiku runs (the table under "Wording for
