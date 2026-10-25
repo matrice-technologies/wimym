@@ -10,6 +10,7 @@
     wimym limits [set <key> <value> | clear <key>]
     wimym rules [draft <n>]                   instructions you keep giving the agents, and a draft to approve
     wimym build                               rebuild the database now
+    wimym label [--dry-run | --yes]           label what's new since the last run, today left out; says the cost first
 
 Output is short by default so it fits in Claude's context; --json gives more. The database is
 <cache dir>/wimym.db, rebuilt when stale (see db.py). What each column means: docs/schema.md.
@@ -290,6 +291,14 @@ def cmd_build(a):
     t = datetime.now()
     n = db.build()
     out(f"wimym.db rebuilt: {n} messages in {(datetime.now() - t).total_seconds():.1f}s ({db.DB})")
+
+
+def cmd_label(a):
+    """labeller/refresh.py, in its own process: it calls Claude, which nothing else here does."""
+    import subprocess
+    cmd = [sys.executable, os.path.join(ROOT, "labeller", "refresh.py"), "--jobs", str(a.jobs)] + \
+        (["--dry-run"] if a.dry_run else ["--yes"] if a.yes else [])
+    sys.exit(subprocess.call(cmd))
 
 
 # ---------------------------------------------------------------------------------------------
@@ -953,6 +962,12 @@ def main(argv=None):
     s.set_defaults(f=cmd_schema)
     s = sp("build", help="rebuild the database now")
     s.set_defaults(f=cmd_build)
+    s = sp("label", help="label what's new since the last run, every set in order, today left out; says what it costs first")
+    g = s.add_mutually_exclusive_group()
+    g.add_argument("--dry-run", action="store_true", help="what it would send and the cost, and stop")
+    g.add_argument("--yes", action="store_true", help="send it without asking")
+    s.add_argument("--jobs", type=int, default=6, help="calls at once")
+    s.set_defaults(f=cmd_label)
     s = sp("week", help="a week's vital signs, days and moments (default: last complete week)")
     s.add_argument("week", nargs="?", help="YYYY-MM-DD (any day of it), 2026-W42, this, last")
     s.add_argument("--limit", type=int, default=8, help="candidate moments shown (default 8)")

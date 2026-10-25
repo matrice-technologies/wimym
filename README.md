@@ -65,6 +65,7 @@ bin/wimym moments --about switches
 bin/wimym show <message id>
 bin/wimym sql "select day, active, night from day_vitals order by day desc limit 7"
 bin/wimym rules                   # instructions you keep giving the agents
+bin/wimym label --dry-run         # what labelling what's new would send and cost; --yes sends it
 bin/wimym practice add …          # and practice list | check, log add | list, limits
 ```
 
@@ -93,7 +94,7 @@ Set a stopping hour, days off a week or a ceiling on sessions at once, on the fr
 - `labeller/`: model labels through your logged-in `claude` CLI (or TypeSafe's Jev for the message sets):
   what each message asks for and does, an account of each session and each day, and repeated instructions.
   Their wording, versions and measured accuracy are in [docs/labels.md](docs/labels.md); a label feeds a
-  measure only once checked.
+  measure only once checked. `refresh.py` (`wimym label`) brings every set up to date with what's new, cost first.
 - `~/.wimym/`: what you enter (check-ins, limits, practices, the growth log, retros) and the labels.
   Not a cache: keep it.
 - `WIMYM_DATA`, `WIMYM_LABELS`, `WIMYM_CACHE` and `WIMYM_PORT` move these (the older `MIRROR_*` names

@@ -10,6 +10,7 @@ definitions.json next to the message sets:
     python3 labeller/accounts.py sessions --all --jobs 12   # every session not written at this version
     python3 labeller/accounts.py days --all                 # needs sessions (and reads acts and categories when there)
     python3 labeller/accounts.py rules                      # needs acts on every message
+    python3 labeller/accounts.py rules --dry-run            # what it would group, sending nothing
     python3 labeller/accounts.py sessions --show ID         # the input Sonnet gets for one session (or day)
 
 Writes ~/.wimym/labels/<set>.json (or --dir) keyed by session file id or day, with a hash of the input, so a rerun
@@ -241,9 +242,9 @@ def day_text(d, budget=DAY_CHARS):
 # ---------------------------------------------------------------------------
 # Weeks, from the day accounts
 
-def load_weeks(folder):
+def load_weeks(folder, sessions=None):
     """ISO weeks of the days with a day account (days.json, and days-history.json for March to June)."""
-    sessions = load_sessions()
+    sessions = load_sessions() if sessions is None else sessions
     hist = history_sessions() + [s for s in sessions if day_of(s["start"]) < FULL_FROM]
     days = {}
     for history, ss in ((True, hist), (False, sessions)):
@@ -416,11 +417,11 @@ def spread(items, n, key, seed=7):
     return out
 
 
-def rules(folder, model, timeout):
-    """One call: every stated rule from acts, grouped; groups across at least two sessions are kept."""
+def rules_input(folder, sessions=None):
+    """The rules call's input: every stated rule from acts, with the feedback notes already in memory.
+    → (prompt, {short id: message id}, {message id: (ts, project, session)}, rules, notes)"""
     acts = load_label("acts", folder)
-    store = Store(os.path.join(folder, DEFS["rules"]["file"]), "rules")
-    sessions = load_sessions()
+    sessions = load_sessions() if sessions is None else sessions
     # every message with a stated rule: (ts, project, session) from the transcripts, and from history.jsonl
     # (March to June) when acts-history.json is there
     where = {t["key"]: (t["ts"], s["project"], s["id"]) for s in sessions for t in s["turns"] if t["mine"]}
@@ -442,7 +443,18 @@ def rules(folder, model, timeout):
     notes = memory_notes() or [f"- {n}" for n in load_json(os.path.join(folder, "memory-notes-seen.json")).get("names") or []]
     prompt = ("Rules, one per message:\n" + "\n".join(lines) + "\n\nFeedback notes already in memory:\n" + "\n".join(notes)
               + "\n\nGroup them. Leave out rules said only once. JSON array only.")
-    print(f"rules v{store.v}: {len(lines)} stated rules, {len(notes)} feedback notes, {len(prompt):,} characters", flush=True)
+    return prompt, ids, where, len(lines), len(notes)
+
+
+def rules(folder, model, timeout, dry_run=False, sessions=None):
+    """One call: every stated rule from acts, grouped; groups across at least two sessions are kept."""
+    prompt, ids, where, n_rules, n_notes = rules_input(folder, sessions)
+    store = Store(os.path.join(folder, DEFS["rules"]["file"]), "rules")
+    h = hashlib.sha1(prompt.encode()).hexdigest()[:12]
+    print(f"rules v{store.v}: {n_rules} stated rules, {n_notes} feedback notes, {len(prompt):,} characters"
+          + (", the same as the last run" if store.d.get("h") == h and store.old_version in (None, store.v) else ""), flush=True)
+    if dry_run:
+        return
     start, t0 = now(), time.time()
     o = ask(prompt, system_prompt("rules"), model, timeout, True)
     arr = parse_any(o.get("result")) or []
@@ -461,7 +473,7 @@ def rules(folder, model, timeout):
                        "projects": sorted({where[k][1] for k in full})})
     groups.sort(key=lambda g: (-g["sessions"], -g["n"]))
     u = o.get("usage") or {}
-    call = {"at": now(), "n": len(lines), "ok": len(groups), "secs": round(time.time() - t0, 1),
+    call = {"at": now(), "n": n_rules, "ok": len(groups), "secs": round(time.time() - t0, 1),
             "in": (u.get("input_tokens") or 0) + (u.get("cache_read_input_tokens") or 0) + (u.get("cache_creation_input_tokens") or 0),
             "out": u.get("output_tokens") or 0, "usd": o.get("total_cost_usd") or 0, "v": store.v,
             "model": next(iter(o.get("modelUsage") or {}), model)}
@@ -469,14 +481,36 @@ def rules(folder, model, timeout):
         store.d[f"groups_v{store.old_version}"] = store.d["groups"]
     store.d["labels"] = {}
     store.d["groups"] = groups
+    store.d["h"] = h  # the input it was grouped from: a rerun on the same input would only spend the call again
     store.d["calls"].append(call)
     store.d["runs"].append({"start": start, "end": now(), "mode": "all", "v": store.v, "model": model, "think": True,
-                            "todo": len(lines), "labelled": len(groups), "calls": 1, "secs": call["secs"], "gave_up": 0,
+                            "todo": n_rules, "labelled": len(groups), "calls": 1, "secs": call["secs"], "gave_up": 0,
                             "in": call["in"], "out": call["out"], "usd": call["usd"]})
     store.save()
     print(f"{len(groups)} groups across two sessions or more, ${call['usd']:.2f}, {call['secs'] / 60:.1f} min")
     for g in groups[:40]:
         print(f"  {g['sessions']:>3} sessions {g['n']:>3} msgs  [{g['kind']}] {g['rule']}" + (f"  (memory: {g['known']})" if g["known"] else ""))
+
+
+def items_of(name, folder, sessions, history=False):
+    """What a set writes an account of, each with the input Opus reads and its hash: sessions, days (which read the
+    session accounts and message labels in folder) or weeks (which read the day accounts). "last" is the latest moment
+    an item's input covers, the end of its last session, so a run can leave out what is still going."""
+    if name == "weeks":
+        items = [{"id": w["id"], "ts": w["id"], "project": "", "text": week_text(w), "ids": w["ids"],
+                  "last": max(s.get("end") or t["ts"] for d, _ in w["days"] for t, s in d["msgs"])} for w in load_weeks(folder, sessions)]
+    elif name == "sessions":
+        items = [{"id": s["id"], "ts": s["start"], "project": s["project"], "text": session_text(s),
+                  "ids": {ref(t["key"]): t["key"] for t in s["turns"] if t["mine"]}, "last": s["end"]} for s in sessions]
+    else:
+        if history:  # history.jsonl's prompts, and the few older transcripts (agent-mode sessions) the index holds
+            sessions = history_sessions() + [s for s in sessions if day_of(s["start"]) < FULL_FROM]
+        items = [{"id": d["id"], "ts": d["id"], "project": "", "text": day_text(d), "ids": d["ids"],
+                  "last": max(s.get("end") or t["ts"] for t, s in d["msgs"])}
+                 for d in load_days(sessions, folder, history) if (d["id"] < FULL_FROM) == history]
+    for p in items:
+        p["h"] = hashlib.sha1(p["text"].encode()).hexdigest()[:12]
+    return items
 
 
 def main():
@@ -498,23 +532,9 @@ def main():
     name, folder = args.set, os.path.expanduser(args.dir)
     model = args.model or DEFS[name].get("model") or "sonnet"
     if name == "rules":
-        return rules(folder, model, args.timeout)
-    sessions = load_sessions()
-    if name == "weeks":
-        items = [{"id": w["id"], "ts": w["id"], "project": "", "text": week_text(w), "ids": w["ids"]} for w in load_weeks(folder)]
-        per_call, max_chars = 1, DAY_CHARS
-    elif name == "sessions":
-        items = [{"id": s["id"], "ts": s["start"], "project": s["project"], "text": session_text(s),
-                  "ids": {ref(t["key"]): t["key"] for t in s["turns"] if t["mine"]}} for s in sessions]
-        per_call, max_chars = args.per_call, 3 * SESSION_CHARS
-    else:
-        if args.history:  # history.jsonl's prompts, and the few older transcripts (agent-mode sessions) the index holds
-            sessions = history_sessions() + [s for s in sessions if day_of(s["start"]) < FULL_FROM]
-        items = [{"id": d["id"], "ts": d["id"], "project": "", "text": day_text(d), "ids": d["ids"]}
-                 for d in load_days(sessions, folder, args.history) if (d["id"] < FULL_FROM) == args.history]
-        per_call, max_chars = 1, DAY_CHARS
-    for p in items:
-        p["h"] = hashlib.sha1(p["text"].encode()).hexdigest()[:12]
+        return rules(folder, model, args.timeout, args.dry_run)
+    items = items_of(name, folder, load_sessions(), args.history)
+    per_call, max_chars = (args.per_call, 3 * SESSION_CHARS) if name == "sessions" else (1, DAY_CHARS)
     if args.show:
         return print(next((p["text"] for p in items if p["id"].startswith(args.show)), "not found"))
     store = Store(os.path.join(folder, L.file_of(name, args.history)), name)

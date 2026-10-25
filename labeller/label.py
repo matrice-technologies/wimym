@@ -61,7 +61,9 @@ from wimym.index import Index  # noqa: E402
 from wimym.paths import DATA_DIR, HOME, LABELS_DIR, scratch, tmp_name  # noqa: E402
 from wimym.text import not_typed, own_words, project_of  # noqa: E402
 
-CLAUDE_BIN = os.environ.get("CLAUDE_BIN") or os.path.join(HOME, ".local", "bin", "claude.exe" if os.name == "nt" else "claude")
+_LOCAL_CLAUDE = os.path.join(HOME, ".local", "bin", "claude.exe" if os.name == "nt" else "claude")
+# where Claude Code's own installer puts it, else wherever the PATH has it (npm, Homebrew)
+CLAUDE_BIN = os.environ.get("CLAUDE_BIN") or (_LOCAL_CLAUDE if os.path.exists(_LOCAL_CLAUDE) else shutil.which("claude") or _LOCAL_CLAUDE)
 MINE = ("desk", "massistant")
 MAX_JOBS = 16  # calls at once; failed calls back off for a minute when the error says rate limit or overload
 AUDIT = "audit-opus.json"
@@ -672,6 +674,22 @@ def signal_prompts(prompts, folder, history=False):
     return [p for p in prompts if not (p["agh"] or (cats.get(p["id"]) or {}).get("ag"))]
 
 
+def open_set(name, folder, prompts, skipped, history=False, engine="claude"):
+    """A set's file and the messages it labels, as every run sees them: the skipped ones noted, so the app doesn't count
+    them as waiting, and for categories the start of your own words brought up to date; the other sets leave out what
+    categories found you didn't type."""
+    store = Store(os.path.join(folder, file_of(name, history)), name, engine)
+    store.d["skipped"] = skipped
+    if name == "categories":
+        for p in prompts:  # the start of your own words, for examples (no call needed)
+            lab = store.d["labels"].get(p["id"])
+            if lab and lab.get("h") == p["h"]:
+                lab["w"] = p["text"][:160]
+    else:
+        prompts = signal_prompts(prompts, folder, history)
+    return store, prompts
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     g = ap.add_mutually_exclusive_group(required=True)
@@ -716,15 +734,7 @@ def main():
     if was.get("labels") and str(was.get("version")).endswith("-jev") != jev and not (args.report or args.dry_run):
         sys.exit(f"{path} holds {'Jev' if not jev else 'Haiku'}'s labels (v{was.get('version')}), and a run with "
                  f"{args.engine} would set them aside: use --dir for another folder, then --promote when it is complete")
-    store = Store(path, name, args.engine)
-    store.d["skipped"] = skipped  # so the app doesn't count them as waiting for a label
-    if name == "categories":
-        for p in prompts:  # the start of your own words, for examples (no call needed)
-            lab = store.d["labels"].get(p["id"])
-            if lab and lab.get("h") == p["h"]:
-                lab["w"] = p["text"][:160]
-    else:
-        prompts = signal_prompts(prompts, folder, args.history)
+    store, prompts = open_set(name, folder, prompts, skipped, args.history, args.engine)
     if not (args.report or args.dry_run):
         store.save()
     todo = [p for p in prompts if not store.done(p)]

@@ -16,6 +16,7 @@ wimym show 3e5bf6dd           # one message whole, with Claude's reply and what 
 wimym practice add|list|check|verdict · wimym log add|list · wimym limits [set|clear]
 wimym rules [draft 3]         instructions you keep giving the agents; a draft memory note to approve (writes nothing)
 wimym build                   # rebuild now
+wimym label --dry-run         # what labelling what's new would send and cost (--yes sends it)
 ```
 
 `wimym schema` reads the tables below from this file, so a column documented here shows its meaning

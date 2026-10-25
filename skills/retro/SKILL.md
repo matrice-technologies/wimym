@@ -18,6 +18,25 @@ they can't be trusted for: `wimym schema` and `docs/schema.md`, "Before trusting
 The `/wimym` skill's method holds here too: moments before totals, the person's own range as the
 yardstick, confounders named, labels trusted only as far as they were checked.
 
+## First: are the labels up to date?
+
+The day accounts, open loops and rules you prepare from are written by the labeller, which runs only when
+asked. Check it before anything else; this is the one step the person hears about before the opening.
+
+1. `wimym label --dry-run`. It sends nothing. Set by set, it says what has come in since the last run (today
+   and the week in progress wait for a later run) and about what labelling it would cost.
+2. "Nothing to send": go on to the preparation.
+3. Something to send: tell the person in two lines what it would label and the cost it gives (a list-price
+   figure that counts against their Claude plan's usage), and ask. On a yes, run `wimym label --yes` in the
+   background with a long timeout (a week of work takes a few minutes), wait for it to finish, then
+   `wimym build`. On a no, go on, and say once in the opening that the day accounts stop at
+   `wimym sql "select max(day) from day_accounts"`.
+4. A set "left as it is" is at an older version: bringing it up is a full relabel, a much bigger cost, and not
+   for the retro. Don't offer it; prepare from what is there.
+5. "Not in Wimym's index yet" means the engine isn't running, so the record stops where it last read. Say so,
+   offer `./install.sh --no-open` in the repository, and on a yes run the label check again once
+   `curl -s http://127.0.0.1:8990/api/state` shows `"phase": "ready"`.
+
 ## Before the conversation: prepare quietly
 
 Do this without narrating it; the person sees only the opening.

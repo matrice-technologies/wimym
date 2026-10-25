@@ -43,6 +43,7 @@ The commands:
 | `wimym log list` | the growth log: what was concluded before |
 | `wimym limits` | the stopping hour and other limits the person set |
 | `wimym rules [draft <n>]` | instructions the person keeps giving the agents, whether a memory note already says it, and a draft note to approve. It never writes to ~/.claude |
+| `wimym label --dry-run` | what the labeller hasn't read yet (today waits) and about what labelling it would cost; sends nothing. `wimym label --yes` sends it, only on the person's yes: it counts against their Claude plan |
 
 Output is short on purpose. Ask for `--json` or `--limit` only when you need more.
 
