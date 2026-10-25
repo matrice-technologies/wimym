@@ -8,6 +8,20 @@ All calls go through `claude -p` on the subscription (no API key), with no tools
 empty folder. Costs below are the list-price equivalent `claude -p` reports, not money spent. Every file keeps its
 own log: `calls` (one entry per call: messages, tokens in and out, seconds, cost, model) and `runs` (one per run).
 
+## Keeping them up to date
+
+`wimym label` (or `python3 labeller/refresh.py`) runs every set on what came in since the last run, in the order
+they build on each other: categories, signals, acts, sessions, days, weeks, rules. Today waits, and so does the week
+in progress: a day still going would be written again tomorrow, when its input has changed. It first says, set by
+set, what it would send and about what it would cost (each set's own cost per item at its version, or the first full
+runs' figures below until it has enough), and sends nothing without a yes: `--dry-run` only says, `--yes` sends
+without asking, and without a terminal it stops at the plan. The weekly retro runs the dry run first.
+
+A set whose file is at an older version than `definitions.json` is left as it is: one label at the new version
+makes the whole file that version, and every older label in it stops counting. That takes a full relabel, below.
+Rules are grouped again only when the stated rules from acts or the memory notes changed (`rules.json` keeps a hash
+of that input), and wait while acts is at an older version.
+
 ## How a set is made
 
 1. A definition in `definitions.json`, with a version.
@@ -114,7 +128,8 @@ every item of that set, not only the new ones. A dry run on copies of his files 
 There is no cheaper path: a new message gets a label at the new version only, and the file's version moves with
 it. So until Alex chooses to pay for the full run, don't run the labeller on his data. When he does, run it into a
 separate folder (`--dir`) and `--promote` it when complete, as the v2 to v3 relabel did, so his counts hold during
-the run. Careful: `accounts.py rules` calls Opus whatever the flags (`--dry-run` is not read for rules).
+the run. `accounts.py rules --dry-run` says what it would group and sends nothing (before 25 Oct it called Opus
+whatever the flags).
 
 ## acts: what you decide, put off and hand over
 
