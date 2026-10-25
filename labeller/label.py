@@ -14,6 +14,8 @@ in definitions.json next to this file (what each field and value means, and the 
     python3 labeller/label.py --report                  # what the labels say so far, and what they cost
     python3 labeller/label.py --promote --dir D         # move complete label files from D into the labels folder
     python3 labeller/label.py --prompt                  # print the instruction Haiku gets
+    python3 labeller/label.py --key                     # keep your TypeSafe key: from then on, Jev labels
+    python3 labeller/label.py --engine jev --check      # the same with Jev (TypeSafe's API)
 
 Reads your messages from Wimym's index (~/.cache/wimym/index.json; run the engine once to
 build it, this never writes it) and writes ~/.wimym/labels/<set>.json (or --dir), keyed by
@@ -24,19 +26,31 @@ list-price cost, wall time.
 Ported from claude-memory-map's categorize.py (as of 1223a32): same calls, same batching.
 Standard library only. Each call is a `claude -p` that can only answer: no tools, no MCP
 servers, no customizations, no slash commands, no session saved, run in an empty folder.
+
+--engine jev asks TypeSafe's Jev instead, one message per request: each choice field is a Choice
+question, each yes/no field a Noul, with the same words. Jev picks and weighs but doesn't write, so
+text and list fields (what was decided, names, a rule) stay empty. Its labels carry the version
+"<n>-jev", so no second judge's mark on the Haiku labels counts for them. The key is yours: --key
+keeps it in ~/.wimym/typesafe.key (yours only to read), and while that file exists Jev is the
+default engine; TYPESAFE_API_KEY works too but chooses nothing. One label file holds one engine's
+labels: a run that would set the other's aside stops, and says to use --dir, then --promote.
 """
 import argparse
+import getpass
 import hashlib
 import json
 import os
 import random
 import re
 import shutil
+import ssl
 import subprocess
 import sys
 import tempfile
 import threading
 import time
+import urllib.error
+import urllib.request
 from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
@@ -44,7 +58,7 @@ from datetime import datetime, timezone
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), "engine"))
 from wimym.index import Index  # noqa: E402
-from wimym.paths import HOME, LABELS_DIR, scratch, tmp_name  # noqa: E402
+from wimym.paths import DATA_DIR, HOME, LABELS_DIR, scratch, tmp_name  # noqa: E402
 from wimym.text import not_typed, own_words, project_of  # noqa: E402
 
 _LOCAL_CLAUDE = os.path.join(HOME, ".local", "bin", "claude.exe" if os.name == "nt" else "claude")
@@ -53,6 +67,9 @@ CLAUDE_BIN = os.environ.get("CLAUDE_BIN") or (_LOCAL_CLAUDE if os.path.exists(_L
 MINE = ("desk", "massistant")
 MAX_JOBS = 16  # calls at once; failed calls back off for a minute when the error says rate limit or overload
 AUDIT = "audit-opus.json"
+JEV_URL = os.environ.get("TYPESAFE_URL") or "https://api.typesafe.ai/v1/systemone"
+KEY_FILE = os.path.join(DATA_DIR, "typesafe.key")  # the person's own TypeSafe key, given with --key
+JEV_USD = 0.042 / 1e6  # list price per input token, jev-1.13 and 1.14; output is free
 
 with open(os.path.join(HERE, "definitions.json"), encoding="utf-8") as _f:
     DEFS = json.load(_f)["sets"]
@@ -204,9 +221,9 @@ class Store:
     won't parse is set aside as <file>.bad-<time> and nothing is written, so hours of labels are never replaced
     by an empty file. Labels of an older version stay in the file; only the current version counts (done())."""
 
-    def __init__(self, path, name):
+    def __init__(self, path, name, engine="claude"):
         self.path, self.name, self.lock = path, name, threading.Lock()
-        self.v = DEFS[name]["version"]
+        self.v = DEFS[name]["version"] if engine == "claude" else f'{DEFS[name]["version"]}-{engine}'
         self.d = {}
         if os.path.exists(path):
             try:
@@ -310,10 +327,155 @@ def now():
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
-def label(store, todo, model, per_call, workers, timeout, think, max_chars=60000):
-    """Labels todo, at most `workers` calls at once; items that don't come back are retried
-    in later batches, then alone, up to three tries each."""
-    system = system_prompt(store.name)
+def via_claude(name, model, timeout, think):
+    """A batch → (labels, the call's log entry), through `claude -p`."""
+    system = system_prompt(name)
+
+    def call(items, v):
+        o = ask(batch_text(items, name), system, model, timeout, think)
+        got = parse(name, o.get("result"), items)
+        u = o.get("usage") or {}
+        c = {"at": now(), "n": len(items), "ok": len(got), "api_ms": o.get("duration_api_ms"),
+             "in": (u.get("input_tokens") or 0) + (u.get("cache_read_input_tokens") or 0) + (u.get("cache_creation_input_tokens") or 0),
+             "out": u.get("output_tokens") or 0, "usd": o.get("total_cost_usd") or 0,
+             "model": next(iter(o.get("modelUsage") or {}), model), "v": v, "think": think}
+        if len(got) < len(items):
+            c["raw"] = (o.get("result") or "")[:400] + " … " + (o.get("result") or "")[-200:]
+        return got, c
+    return call
+
+
+# ---------------------------------------------------------------------------
+# Jev: one message per request, each field its own typed question
+
+def jev_questions(name):
+    """The set's choice fields as Choice questions and its yes/no fields as Nouls, in definitions.json's words.
+    Text and list fields aren't asked: Jev picks and weighs, it doesn't write."""
+    d = DEFS[name]
+    context = ("`message` is what a person typed to Claude Code, their coding agent. Messages can be in any language, "
+               "often short, sometimes dictated. `claude_before` is the start and end of Claude's previous message in that "
+               "session, for context." + (" `project` is the project it was typed in." if d.get("before") else "") +
+               " Judge only what the person's words in `message` show; when unsure, use the plain default.")
+    qs = {}
+    for f in d["fields"]:
+        if f["type"] not in ("enum", "bool"):
+            continue
+        ins = {"context": context}
+        if f["type"] == "enum":
+            ins["question"] = f"{f['name']} for `message`: {f.get('lead') or 'one of the options.'}"
+        else:
+            ins["question"] = f"{f['name']}: is it true of `message`?"
+        if f.get("after"):
+            ins["then"] = f["after"]
+        if f.get("rules"):
+            ins["rules"] = f["rules"]
+        if f["type"] == "enum":
+            qs[f["key"]] = {"type": "choice", "instructions": ins, "criteria": {v["key"]: v["meaning"] for v in f["values"]}}
+        else:
+            qs[f["key"]] = {"type": "noul", "instructions": ins,
+                            "criteria": {str(v["key"]).lower(): v["meaning"] for v in f["values"]}}
+    return qs
+
+
+def jev_state(name, p):
+    s = {"project": p["project"]} if DEFS[name].get("before") else {}
+    s["claude_before"] = before_of(name, p) or ("(not recorded)" if p.get("history") else "(nothing)" if p["stopped"] else "(start of session)")
+    if p["stopped"]:
+        s["note"] = "The person stopped Claude's previous turn before it finished."
+    s["message"] = p["text"]
+    return s
+
+
+def tls():
+    """Python from python.org on a Mac has no certificates until "Install Certificates" is run: fall back on the system's."""
+    ctx = ssl.create_default_context()
+    if not ctx.get_ca_certs() and os.path.exists("/etc/ssl/cert.pem"):
+        ctx.load_verify_locations("/etc/ssl/cert.pem")
+    return ctx
+
+
+TLS = tls()
+
+
+def typesafe_key():
+    """TYPESAFE_API_KEY, else the key kept by --key, else None."""
+    if os.environ.get("TYPESAFE_API_KEY"):
+        return os.environ["TYPESAFE_API_KEY"].strip()
+    try:
+        with open(KEY_FILE, encoding="utf-8") as f:
+            return f.read().strip() or None
+    except OSError:
+        return None
+
+
+def keep_key():
+    """Ask for the person's TypeSafe key without showing it (or read it from stdin when that isn't a terminal),
+    check it with TypeSafe, and keep it in KEY_FILE, readable by them only. Never prints the key."""
+    key = (getpass.getpass("TypeSafe API key (from console.typesafe.ai; not shown): ") if sys.stdin.isatty()
+           else sys.stdin.readline()).strip()
+    if not key:
+        sys.exit("no key given; nothing kept")
+    req = urllib.request.Request(JEV_URL.rsplit("/", 1)[0] + "/models", headers={"Authorization": f"Bearer {key}"})
+    try:
+        with urllib.request.urlopen(req, timeout=30, context=TLS) as r:
+            r.read()
+    except urllib.error.HTTPError as e:
+        sys.exit(f"TypeSafe refused the key ({e.code}); nothing kept")
+    except OSError as e:
+        sys.exit(f"couldn't reach TypeSafe to check the key ({e}); nothing kept")
+    os.makedirs(DATA_DIR, exist_ok=True)
+    tmp = tmp_name(KEY_FILE)
+    with open(os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w", encoding="utf-8") as f:
+        f.write(key + "\n")
+    os.replace(tmp, KEY_FILE)
+    print(f"key checked and kept in {KEY_FILE}; the labeller now uses Jev (delete the file to go back to Haiku)")
+
+
+def jev_ask(body, timeout, tries=5):
+    """One System One request; a rate limit or overload waits (retry-after, else 2, 4, 8… seconds) and tries again."""
+    key = typesafe_key()
+    if not key:
+        raise RuntimeError("no TypeSafe key: run label.py --key, or set TYPESAFE_API_KEY")
+    data = json.dumps(body, ensure_ascii=False).encode()
+    for n in range(tries):
+        req = urllib.request.Request(JEV_URL, data=data, method="POST",
+                                     headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
+        try:
+            with urllib.request.urlopen(req, timeout=timeout, context=TLS) as r:
+                return json.load(r)
+        except urllib.error.HTTPError as e:
+            if e.code in (429, 529) and n < tries - 1:
+                wait = e.headers.get("retry-after")
+                time.sleep(float(wait) if wait and wait.replace(".", "", 1).isdigit() else 2 ** (n + 1))
+                continue
+            raise RuntimeError(f"typesafe {e.code}: {e.read().decode('utf-8', 'replace')[:300]}") from None
+
+
+def via_jev(name, model, timeout):
+    """A batch of one → (labels, the call's log entry). A Noul over 0.5 is true. Every answer's probabilities
+    are kept on the label ("p") so a threshold can be set against a second judge later."""
+    qs = jev_questions(name)
+
+    def call(items, v):
+        (p,) = items
+        o = jev_ask({"model": model, "state": jev_state(name, p), "questions": qs}, timeout)
+        a, probs = {}, {}
+        for k, ans in (o.get("answers") or {}).items():
+            if "noul" in ans:
+                a[k], probs[k] = ans["noul"] > 0.5, round(ans["noul"], 3)
+            else:
+                a[k], probs[k] = ans.get("choice"), {c: round(x, 3) for c, x in (ans.get("probabilities") or {}).items()}
+        lab = check(name, a, p)
+        got = {p["id"]: {**lab, "v": v, "p": probs}} if lab else {}
+        u = o.get("usage") or {}
+        return got, {"at": now(), "n": 1, "ok": len(got), "in": u.get("input_tokens") or 0, "out": u.get("output_tokens") or 0,
+                     "usd": round((u.get("input_tokens") or 0) * JEV_USD, 6), "model": o.get("model") or model, "v": v}
+    return call
+
+
+def label(store, todo, call, per_call, workers, max_chars=60000):
+    """Labels todo through call (via_claude or via_jev), at most `workers` calls at once; items that don't come
+    back are retried in later batches, then alone, up to three tries each."""
     tries = Counter()
     queue = list(todo)
     t0, ncalls, first_call = time.time(), 0, len(store.d["calls"])
@@ -336,27 +498,19 @@ def label(store, todo, model, per_call, workers, timeout, think, max_chars=60000
         nonlocal ncalls
         start = time.time()
         try:
-            o = ask(batch_text(items, store.name), system, model, timeout, think)
-            got = parse(store.name, o.get("result"), items)
-            u = o.get("usage") or {}
-            call = {"at": now(), "n": len(items), "ok": len(got), "secs": round(time.time() - start, 1),
-                    "api_ms": o.get("duration_api_ms"),
-                    "in": (u.get("input_tokens") or 0) + (u.get("cache_read_input_tokens") or 0) + (u.get("cache_creation_input_tokens") or 0),
-                    "out": u.get("output_tokens") or 0, "usd": o.get("total_cost_usd") or 0,
-                    "model": next(iter(o.get("modelUsage") or {}), model), "v": store.v, "think": think}
-            if len(got) < len(items):
-                call["raw"] = (o.get("result") or "")[:400] + " … " + (o.get("result") or "")[-200:]
+            got, c = call(items, store.v)
+            c["secs"] = round(time.time() - start, 1)
         except Exception as e:  # noqa: BLE001  a failed call: its items go back in the queue
-            got, call = {}, {"at": now(), "n": len(items), "ok": 0, "secs": round(time.time() - start, 1),
-                             "error": str(e)[:300], "v": store.v, "think": think}
+            got, c = {}, {"at": now(), "n": len(items), "ok": 0, "secs": round(time.time() - start, 1),
+                          "error": str(e)[:300], "v": store.v}
             if re.search(r"rate|limit|429|overload|529", str(e), re.I):  # back off before the retry
                 time.sleep(60)
-        store.put(got, call)
+        store.put(got, c)
         with pr:
             ncalls += 1
             done = sum(store.done(p) for p in todo)
-            print(f"  call {ncalls}: {call['ok']}/{call['n']} in {call['secs']}s, {done}/{len(todo)} done"
-                  + (f" ({call['error']})" if call.get("error") else ""), flush=True)
+            print(f"  call {ncalls}: {c['ok']}/{c['n']} in {c['secs']}s, {done}/{len(todo)} done"
+                  + (f" ({c['error']})" if c.get("error") else ""), flush=True)
         return [p for p in items if p["id"] not in got]
 
     gave_up = []
@@ -484,14 +638,14 @@ def report(store, prompts, ids=None, examples=15):
         print(f"  [{tags}] {p['project']}: {p['text'][:140]!r}")
 
 
-def promote(src, prompts):
+def promote(src, prompts, engine="claude"):
     """Move src/<set>.json into the labels folder once a full run has labelled every message at the set's version;
     the file it replaces is kept as <set>.v<old version>.json when its version differs."""
     for name, d in MESSAGE_SETS.items():
         path = os.path.join(src, d["file"])
         if not os.path.exists(path):
             continue
-        st = Store(path, name)
+        st = Store(path, name, engine)
         mine = prompts if name == "categories" else signal_prompts(prompts, src)
         # messages sent after the last run started are labelled by the next run, as always
         since = max((r["start"] for r in st.d["runs"] if r["mode"] == "all" and r["v"] == st.v), default=None)
@@ -502,28 +656,29 @@ def promote(src, prompts):
         path, dest = os.path.join(src, d["file"]), os.path.join(LABELS_DIR, d["file"])
         if not os.path.exists(path):
             continue
-        ov = load_json(dest).get("version")
-        if ov is not None and ov != d["version"]:
+        ov, nv = load_json(dest).get("version"), load_json(path).get("version")
+        if ov is not None and ov != nv:
             keep = os.path.join(LABELS_DIR, f"{os.path.splitext(d['file'])[0]}.v{ov}.json")
             shutil.copy2(dest, keep)
             print(f"kept the old {name} as {keep}")
         tmp = tmp_name(dest)
         shutil.copy2(path, tmp)
         os.replace(tmp, dest)
-        print(f"{name} v{d['version']} → {dest}")
+        print(f"{name} v{nv} → {dest}")
 
 
 def signal_prompts(prompts, folder, history=False):
-    """The second set builds on the first: nothing the first found you didn't type."""
-    cats = load_json(os.path.join(folder, file_of("categories", history))).get("labels") or {}
+    """The second set builds on the first: nothing the first found you didn't type (the labels folder's first set
+    when this folder has none, as a Jev folder may not)."""
+    cats = (load_json(os.path.join(folder, file_of("categories", history))) or load_json(os.path.join(LABELS_DIR, file_of("categories", history)))).get("labels") or {}
     return [p for p in prompts if not (p["agh"] or (cats.get(p["id"]) or {}).get("ag"))]
 
 
-def open_set(name, folder, prompts, skipped, history=False):
+def open_set(name, folder, prompts, skipped, history=False, engine="claude"):
     """A set's file and the messages it labels, as every run sees them: the skipped ones noted, so the app doesn't count
     them as waiting, and for categories the start of your own words brought up to date; the other sets leave out what
     categories found you didn't type."""
-    store = Store(os.path.join(folder, file_of(name, history)), name)
+    store = Store(os.path.join(folder, file_of(name, history)), name, engine)
     store.d["skipped"] = skipped
     if name == "categories":
         for p in prompts:  # the start of your own words, for examples (no call needed)
@@ -545,27 +700,41 @@ def main():
     g.add_argument("--ids", metavar="FILE", help="label the messages whose ids are in FILE (a JSON list), e.g. a sample for a second judge")
     g.add_argument("--report", action="store_true", help="what the labels say so far")
     g.add_argument("--promote", action="store_true", help="move complete label files from --dir into the labels folder")
-    g.add_argument("--prompt", action="store_true", help="print the instruction Haiku gets")
+    g.add_argument("--prompt", action="store_true", help="print the instruction Haiku gets (with --engine jev, the questions)")
+    g.add_argument("--key", action="store_true", help=f"keep your TypeSafe key in {KEY_FILE}, so Jev labels from then on")
     ap.add_argument("--history", action="store_true",
                     help="the March to June prompts from history.jsonl instead, into <set>-history.json")
     ap.add_argument("--set", choices=list(MESSAGE_SETS), default="categories")
+    ap.add_argument("--engine", choices=("claude", "jev"),
+                    help="claude: Haiku through `claude -p` on your plan; jev: TypeSafe's API with your key. "
+                         "Default: jev when --key has kept a key, else claude")
     ap.add_argument("--dir", default=LABELS_DIR, help=f"labels folder to read and write (default {LABELS_DIR})")
-    ap.add_argument("--model", help="default: the set's model, else haiku")
+    ap.add_argument("--model", help="default: the set's model, else haiku; with --engine jev, jev-latest")
     ap.add_argument("--per-call", type=int, help="messages per call (default: the set's per_call, else 50)")
     ap.add_argument("--jobs", "--workers", dest="jobs", type=int, default=3, help=f"calls at once (at most {MAX_JOBS})")
     ap.add_argument("--timeout", type=int, default=600)
     ap.add_argument("--no-think", action="store_true", help="no extended thinking: about 5x fewer tokens out")
     args = ap.parse_args()
-    name = args.set
+    if args.key:
+        return keep_key()
+    args.engine = args.engine or ("jev" if os.path.exists(KEY_FILE) else "claude")
+    name, jev = args.set, args.engine == "jev"
     if args.prompt:
-        return print(system_prompt(name))
+        return print(json.dumps(jev_questions(name), ensure_ascii=False, indent=1) if jev else system_prompt(name))
     folder = os.path.expanduser(args.dir)
+    if jev and not typesafe_key() and not (args.report or args.dry_run):
+        sys.exit("no TypeSafe key: run label.py --key first (or set TYPESAFE_API_KEY)")
     prompts, skipped = load_prompts()
     if args.history:
         prompts, skipped = load_history(prompts), []
     if args.promote:
-        return promote(folder, prompts)
-    store, prompts = open_set(name, folder, prompts, skipped, args.history)
+        return promote(folder, prompts, args.engine)
+    path = os.path.join(folder, file_of(name, args.history))
+    was = load_json(path)
+    if was.get("labels") and str(was.get("version")).endswith("-jev") != jev and not (args.report or args.dry_run):
+        sys.exit(f"{path} holds {'Jev' if not jev else 'Haiku'}'s labels (v{was.get('version')}), and a run with "
+                 f"{args.engine} would set them aside: use --dir for another folder, then --promote when it is complete")
+    store, prompts = open_set(name, folder, prompts, skipped, args.history, args.engine)
     if not (args.report or args.dry_run):
         store.save()
     todo = [p for p in prompts if not store.done(p)]
@@ -575,11 +744,14 @@ def main():
         chars = sum(len(p["text"]) + len(p["before"]) for p in todo)
         print(f"{name} v{store.v}: {len(prompts)} messages, {len(prompts) - len(todo)} labelled, {len(todo)} to go "
               f"(~{chars // 4:,} tokens of text)")
+        if jev:  # every request carries the questions too; a rough count, 4 characters a token
+            toks = sum(len(json.dumps({"s": jev_state(name, p), "q": jev_questions(name)}, ensure_ascii=False)) for p in todo) // 4
+            print(f"  Jev: ~{toks:,} tokens in, about ${toks * JEV_USD:.2f} at list price")
         return
     ids = None
     if args.sample or args.check:
-        # the same sample again after the taxonomy changes, so labels can be compared
-        have = set(store.d.get("sample") or [])
+        # the same sample again after the taxonomy changes, so labels can be compared; a new Jev folder takes Haiku's
+        have = set(store.d.get("sample") or load_json(os.path.join(LABELS_DIR, file_of(name, args.history))).get("sample") or [])
         n = args.sample or len(have)
         pick = [p for p in prompts if p["id"] in have] if have and len(have) == n else sample(prompts, n)
         store.d["sample"] = sorted(p["id"] for p in pick)
@@ -592,14 +764,19 @@ def main():
         todo = [p for p in prompts if p["id"] in ids and not store.done(p)]
     mode = f"ids {os.path.basename(args.ids)}" if args.ids else "all" if args.all else "check" if args.check else f"sample {args.sample}"
     workers = max(1, min(MAX_JOBS, args.jobs))
-    args.model = args.model or DEFS[name].get("model") or "haiku"
-    args.per_call = args.per_call or DEFS[name].get("per_call") or 50
-    print(f"{name} v{store.v}: labelling {len(todo)} messages, {args.per_call} per call, {workers} at once, "
-          f"thinking {'off' if args.no_think else 'on'}", flush=True)
+    if jev:
+        args.model, args.per_call, think = args.model or "jev-latest", 1, None
+        call = via_jev(name, args.model, args.timeout)
+    else:
+        args.model = args.model or DEFS[name].get("model") or "haiku"
+        args.per_call, think = args.per_call or DEFS[name].get("per_call") or 50, not args.no_think
+        call = via_claude(name, args.model, args.timeout, think)
+    print(f"{name} v{store.v}: labelling {len(todo)} messages with {args.model}, {args.per_call} per call, {workers} at once"
+          + ("" if jev else f", thinking {'on' if think else 'off'}"), flush=True)
     start = now()
-    r = label(store, todo, args.model, args.per_call, workers, args.timeout, not args.no_think)
+    r = label(store, todo, call, args.per_call, workers)
     store.d["runs"].append({"start": start, "end": now(), "mode": mode, "v": store.v, "model": args.model,
-                            "think": not args.no_think, "todo": len(todo), "labelled": len(todo) - r["gave_up"], **r})
+                            "think": think, "todo": len(todo), "labelled": len(todo) - r["gave_up"], **r})
     store.save()
     print(f"done in {r['secs'] / 60:.1f} min, {r['calls']} calls, {r['in']:,} tokens in, {r['out']:,} out, ${r['usd']:.2f}", flush=True)
     if args.check:

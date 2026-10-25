@@ -177,6 +177,28 @@ class Refresh(unittest.TestCase):
         self.assertIn("Left as it is: signals.", out)
 
 
+    def test_6_with_a_typesafe_key_the_message_sets_go_to_jev(self):
+        def jev_ask(body, timeout):
+            CALLS.append("jev")
+            return {"answers": {k: {"choice": next(iter(q["criteria"])), "probabilities": {}} if q["type"] == "choice"
+                                else {"noul": 0.1} for k, q in body["questions"].items()},
+                    "usage": {"input_tokens": 100}, "model": "jev-test"}
+        key = os.path.join(TMP, "typesafe.key")
+        open(key, "w").close()
+        folder = os.path.join(TMP, "labels-jev")
+        CALLS.clear()
+        out = io.StringIO()
+        with mock.patch.object(L, "KEY_FILE", key), mock.patch.object(L, "jev_ask", jev_ask), contextlib.redirect_stdout(out):
+            R.main(["--yes", "--dir", folder])
+        self.assertRegex(out.getvalue(), r"categories\s+v\d+-jev\s+4 messages new\s+about \$[\d.]+\s+Jev")
+        self.assertIn("Jev's are billed to your TypeSafe key", out.getvalue())
+        with open(os.path.join(folder, L.DEFS["categories"]["file"]), encoding="utf-8") as f:
+            self.assertTrue(json.load(f)["version"].endswith("-jev"))
+        self.assertNotIn("categories", CALLS)  # none of the message sets went to claude
+        self.assertIn("jev", CALLS)
+        self.assertIn("sessions", CALLS)
+
+
 def tearDownModule():
     shutil.rmtree(TMP, ignore_errors=True)
 

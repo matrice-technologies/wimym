@@ -16,12 +16,15 @@ A set whose file is at another version than definitions.json is left as it is: o
 file that version, and every older label in it stops counting. That set needs a full relabel (labeller/relabel.sh,
 docs/labels.md); this says so, with what it would cost, and goes on with the others.
 
-The costs are estimates, the list-price equivalent `claude -p` reports, which counts against your Claude plan's usage:
-from what each set's own calls cost per item at its version, or the first full runs' figures until it has enough of
-its own. Standard library only, as label.py and accounts.py, whose calls these are.
+The message sets go to Jev when label.py --key has kept a TypeSafe key, as label.py does; the rest always go through
+`claude -p`. The costs are estimates: list prices, which on Claude count against your plan's usage and on Jev are
+billed to your key. They come from what each set's own calls cost per item at its version, or until it has enough of
+its own, the first full runs' figures (Claude) or the tokens it would send (Jev). Standard library only, as label.py
+and accounts.py, whose calls these are.
 """
 import argparse
 import hashlib
+import json
 import os
 import sys
 from datetime import date, datetime, timedelta, timezone
@@ -57,13 +60,20 @@ def noun(name, n):
     return f"{n:,} {one if n == 1 else many}"
 
 
-def per_item(store):
-    calls = [c for c in store.d["calls"] if c.get("v") == store.v]
+def own_cost(store):
+    """What a set's own calls cost per item at its version, or None until there are enough of them."""
     if store.name == "rules":
         runs = [r for r in store.d["runs"] if r.get("v") == store.v]
-        return sum(r.get("usd", 0) for r in runs) / len(runs) if runs else FIRST_RUNS["rules"]
+        return sum(r.get("usd", 0) for r in runs) / len(runs) if runs else None
+    calls = [c for c in store.d["calls"] if c.get("v") == store.v]
     ok = sum(c.get("ok", 0) for c in calls)
-    return sum(c.get("usd", 0) for c in calls) / ok if ok >= OWN_FROM else FIRST_RUNS[store.name]
+    return sum(c.get("usd", 0) for c in calls) / ok if ok >= OWN_FROM else None
+
+
+def jev_cost(name, items):
+    """Jev's list price for items, from the tokens each request would carry (4 characters a token), as label.py --dry-run."""
+    qs = L.jev_questions(name)
+    return sum(len(json.dumps({"s": L.jev_state(name, p), "q": qs}, ensure_ascii=False)) for p in items) // 4 * L.JEV_USD
 
 
 class Stage:
@@ -72,10 +82,11 @@ class Stage:
 
     def __init__(self, name, folder, data, day):
         self.name, self.folder, self.data, self.day = name, folder, data, day
+        self.engine = data["engine"] if name in L.MESSAGE_SETS else "claude"
         self.items, self.waits_for = [], None
         if name == "rules":
             # rules are read from acts: while acts is left at an older version, grouping them again finds nothing new
-            acts = Store(os.path.join(folder, DEFS["acts"]["file"]), "acts")
+            acts = Store(os.path.join(folder, DEFS["acts"]["file"]), "acts", data["engine"])
             if acts.old_version not in (None, acts.v) and acts.d["labels"]:
                 self.store, self.todo, self.waiting, self.behind = acts, [], [], False
                 self.waits_for = f"acts at v{acts.v}"
@@ -87,12 +98,12 @@ class Stage:
             self.todo, self.waiting, self.behind = ([] if same or not n_rules else [{"id": "rules"}]), [], False
             return
         if name in L.MESSAGE_SETS:
-            self.store, self.items = L.open_set(name, folder, data["prompts"], data["skipped"])
+            self.store, self.items = L.open_set(name, folder, data["prompts"], data["skipped"], engine=self.engine)
         else:
             self.store = Store(os.path.join(folder, DEFS[name]["file"]), name)
             self.items = A.items_of(name, folder, data["sessions"])
         st = self.store
-        # a file at another version: a new label would make it this version, and its labels would stop counting
+        # a file at another version, or another engine's: a new label would make it this one, and its labels would stop counting
         self.behind = st.old_version not in (None, st.v) and bool(st.d["labels"])
         fresh = [p for p in self.items if not st.done(p)]
         self.todo = [p for p in fresh if self.settled(p)]
@@ -103,10 +114,16 @@ class Stage:
             return False
         return self.name != "weeks" or week_ended(p["id"], self.day)
 
-    def cost(self, n=None):
-        return per_item(self.store) * (len(self.todo) if n is None else n)
+    def cost(self, items=None):
+        items = self.todo if items is None else items
+        each = own_cost(self.store)
+        if each is None and self.engine == "jev":
+            return jev_cost(self.name, items)
+        return (FIRST_RUNS[self.name] if each is None else each) * len(items)
 
     def model(self):
+        if self.engine == "jev":
+            return "jev-latest"
         return DEFS[self.name].get("model") or ("haiku" if self.name in L.MESSAGE_SETS else "sonnet")
 
     def run(self, jobs, timeout):
@@ -117,11 +134,15 @@ class Stage:
         start = now()
         if self.name in L.MESSAGE_SETS:
             st.save()  # the skipped list and the start of your words, as label.py does before its calls
-            r = L.label(st, todo, self.model(), DEFS[self.name].get("per_call") or 50, jobs, timeout, True)
+            if self.engine == "jev":
+                r = L.label(st, todo, L.via_jev(self.name, self.model(), timeout), 1, jobs)
+            else:
+                r = L.label(st, todo, L.via_claude(self.name, self.model(), timeout, True), DEFS[self.name].get("per_call") or 50, jobs)
         else:
             per_call, max_chars = (5, 3 * A.SESSION_CHARS) if self.name == "sessions" else (1, A.DAY_CHARS)
             r = A.run_items(st, todo, None, self.model(), per_call, jobs, timeout, True, max_chars)
-        st.d["runs"].append({"start": start, "end": now(), "mode": "refresh", "v": st.v, "model": self.model(), "think": True,
+        st.d["runs"].append({"start": start, "end": now(), "mode": "refresh", "v": st.v, "model": self.model(),
+                             "think": None if self.engine == "jev" else True,
                              "todo": len(todo), "labelled": len(todo) - r["gave_up"], **r})
         st.save()
         print(f"{self.name}: done in {r['secs'] / 60:.1f} min, {r['calls']} calls, ${r['usd']:.2f}"
@@ -161,7 +182,7 @@ def plan(stages, day, claude_ok, unread):
     for s in stages:
         if s.behind:
             print(f"  {s.name:<11} v{s.store.old_version}  left as it is: this Wimym labels at v{s.store.v} "
-                  f"(a full relabel, about ${s.cost(len(s.items)):,.0f})")
+                  f"(a full relabel, about ${s.cost(s.items):,.0f})")
             continue
         if s.name == "rules" and s.waits_for:
             print(f"  {s.name:<11} waits for {s.waits_for}")
@@ -172,9 +193,10 @@ def plan(stages, day, claude_ok, unread):
         what = "grouped again" if s.name == "rules" else f"{noun(s.name, len(s.todo))} new"
         c = s.cost()
         total += c
-        print(f"  {s.name:<11} v{s.store.v}  {what:<28} about ${c:,.2f}  {s.model().capitalize()}")
-    print(f"\n  About ${total:,.2f} in all, list price: it counts against your Claude plan's usage." if total else
-          "\n  Nothing to send.")
+        print(f"  {s.name:<11} v{s.store.v}  {what:<28} about ${c:,.2f}  {'Jev' if s.engine == 'jev' else s.model().capitalize()}")
+    jev = any(s.engine == "jev" and s.todo and not s.behind for s in stages)
+    print(f"\n  About ${total:,.2f} in all, list price: Claude's calls count against your Claude plan's usage"
+          + (", Jev's are billed to your TypeSafe key." if jev else ".") if total else "\n  Nothing to send.")
     by = {s.name: s for s in stages if not s.behind}
     waits = [noun(n, len(by[n].waiting)) for n in ("categories", "sessions", "days") if n in by and by[n].waiting]
     if waits:
@@ -184,7 +206,7 @@ def plan(stages, day, claude_ok, unread):
         print(f"\nLeft as {'they are' if len(behind) > 1 else 'it is'}: {', '.join(s.name for s in behind)}. One label at this "
               "Wimym's version would make the whole file that version, and every older label in it would stop counting. "
               f"Bringing {'them' if len(behind) > 1 else 'it'} up means a full relabel, about "
-              f"${sum(s.cost(len(s.items)) for s in behind):,.0f} in all, built in a separate folder (docs/labels.md); "
+              f"${sum(s.cost(s.items) for s in behind):,.0f} in all, built in a separate folder (docs/labels.md); "
               "until then the page keeps showing the labels there as they are.")
     if unread:
         print(f"\n{unread:,} transcript{'s' if unread != 1 else ''} written before today "
@@ -207,7 +229,9 @@ def main(argv=None):
     a = ap.parse_args(argv)
     folder, day = os.path.expanduser(a.dir), today()
     prompts, skipped = L.load_prompts()
-    data = {"prompts": prompts, "skipped": skipped, "sessions": A.load_sessions()}
+    # the message sets' engine as label.py chooses it: Jev once --key has kept a key, else Haiku through claude
+    data = {"prompts": prompts, "skipped": skipped, "sessions": A.load_sessions(),
+            "engine": "jev" if os.path.exists(L.KEY_FILE) else "claude"}
     claude_ok = os.path.exists(L.CLAUDE_BIN)
     # each set's plan as the files are now: the later sets' counts are what's new now, their inputs once the
     # earlier sets have run (a day reads its sessions' accounts) are made again just before each one runs
