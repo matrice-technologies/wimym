@@ -213,11 +213,10 @@ ways, and the person picks:
 - **Jev, with their own TypeSafe key.** TypeSafe's Jev reads each message and picks the labels. It takes
   minutes and costs cents to a few dollars on their TypeSafe account, and their messages go to TypeSafe.
   Jev picks but doesn't write, so a few written details stay empty (what was decided, who was named).
-  Wimym shows Jev's labels everywhere but doesn't count them in the vital signs yet: it counts a label only
-  once a second judge has checked it, and Jev's labels haven't been checked yet.
+  Its main labels were checked by a second judge, so the vital signs count them, tone included.
 - **Haiku, on their Claude plan.** The labeller sends their messages to Claude Haiku through their own
-  logged-in `claude` command, which counts against their plan and can take an hour or more. Its main labels
-  are checked, so the vital signs count them.
+  logged-in `claude` command, which counts against their plan and can take an hour or more. It writes the
+  details Jev leaves empty, and its main labels are checked too (not tone).
 
 **If they choose Jev**, they need a key from https://console.typesafe.ai. The key is theirs to type: never
 ask them to paste it into this conversation, and never type it for them. Ask them to run this in a terminal

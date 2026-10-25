@@ -104,7 +104,7 @@ What differs from Haiku:
   `rule` in acts are always empty, and `rules.json`, which groups `rule`, has nothing to group. None of them is
   checked. Sessions, days, weeks and rules are accounts, not choices, and stay with Opus.
 - **Its own version.** Labels carry the version `<n>-jev` (`acts` v`4-jev`), so no mark a judge gave
-  Haiku's labels counts for them: every field is a reading until a judge checks Jev's. One label file holds
+  Haiku's labels counts for them; Jev's own judge (below) decides which fields count. One label file holds
   one engine's labels: a new person's Jev run writes straight into the labels folder, but a run that would
   set the other engine's labels aside stops. To try Jev beside Haiku's labels, run it with
   `--dir <labels>/jev` (which the engine doesn't read), and `--promote --engine jev --dir <labels>/jev` moves
@@ -142,7 +142,33 @@ clearest gain: Jev never inflated pleased or frustrated. Its intent misses lean 
 and towards plan or ship for "what's next?" questions. A Noul threshold of 0.5 was best or near best for `dec`,
 `dfr` and `nd`; 0.7 gained one or two on `dfr` and `nd`.
 
-None of this marks a Jev field checked: that needs a judge of Jev's own labels, blind to Haiku's.
+**Jev's own judge (25 Oct).** The comparison above leans on marks Opus gave Haiku's labels, so Jev's labels had
+their own judge, the way Haiku's had: `judge.py cards` from the Jev labels, 11 Opus judges of about 50 cards
+each who saw only Jev's labels and the definitions, then `judge.py score`. Samples: the 150 held-out acts
+messages (with the text fields left off the cards: Jev leaves them empty), and the stored random samples of
+categories (200) and signals (198). Cards, marks and scores are in `labels/judge/jev-acts-heldout`,
+`jev-categories` and `jev-signals`. Random cards right (Wilson 95%), next to Haiku's judge on the same kind of
+sample (acts: the held-out 150; categories and signals: the 22 Oct audit's random cards):
+
+| Field | Jev | Haiku | Checked for Jev |
+|---|---|---|---|
+| intent `in` | 180/195 (88–95%); every intent 70% or better as given | 18/19 | yes |
+| tone `to` | 200/200 (98–100%); pleased 5/5, frustrated 5/5, none missed | 17/19; pleased 2/6, frustrated 4/7 | yes, on 10 rare cases |
+| says what done looks like `sp` | 160/196 (76–86%); 34 missed yeses | 13/17 | no |
+| not typed `ag` | 199/200 | — | no (the text rule decides) |
+| acts `dfr` | 150/150 | 147/150 | yes |
+| acts `off` | 140/149 (89–97%) | 125/147 (78–90%) | yes |
+| acts `dom` | 146/148 | 140/142 | yes |
+| acts `ppl`, none against any | 139/150; mention as given 3/11 | 139/149; mention 3/7 | yes, none against any only |
+| acts `dec` | 142/149; true as given 15/19 | 133/148; true 14/24 | no: rare value |
+| acts `nd`, `st` | 145/150 (true 2/4), 149/150 (one non-none) | 146/150, 149/150 | no: too rare to measure |
+| signals `own`, `who`, `sc` | 190/197, 186/196, 182/197 | 19/20, 19/20, 17/20 | no measure uses them |
+| signals `pr`, `irk`, `pl` | 196/198 each; pr and pl true 0/2 | 20/20, 18/20, 18/20 | no |
+
+So `CHECKED` in `engine/wimym/labels.py` counts categories `in` and `to` and acts `dfr`, `dom`, `off` and `ppl`
+at version `4-jev`. Tone is a first: Haiku's never held up, so for a Jev user strain counts frustrated messages
+as well as corrections. Its rare values rest on 10 cases; a larger judge of pleased and frustrated is owed
+before reading much into a weekly share of them. The judges saw the labels they marked, as Haiku's judges did.
 
 ## Wording for anyone (23 Oct)
 

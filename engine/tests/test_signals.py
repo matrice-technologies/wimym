@@ -386,6 +386,10 @@ class Checked(unittest.TestCase):
         self.assertTrue(labels.checked("categories", "in", 2))     # the audited versions
         self.assertTrue(labels.checked("categories", "in", 3))
         self.assertFalse(labels.checked("categories", "in", 4))
+        self.assertTrue(labels.checked("categories", "to", "4-jev"))  # Jev's own judge, not Haiku's
+        self.assertFalse(labels.checked("categories", "sp", "4-jev"))
+        self.assertTrue(labels.checked("acts", "off", "4-jev"))
+        self.assertFalse(labels.checked("acts", "dec", "4-jev"))
         self.assertTrue(labels.checked("sessions", "goal", 5))
         self.assertFalse(labels.checked("sessions", "goal", 6))
 
