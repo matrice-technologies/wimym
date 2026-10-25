@@ -259,7 +259,7 @@ img, video { display: block; max-width: 100%; height: auto; }
 @media (min-width: 640px) { .row .pic { padding: 48px 32px; } }
 @media (min-width: 1024px) { .row .pic { min-height: 26rem; border-top: 0; border-left: 1px solid var(--border); } }
 .shot { margin: 0; width: 100%; }
-.shot a { display: block; overflow: hidden; border: 1px solid var(--border); background: var(--card); box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 18px 40px -18px rgba(0, 0, 0, .45); }
+.shot a { display: block; overflow: hidden; }
 .shot img, .shot video { display: block; width: 100%; height: auto; }
 .shot figcaption { margin-top: 12px; font-size: 13.5px; color: var(--muted-foreground); }
 .shot.tall { max-width: 340px; }
@@ -395,14 +395,14 @@ pre code { background: none; border: 0; padding: 0; font: inherit; overflow-wrap
         <div class="rp-hud">
           <div class="rp-clock">
             <p class="rp-label"><span class="star" aria-hidden="true">✦</span> One of Robin's days, replayed</p>
-            <b class="rp-time">23:38</b>
-            <p class="rp-date">Thursday 22 October · 216 messages · 7 projects</p>
+            <b class="rp-time">23:28</b>
+            <p class="rp-date">Thursday 22 October · 147 messages · 4 projects</p>
           </div>
           <dl class="rp-counts">
-            <div><dt>Messages</dt><dd data-c="msgs">216</dd></div>
-            <div><dt>Project switches</dt><dd data-c="sw">118</dd></div>
-            <div><dt>Go-aheads, three words or fewer</dt><dd data-c="quick">21</dd></div>
-            <div><dt>Agent sent back</dt><dd data-c="steer">18</dd></div>
+            <div><dt>Messages</dt><dd data-c="msgs">147</dd></div>
+            <div><dt>Project switches</dt><dd data-c="sw">66</dd></div>
+            <div><dt>Go-aheads, three words or fewer</dt><dd data-c="quick">28</dd></div>
+            <div><dt>Agent sent back</dt><dd data-c="steer">5</dd></div>
           </dl>
         </div>
         <div class="rp-strings"></div>
@@ -423,12 +423,12 @@ pre code { background: none; border: 0; padding: 0; font: inherit; overflow-wrap
           </div>
         </div>
         <ol class="rp-moments">
-          <li><button type="button" data-key="late" aria-pressed="false"><span class="mo-name">Losing the hours</span><span class="mo-num"><b>47</b> messages</span><span class="mo-fact">after 21:30, the hour Robin meant to stop. The last at 23:38.</span></button></li>
-          <li><button type="button" data-key="streak" aria-pressed="false"><span class="mo-name">No end of day</span><span class="mo-num"><b>36</b> days in a row</span><span class="mo-fact">without a day off, this one from 08:53 to 23:38.</span></button></li>
-          <li><button type="button" data-key="switch" aria-pressed="false"><span class="mo-name">Dispersion</span><span class="mo-num"><b>118</b> switches</span><span class="mo-fact">between 7 projects: one every 8 minutes.</span></button></li>
-          <li><button type="button" data-key="deep" aria-pressed="false"><span class="mo-name">Loss of depth</span><span class="mo-num"><b>30</b> minutes</span><span class="mo-fact">the longest stretch on one project before 18:00, from 14:04.</span></button></li>
-          <li><button type="button" data-key="quick" aria-pressed="false"><span class="mo-name">Rubber-stamping</span><span class="mo-num"><b>21</b> go-aheads</span><span class="mo-fact">of three words or fewer: “great, keep going”, “go for it”, “ok”.</span></button></li>
-          <li><button type="button" data-key="steer" aria-pressed="false"><span class="mo-name">Strain</span><span class="mo-num"><b>18</b> times sent back</span><span class="mo-fact">At 09:33: “This is the third try at the home screen widget; slow…”</span></button></li>
+          <li><button type="button" data-key="late" aria-pressed="false"><span class="mo-name">Losing the hours</span><span class="mo-num"><b>26</b> messages</span><span class="mo-fact">after 21:30, the hour Robin meant to stop. The last at 23:28.</span></button></li>
+          <li><button type="button" data-key="streak" aria-pressed="false"><span class="mo-name">No end of day</span><span class="mo-num"><b>35</b> days in a row</span><span class="mo-fact">without a day off, this one from 08:20 to 23:28.</span></button></li>
+          <li><button type="button" data-key="switch" aria-pressed="false"><span class="mo-name">Dispersion</span><span class="mo-num"><b>66</b> switches</span><span class="mo-fact">between 4 projects: one every 14 minutes.</span></button></li>
+          <li><button type="button" data-key="deep" aria-pressed="false"><span class="mo-name">Loss of depth</span><span class="mo-num"><b>40</b> minutes</span><span class="mo-fact">the longest stretch on one project before 18:00, from 16:41.</span></button></li>
+          <li><button type="button" data-key="quick" aria-pressed="false"><span class="mo-name">Rubber-stamping</span><span class="mo-num"><b>28</b> go-aheads</span><span class="mo-fact">of three words or fewer: “perfect, ship it”, “yes please”, “ok”.</span></button></li>
+          <li><button type="button" data-key="steer" aria-pressed="false"><span class="mo-name">Strain</span><span class="mo-num"><b>5</b> times sent back</span><span class="mo-fact">At 09:54: “This is the third try at the FAQ; slow down and read how…”</span></button></li>
         </ol>
         <figcaption>Each project is a string, plucked by every message at the hour it was sent. Point at a mark to read it. Robin is made up.</figcaption>
         <div class="dy-tip" hidden></div>
