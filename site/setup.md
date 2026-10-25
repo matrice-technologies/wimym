@@ -54,10 +54,9 @@ df -h ~ | tail -1; du -sh ~/.claude
   there; otherwise point to python.org and nodejs.org). Install only on a yes.
 - **Transcripts**: if `~/.claude/projects` is missing or empty, Wimym will start and show nothing yet.
   Say so; the person can still go on, and try the demo in step 4.
-- **The `claude` command**: labelling with Haiku in step 9 runs it, and looks only at
-  `~/.local/bin/claude`, where Claude Code's installer puts it. If it is somewhere else, note the path
-  `command -v claude` shows, for step 9. If there is none at all, everything else still works; only Haiku
-  labelling needs it.
+- **The `claude` command**: the labels in step 9 run it, from `~/.local/bin/claude` (where Claude Code's
+  installer puts it) or else from the PATH (`command -v claude`). If there is none at all, everything else
+  still works; only the labels need it.
 
 ## 2. Back up ~/.claude
 
@@ -227,28 +226,27 @@ up. The stopping hour and the sessions at once still speak, since they don't nee
 ## 9. Labels (optional)
 
 Some of what Wimym shows (tone, strain, what each message asks for) comes from a model reading the
-person's words. Before asking whether they want it, tell them what this step gives today and what it
-doesn't:
+person's words. Before asking whether they want it, tell them what this step gives:
 
-- **It gives** labels on each message: what it asks for, and with Jev also its tone and what it does.
-  The vital signs count a label only once a second judge has checked its version. Today that is what each
-  message asks for, with either way below, and tone and what it does with Jev. That fills strain,
-  corrections and the other rows that say they wait for labels.
-- **It doesn't give** the accounts: a few written sentences for each session, each day and each week,
-  and the instructions they keep repeating, grouped. A stronger model (mostly Opus, on their plan) writes
-  those from the labels, and this guide doesn't run it yet. **The week** page tells the days from them,
-  and `/retro` reads them, so until they exist the retro works from the numbers and the messages alone.
+- **Labels on each message**: what it asks for, and with Jev also its tone and what it does. The vital
+  signs count a label only once a second judge has checked its version. Today that is what each message
+  asks for, with either way below, and tone and what it does with Jev. That fills strain, corrections and
+  the other rows that say they wait for labels.
+- **The accounts**: a few written sentences for each session, each day and each week, and the
+  instructions they keep repeating, grouped. Claude Opus writes those on their plan, whichever way they
+  pick below. **The week** page tells the days from them, and `/retro` reads them.
 
-Ask whether they want the labels at all; skip the step on anything but a yes. Then there are two ways,
-and the person picks:
+Ask whether they want the labels at all; skip the step on anything but a yes. Then there are two ways
+to label the messages, and the person picks:
 
 - **Jev, with their own TypeSafe key.** TypeSafe's Jev reads each message and picks the labels. It takes
   minutes and costs cents to a few dollars on their TypeSafe account, and their messages go to TypeSafe.
-  Jev picks but doesn't write, so a few written details stay empty (what was decided, who was named).
-  Its main labels were checked by a second judge, so the vital signs count them, tone included.
+  Jev picks but doesn't write, so a few written details stay empty (what was decided, who was named, the
+  rules they repeat). Its main labels were checked by a second judge, so the vital signs count them, tone
+  included.
 - **Haiku, on their Claude plan.** The labeller sends their messages to Claude Haiku through their own
-  logged-in `claude` command, which counts against their plan and can take an hour or more. It writes the
-  details Jev leaves empty, and its main labels are checked too (not tone).
+  logged-in `claude` command, which counts against their plan and can take an hour or more the first time.
+  It writes the details Jev leaves empty, and its main labels are checked too (not tone).
 
 **If they choose Jev**, they need a key from https://console.typesafe.ai. The key is theirs to type: never
 ask them to paste it into this conversation, and never type it for them. Ask them to run this in a terminal
@@ -263,33 +261,29 @@ readable by them only; from then on the labeller uses Jev. Check it is there wit
 `test -f ~/.wimym/typesafe.key && echo kept`, never by reading it, and add it to your list (undo: delete the
 file, and the labeller goes back to Haiku). If they change their mind, go on with Haiku.
 
-**Either way**, show how much it would read and what it would cost, without sending anything:
+**Either way**, one command does the whole chain: the message labels, then the accounts, each set in the
+order it builds on the others, and only on what is new since the last run. Today is left out, and so is
+the week in progress: they would only be written again later. First show what it would send and what it
+would cost, without sending anything:
 
 ```bash
-cd WIMYM && python3 labeller/label.py --dry-run
+cd WIMYM && python3 labeller/refresh.py --dry-run
 ```
 
-If `claude` isn't at `~/.local/bin/claude` (step 1), put `CLAUDE_BIN=<the path>` in front of each
-labeller command for Haiku, for example `CLAUDE_BIN=/opt/homebrew/bin/claude python3 labeller/label.py --all`.
+(With the `wimym` command from step 6, `wimym label --dry-run` is the same.) Tell the person, in a line or
+two, what it lists and the total it gives: a list price, which on Claude counts against their plan's usage
+and on Jev is billed to their key. If it says the `claude` command can't be found, the accounts (and Haiku)
+can't run: say so, and stop the step there.
 
-<!-- A single `wimym label` command is coming: the whole chain (these sets and the accounts), with a dry
-run of the cost first. When it lands, its commands replace the ones below, and "It doesn't give" above
-changes with them. -->
-
-Only on a clear yes, run it in the background. With Jev, label all three sets, in this order (the second
-and third skip what the first finds the person didn't type):
+Only on a clear yes, run it in the background with a long timeout:
 
 ```bash
-cd WIMYM && python3 labeller/label.py --all --jobs 8 && python3 labeller/label.py --set signals --all --jobs 8 && python3 labeller/label.py --set acts --all --jobs 8
+cd WIMYM && python3 labeller/refresh.py --yes
 ```
 
-With Haiku, the first set only, since each set takes a while on their plan:
-
-```bash
-cd WIMYM && python3 labeller/label.py --all
-```
-
-The **Labels** page shows what each label means and how far it has been checked.
+Run without `--yes`, it only shows the plan again, since it asks before sending and there is no terminal to
+ask in. A rerun only does what is still missing, so if it stops part way, running it again picks up from
+there. The **Labels** page shows what each label means and how far it has been checked.
 
 ## 10. Wrap up
 
@@ -304,6 +298,8 @@ Give the person a short summary:
   redoes what changed); `./install.sh --stop` stops it. To update: `cd WIMYM && ./install.sh --update`,
   which says what is new and restarts Wimym onto it. The page says when a new version is out.
 - The retro is the heart of it: once a week, `/retro` (with the skills) or **The week** on the page.
+  With the labels from step 9, `/retro` first offers to label the week's new work, with its cost; any
+  other time, `wimym label` (or `python3 labeller/refresh.py`) does the same.
 - The first month is thin: the usual range needs four earlier weeks, and a flag two weeks running
   outside it, so it fills in over the next month or two.
 
@@ -330,8 +326,8 @@ Claude Code session) so the PATH has it.
 
    Offer what is missing, on a yes: `winget install Python.Python.3.12`, `winget install OpenJS.NodeJS.LTS`,
    `winget install Git.Git`, and `winget install GitHub.cli` for step 3. `python3` on Windows is often a
-   shortcut to the Microsoft Store, not Python: use `py -3`. Haiku labelling looks for `claude` only at
-   `$HOME\.local\bin\claude.exe`; if it is elsewhere, note the path for step 9.
+   shortcut to the Microsoft Store, not Python: use `py -3`. The labels in step 9 run `claude`, from
+   `$HOME\.local\bin\claude.exe` or else the PATH.
 2. **Back up.** `Copy-Item -Recurse $HOME\.claude "$HOME\Backups\claude-$(Get-Date -Format yyyy-MM-dd)"`,
    then compare the sizes as in step 1. The settings file is `$HOME\.claude\settings.json`; check it with
    `py -3 -m json.tool $HOME\.claude\settings.json > $null`.
@@ -355,9 +351,10 @@ Claude Code session) so the PATH has it.
    are `py -3` and the full path with forward slashes, which every shell Claude Code uses on Windows reads
    the same: `"command": "py -3 C:/Users/NAME/wimym/hooks/limits.py"` for the two hooks, and
    `"statusLine": { "type": "command", "command": "py -3 C:/Users/NAME/wimym/hooks/limits.py --status" }`.
-9. **Labels.** `py -3 labeller\label.py --key` for Jev (the person runs it), then `--dry-run`, then `--all`
-   (and the other two sets with Jev). If `claude.exe` is elsewhere, set `$env:CLAUDE_BIN = "<the path>"`
-   first. The labeller has not been tried on Windows yet: if it fails, stop and say so.
+9. **Labels.** `py -3 labeller\label.py --key` for Jev (the person runs it), then
+   `py -3 labeller\refresh.py --dry-run`, then `--yes`. If `claude.exe` is neither in `$HOME\.local\bin` nor
+   on the PATH, set `$env:CLAUDE_BIN = "<the path>"` first. The labeller has not been tried on Windows yet: if
+   it fails, stop and say so.
 10. **Day to day.** Wimym doesn't start at login: `cd $HOME\wimym; .\install.cmd` starts it again after a
     restart, `.\install.cmd --stop` stops it, `.\install.cmd --update` updates it. Undo a junction with
     `cmd /c rmdir "$HOME\.claude\skills\wimym"`, which removes only the junction. Never `Remove-Item` on it:
