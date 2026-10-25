@@ -16,6 +16,9 @@ in progress: a day still going would be written again tomorrow, when its input h
 set, what it would send and about what it would cost (each set's own cost per item at its version, or the first full
 runs' figures below until it has enough), and sends nothing without a yes: `--dry-run` only says, `--yes` sends
 without asking, and without a terminal it stops at the plan. The weekly retro runs the dry run first.
+The message sets go to Jev once `label.py --key` has kept a TypeSafe key, as `label.py` chooses (their cost then
+comes from the tokens each request carries, billed to that key); sessions, days, weeks and rules always go through
+`claude -p`.
 
 A set whose file is at an older version than `definitions.json` is left as it is: one label at the new version
 makes the whole file that version, and every older label in it stops counting. That takes a full relabel, below.
