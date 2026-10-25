@@ -87,8 +87,10 @@ def rules():
 # Everything else is shown as a reading, never counted.
 # The judged versions before the wording was made neutral for anyone (categories v4, acts v4, sessions v6, days v6)
 # keep their marks here, so labels made before that change still count until a relabel replaces them.
+# Jev's labels ("<n>-jev") had their own Opus judge on 25 Oct (labels/judge/jev-*, docs/labels.md).
 CHECKED = {("categories", 2): {"in"}, ("categories", 3): {"in"},   # (set, version) → fields known to be good enough to count
            ("acts", 3): {"dfr", "dom", "off", "ppl"},
+           ("categories", "4-jev"): {"in", "to"}, ("acts", "4-jev"): {"dfr", "dom", "off", "ppl"},
            ("sessions", 5): {"goal", "outcome", "decisions", "rework", "people", "account"},
            ("days", 5): {"decided", "dropped", "postponed"}}
 _heads = {}

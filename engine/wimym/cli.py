@@ -478,7 +478,8 @@ def cmd_show(a):
                 extra.append(f"{x['field']} {clip(x['value'], 60)}")
                 seen.add(x["field"])
         if lab or extra:
-            out("labels (Haiku): " + ", ".join(lab + extra))
+            by = "Jev" if any(str(x["version"]).endswith("-jev") for x in labs) else "Haiku"
+            out(f"labels ({by}): " + ", ".join(lab + extra))
     if before and before["reply"] and a.context:
         out(f"\n--- Claude, just before\n{clip(before['reply'], 600)}")
     text = r["text"] or ""

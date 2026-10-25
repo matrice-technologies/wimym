@@ -204,18 +204,47 @@ Wimym's (`9h35 today · 85 days in a row`); keep theirs unless they say so. Back
 `~/.claude/settings.json.before-wimym` first if that copy doesn't exist, show the person the change
 before writing it, write it on their yes, and check it parses with `python3 -m json.tool`.
 
-## 9. Labels (optional, uses their Claude plan)
+## 9. Labels (optional)
 
 Some of what Wimym shows (tone, strain, what each message asks for) comes from a model reading the
-person's words. The labeller sends their messages to Claude Haiku through their own logged-in `claude`
-command, which counts against their plan. Say so, then show how much it would read, without sending
-anything:
+person's words. Ask whether they want that at all; skip the step on anything but a yes. Then there are two
+ways, and the person picks:
+
+- **Jev, with their own TypeSafe key.** TypeSafe's Jev reads each message and picks the labels. It takes
+  minutes and costs cents to a few dollars on their TypeSafe account, and their messages go to TypeSafe.
+  Jev picks but doesn't write, so a few written details stay empty (what was decided, who was named).
+  Its main labels were checked by a second judge, so the vital signs count them, tone included.
+- **Haiku, on their Claude plan.** The labeller sends their messages to Claude Haiku through their own
+  logged-in `claude` command, which counts against their plan and can take an hour or more. It writes the
+  details Jev leaves empty, and its main labels are checked too (not tone).
+
+**If they choose Jev**, they need a key from https://console.typesafe.ai. The key is theirs to type: never
+ask them to paste it into this conversation, and never type it for them. Ask them to run this in a terminal
+of their own (it needs one to ask for the key), and tell you when it says the key is kept:
+
+```bash
+cd WIMYM && python3 labeller/label.py --key
+```
+
+It asks for the key without showing it, checks it with TypeSafe, and keeps it in `~/.wimym/typesafe.key`,
+readable by them only; from then on the labeller uses Jev. Check it is there with
+`test -f ~/.wimym/typesafe.key && echo kept`, never by reading it, and add it to your list (undo: delete the
+file, and the labeller goes back to Haiku). If they change their mind, go on with Haiku.
+
+**Either way**, show how much it would read and what it would cost, without sending anything:
 
 ```bash
 cd WIMYM && python3 labeller/label.py --dry-run
 ```
 
-Only on a clear yes, and then in the background since it can take a while:
+Only on a clear yes, run it in the background. With Jev, label all three sets, in this order (the second
+and third skip what the first finds the person didn't type):
+
+```bash
+cd WIMYM && python3 labeller/label.py --all --jobs 8 && python3 labeller/label.py --set signals --all --jobs 8 && python3 labeller/label.py --set acts --all --jobs 8
+```
+
+With Haiku, the first set only, since each set takes a while on their plan:
 
 ```bash
 cd WIMYM && python3 labeller/label.py --all
@@ -282,8 +311,9 @@ Claude Code session) so the PATH has it.
    are `py -3` and the full path with forward slashes, which every shell Claude Code uses on Windows reads
    the same: `"command": "py -3 C:/Users/NAME/wimym/hooks/limits.py"` for the two hooks, and
    `"statusLine": { "type": "command", "command": "py -3 C:/Users/NAME/wimym/hooks/limits.py --status" }`.
-9. **Labels.** `py -3 labeller\label.py --dry-run`, then `--all`. The labeller has not been tried on Windows
-   yet: if it fails, stop and say so.
+9. **Labels.** `py -3 labeller\label.py --key` for Jev (the person runs it), then `--dry-run`, then `--all`
+   (and the other two sets with Jev). The labeller has not been tried on Windows yet: if it fails, stop and
+   say so.
 10. **Day to day.** `cd $HOME\wimym; .\install.cmd` starts it again after a restart, `.\install.cmd --stop`
     stops it, `.\install.cmd --update` updates it. Undo a junction with
     `cmd /c rmdir "$HOME\.claude\skills\wimym"`, which removes only the junction. Never `Remove-Item` on it:

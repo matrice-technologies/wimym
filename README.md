@@ -90,9 +90,10 @@ Set a stopping hour, days off a week or a ceiling on sessions at once, on the fr
   serves the page and `/api/*` on 127.0.0.1 only. Tests: `python3 -m unittest discover -s engine/tests`;
   CI (`.github/workflows/ci.yml`) runs them on Windows and Linux, then the installer for real (`.github/smoke.py`).
 - `app/`: Vite, React and TypeScript, d3. `lab/`: the hero (three.js) and its prototypes.
-- `labeller/`: model labels through your logged-in `claude` CLI: what each message asks for and does,
-  an account of each session and each day, and repeated instructions. Their wording, versions and
-  measured accuracy are in [docs/labels.md](docs/labels.md); a label feeds a measure only once checked.
+- `labeller/`: model labels through your logged-in `claude` CLI (or TypeSafe's Jev for the message sets):
+  what each message asks for and does, an account of each session and each day, and repeated instructions.
+  Their wording, versions and measured accuracy are in [docs/labels.md](docs/labels.md); a label feeds a
+  measure only once checked.
 - `~/.wimym/`: what you enter (check-ins, limits, practices, the growth log, retros) and the labels.
   Not a cache: keep it.
 - `WIMYM_DATA`, `WIMYM_LABELS`, `WIMYM_CACHE` and `WIMYM_PORT` move these (the older `MIRROR_*` names
@@ -118,9 +119,9 @@ refuses, because the two histories share no commit.
 Wimym reads everything where it is, and sends nothing of yours anywhere itself. The server listens on
 127.0.0.1, answers only requests whose `Host` is this machine, and takes input only as JSON from its
 own page. Text leaves the Mac only when you run the labeller or ask Claude through the skills, and then
-it goes to Claude, which saw it the first time. Pull requests and reviews are read from GitHub, through
-your `gh` login, only if you turn it on (`{"github": true}` in `~/.wimym/settings.json`, or
-`WIMYM_GITHUB=1`); it is off by default.
+it goes to Claude, which saw it the first time, or to TypeSafe when you run the labeller with
+`--engine jev`. Pull requests and reviews are read from GitHub, through your `gh` login, only if you
+turn it on (`{"github": true}` in `~/.wimym/settings.json`, or `WIMYM_GITHUB=1`); it is off by default.
 
 Once a day the engine asks the repository it was cloned from which version is the latest (`git ls-remote`,
 with your own git login, and nothing of yours in the question), so the page can say when a newer one is

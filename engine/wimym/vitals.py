@@ -467,7 +467,7 @@ class Vitals:
             (["messages saying you are tired, stressed, low or unwell"] if state else []) + \
             (["messages finding that what Claude called done wasn't"] if nd else [])
         left = [x for x, ok in (("tone", tone), ("self-state", state), ("not done after all", nd)) if not ok]
-        note = (f"{', '.join(parts)}, from Haiku's labels on {round(100 * lab / max(1, len(self.sig.msgs)))}% of your messages"
+        note = (f"{', '.join(parts)}, from the model's labels on {round(100 * lab / max(1, len(self.sig.msgs)))}% of your messages"
                 + (f"; {' and '.join(left)} wait until their labels are checked" if left else "")
                 + "; reply length late in the day and check-in energy aren't in it yet")
         return daily, weekly, note, ev
@@ -498,7 +498,7 @@ class Vitals:
         for w in self.weeks:
             n = sum(daily_n[d] for d in self.wk_days[w])
             weekly.append(rnd(100 * sum(daily_ok[d] for d in self.wk_days[w]) / n) if n >= 10 else None)
-        return daily, weekly, "build and fix requests, from Haiku's labels; the next labelled message in the session decides", ev
+        return daily, weekly, "build and fix requests, from the model's labels; the next labelled message in the session decides", ev
 
     def m_leverage(self):
         if not self.git_read:

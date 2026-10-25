@@ -556,7 +556,7 @@ def _labels_rows():
             if not isinstance(l, dict):
                 continue
             for f, v in l.items():
-                if f in ("h", "v", "w"):
+                if f in ("h", "v", "w", "p"):  # p: Jev's probabilities behind the label (labeller/label.py)
                     continue
                 rows.append({"id": mid, "set": sset, "field": f,
                              "value": json.dumps(v, ensure_ascii=False) if isinstance(v, (list, dict)) else
