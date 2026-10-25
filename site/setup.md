@@ -26,6 +26,9 @@ What it shows: https://wimym.matricetechnologies.com
 - **Keep a list as you go** of everything you created or changed, with how to undo it. You give it to
   the person at the end.
 - The person may not be a developer. Plain words; commands only when they help.
+- **Claude Code asks too.** Besides the questions this guide has you ask, Claude Code shows its own
+  permission prompts before some commands and edits. Tell the person at the start, so a second
+  question for the same step doesn't surprise them.
 
 Shell commands below assume zsh or bash on macOS. On Windows, follow the same steps with the commands in
 **On Windows** at the end of this page. `WIMYM` stands for the Wimym folder (step 3).
@@ -37,6 +40,7 @@ Run these and report the results in one short paragraph:
 ```bash
 uname -s; sw_vers -productVersion
 python3 -V; node -v; npm -v; git --version; gh --version | head -1
+ls -l ~/.local/bin/claude; command -v claude
 ls -d ~/.claude/projects && find ~/.claude/projects -name '*.jsonl' | wc -l
 df -h ~ | tail -1; du -sh ~/.claude
 ```
@@ -50,6 +54,10 @@ df -h ~ | tail -1; du -sh ~/.claude
   there; otherwise point to python.org and nodejs.org). Install only on a yes.
 - **Transcripts**: if `~/.claude/projects` is missing or empty, Wimym will start and show nothing yet.
   Say so; the person can still go on, and try the demo in step 4.
+- **The `claude` command**: labelling with Haiku in step 9 runs it, and looks only at
+  `~/.local/bin/claude`, where Claude Code's installer puts it. If it is somewhere else, note the path
+  `command -v claude` shows, for step 9. If there is none at all, everything else still works; only Haiku
+  labelling needs it.
 
 ## 2. Back up ~/.claude
 
@@ -131,6 +139,13 @@ If port 8990 is taken it says so: rerun with `--port 8991`, and use that port fr
 Check it answered: `curl -s http://127.0.0.1:8990/api/state | head -c 300`. Point the person to the page:
 the planet is their days, every message a light; **This week** comes first, **The week** is the retro.
 
+Tell them, too, that the first month will look thin. Claude Code keeps about 30 days of transcripts unless
+step 2 changed that, so Wimym starts with about four weeks. A week is compared with the weeks before it:
+the usual range appears only once there are four earlier weeks, and a row is flagged only when two weeks
+in a row fall outside it. So for the first weeks most rows show numbers with no range and no flags, and
+"against your own usual" fills in over the next month or two. A longer `cleanupPeriodDays` only keeps
+transcripts from now on; it can't bring back ones already deleted.
+
 ## 6. The wimym command (optional)
 
 Offer to link the `wimym` command, which answers questions from a local copy of everything Wimym
@@ -204,11 +219,28 @@ Wimym's (`9h35 today · 85 days in a row`); keep theirs unless they say so. Back
 `~/.claude/settings.json.before-wimym` first if that copy doesn't exist, show the person the change
 before writing it, write it on their yes, and check it parses with `python3 -m json.tool`.
 
+Tell them what happens after a restart. Wimym doesn't start at login: until `./install.sh` runs again,
+the engine is off, and the status line and the hook read what it last wrote. They go quiet without
+saying why: the status line shows no hours for today, and its count of days in a row stops keeping
+up. The stopping hour and the sessions at once still speak, since they don't need the engine.
+
 ## 9. Labels (optional)
 
 Some of what Wimym shows (tone, strain, what each message asks for) comes from a model reading the
-person's words. Ask whether they want that at all; skip the step on anything but a yes. Then there are two
-ways, and the person picks:
+person's words. Before asking whether they want it, tell them what this step gives today and what it
+doesn't:
+
+- **It gives** labels on each message: what it asks for, and with Jev also its tone and what it does.
+  The vital signs count a label only once a second judge has checked its version. Today that is what each
+  message asks for, with either way below, and tone and what it does with Jev. That fills strain,
+  corrections and the other rows that say they wait for labels.
+- **It doesn't give** the accounts: a few written sentences for each session, each day and each week,
+  and the instructions they keep repeating, grouped. A stronger model (mostly Opus, on their plan) writes
+  those from the labels, and this guide doesn't run it yet. **The week** page tells the days from them,
+  and `/retro` reads them, so until they exist the retro works from the numbers and the messages alone.
+
+Ask whether they want the labels at all; skip the step on anything but a yes. Then there are two ways,
+and the person picks:
 
 - **Jev, with their own TypeSafe key.** TypeSafe's Jev reads each message and picks the labels. It takes
   minutes and costs cents to a few dollars on their TypeSafe account, and their messages go to TypeSafe.
@@ -237,6 +269,13 @@ file, and the labeller goes back to Haiku). If they change their mind, go on wit
 cd WIMYM && python3 labeller/label.py --dry-run
 ```
 
+If `claude` isn't at `~/.local/bin/claude` (step 1), put `CLAUDE_BIN=<the path>` in front of each
+labeller command for Haiku, for example `CLAUDE_BIN=/opt/homebrew/bin/claude python3 labeller/label.py --all`.
+
+<!-- A single `wimym label` command is coming: the whole chain (these sets and the accounts), with a dry
+run of the cost first. When it lands, its commands replace the ones below, and "It doesn't give" above
+changes with them. -->
+
 Only on a clear yes, run it in the background. With Jev, label all three sets, in this order (the second
 and third skip what the first finds the person didn't type):
 
@@ -260,10 +299,13 @@ Give the person a short summary:
 - The list you kept: everything created or changed, each with how to undo it (remove the links,
   restore `~/.claude/settings.json.before-wimym`, delete `~/.cache/wimym`; `~/.wimym` holds what
   they enter, so only on purpose).
-- Day to day: `cd WIMYM && ./install.sh` starts it again after a restart and only redoes what changed;
-  `./install.sh --stop` stops it. To update: `cd WIMYM && ./install.sh --update`, which says what is new
-  and restarts Wimym onto it. The page says when a new version is out.
+- Day to day: Wimym doesn't start at login. After a restart the page doesn't open, and the status
+  line and the hook quietly fall behind, until `cd WIMYM && ./install.sh` starts it again (it only
+  redoes what changed); `./install.sh --stop` stops it. To update: `cd WIMYM && ./install.sh --update`,
+  which says what is new and restarts Wimym onto it. The page says when a new version is out.
 - The retro is the heart of it: once a week, `/retro` (with the skills) or **The week** on the page.
+- The first month is thin: the usual range needs four earlier weeks, and a flag two weeks running
+  outside it, so it fills in over the next month or two.
 
 Wimym shows signs and diagnoses nothing; it is not a clinical tool.
 
@@ -280,6 +322,7 @@ Claude Code session) so the PATH has it.
    ```powershell
    [Environment]::OSVersion.VersionString
    py -3 -V; node -v; npm -v; git --version; gh --version
+   Test-Path $HOME\.local\bin\claude.exe; (Get-Command claude -ErrorAction SilentlyContinue).Source
    (Get-ChildItem $HOME\.claude\projects -Recurse -Filter *.jsonl -ErrorAction SilentlyContinue).Count
    Get-PSDrive ($HOME.Substring(0, 1)) | Select-Object Used, Free
    "{0:N0} MB" -f ((Get-ChildItem $HOME\.claude -Recurse -File | Measure-Object Length -Sum).Sum / 1MB)
@@ -287,7 +330,8 @@ Claude Code session) so the PATH has it.
 
    Offer what is missing, on a yes: `winget install Python.Python.3.12`, `winget install OpenJS.NodeJS.LTS`,
    `winget install Git.Git`, and `winget install GitHub.cli` for step 3. `python3` on Windows is often a
-   shortcut to the Microsoft Store, not Python: use `py -3`.
+   shortcut to the Microsoft Store, not Python: use `py -3`. Haiku labelling looks for `claude` only at
+   `$HOME\.local\bin\claude.exe`; if it is elsewhere, note the path for step 9.
 2. **Back up.** `Copy-Item -Recurse $HOME\.claude "$HOME\Backups\claude-$(Get-Date -Format yyyy-MM-dd)"`,
    then compare the sizes as in step 1. The settings file is `$HOME\.claude\settings.json`; check it with
    `py -3 -m json.tool $HOME\.claude\settings.json > $null`.
@@ -312,9 +356,9 @@ Claude Code session) so the PATH has it.
    the same: `"command": "py -3 C:/Users/NAME/wimym/hooks/limits.py"` for the two hooks, and
    `"statusLine": { "type": "command", "command": "py -3 C:/Users/NAME/wimym/hooks/limits.py --status" }`.
 9. **Labels.** `py -3 labeller\label.py --key` for Jev (the person runs it), then `--dry-run`, then `--all`
-   (and the other two sets with Jev). The labeller has not been tried on Windows yet: if it fails, stop and
-   say so.
-10. **Day to day.** `cd $HOME\wimym; .\install.cmd` starts it again after a restart, `.\install.cmd --stop`
-    stops it, `.\install.cmd --update` updates it. Undo a junction with
+   (and the other two sets with Jev). If `claude.exe` is elsewhere, set `$env:CLAUDE_BIN = "<the path>"`
+   first. The labeller has not been tried on Windows yet: if it fails, stop and say so.
+10. **Day to day.** Wimym doesn't start at login: `cd $HOME\wimym; .\install.cmd` starts it again after a
+    restart, `.\install.cmd --stop` stops it, `.\install.cmd --update` updates it. Undo a junction with
     `cmd /c rmdir "$HOME\.claude\skills\wimym"`, which removes only the junction. Never `Remove-Item` on it:
     in Windows PowerShell 5 that can delete what is inside the folder it points to.
