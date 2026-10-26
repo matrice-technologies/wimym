@@ -581,16 +581,16 @@ pre code { background: none; border: 0; padding: 0; font: inherit; overflow-wrap
           <p class="card-top"><span>Claude Code</span><span>One prompt</span></p>
           <div class="card-body">
             <h3>Let Claude set it up</h3>
-            <p>Paste this into Claude Code. It reads the setup guide, checks your computer, and asks you everything at once before it changes anything. Then it does what you chose, saying what each step does.</p>
+            <p>Paste this into Claude Code. It reads the setup guide, checks your computer, and asks you one question before it changes anything: whether Wimym may change your Claude Code setup. Then it does what you chose, saying what each step does.</p>
             <pre><code>Set up Wimym on this computer for me. Read the guide with curl -fsSL https://wimym.matricetechnologies.com/setup.md and follow it step by step: say what each step does, and ask me before anything that changes my computer.</code></pre>
-            <p>It offers a backup of <code>~/.claude</code>, the demo, the command, the skills, the limits and the labels, then gets the code and starts Wimym on your own record. It comes back to you only for a TypeSafe key, if you want one, and to show you what the labels cost before it sends anything. You still need your GitHub account invited to the private repository; Claude checks, and tells you which account to give. The guide it follows: <a href="/setup.md">setup.md</a>.</p>
+            <p>Say to leave your Claude Code setup as it is, and nothing in <code>~/.claude</code> is written, now or later. Otherwise it keeps your transcripts for a year and adds the <code>/wimym</code> and <code>/retro</code> skills. Either way it backs up <code>~/.claude</code>, gets the code, adds the <code>wimym</code> command and starts Wimym on your own record, unless you say otherwise. It comes back to you only to show you what the labels cost before it sends anything. You still need your GitHub account invited to the private repository; Claude checks, and tells you which account to give. The guide it follows: <a href="/setup.md">setup.md</a>.</p>
           </div>
         </div>
       </div>
 
       <details class="by-hand">
       <summary><span><span class="star" aria-hidden="true">✦</span>Or set it up by hand</span><span class="count">// 8 steps <svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span></summary>
-      <p class="intro">The same steps, as commands to run yourself.</p>
+      <p class="intro">The same steps, as commands to run yourself. Only the transcript setting below and the optional skills and limits change your Claude Code setup: skip them and nothing in <code>~/.claude</code> changes.</p>
 
       <div class="warn" role="note">
         <h3>First, back up ~/.claude</h3>

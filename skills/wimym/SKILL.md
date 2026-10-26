@@ -42,7 +42,8 @@ The commands:
 | `wimym practice list\|check` | practices in flight and whether they held |
 | `wimym log list` | the growth log: what was concluded before |
 | `wimym limits` | the stopping hour and other limits the person set |
-| `wimym rules [draft <n>]` | instructions the person keeps giving the agents, whether a memory note already says it, and a draft note to approve. It never writes to ~/.claude |
+| `wimym rules [draft <n>]` | instructions the person keeps giving the agents, whether a memory note already says it, and a draft note to approve. It never writes to ~/.claude, and drafts nothing when the person chose to leave their Claude Code setup as it is |
+| `wimym claude-setup` | whether the person lets Wimym offer changes to their Claude Code setup: `none` means never offer a memory note, a CLAUDE.md line, a skill or a hook |
 | `wimym label --dry-run` | what the labeller hasn't read yet (today waits) and about what labelling it would cost; sends nothing. `wimym label --yes` sends it, only on the person's yes: it counts against their Claude plan |
 
 Output is short on purpose. Ask for `--json` or `--limit` only when you need more.
@@ -93,6 +94,7 @@ Besides numbers, the database holds a model's readings of the record. They are n
 - **Rules** (`wimym rules`): instructions given again and again, a sign the agents keep forgetting
   something. When a question touches repeated friction, look there: a rule given five times is a
   practice to give the agents (`wimym rules draft <n>` proposes the text; only the person adds it).
+  If `wimym claude-setup` says `none`, it stays a practice of the person's own: don't offer the draft.
 
 ## Shape of an answer
 

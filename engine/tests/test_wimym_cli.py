@@ -101,7 +101,7 @@ class PersonsFiles(unittest.TestCase):
         # only the person's three files and their set-aside copies, only inside the tests' folder
         assert _in_tests_tmp(paths.DATA_DIR)
         os.makedirs(paths.DATA_DIR, exist_ok=True)
-        for n in ("practices.json", "limits.json", "log.jsonl"):
+        for n in ("practices.json", "limits.json", "log.jsonl", "settings.json"):
             for p in glob.glob(practices.path(n)) + glob.glob(practices.path(n) + ".bad-*"):
                 os.remove(p)
 
@@ -131,6 +131,29 @@ class PersonsFiles(unittest.TestCase):
         with practices._lock:  # store.py writes priorities under this lock and may call set_limit inside it
             practices.set_limit("stopHour", 21)
         self.assertEqual(practices.limits()["stopHour"], 21)
+
+    def test_claude_setup_keeps_the_other_settings(self):
+        p = practices.path("settings.json")
+        self.assertIsNone(practices.claude_setup())  # never asked
+        open(p, "w").write('{"github": true, "updates": false}')
+        practices.set_claude_setup("none")
+        self.assertEqual(json.load(open(p)), {"github": True, "updates": False, "claudeSetup": "none"})
+        self.assertEqual(practices.claude_setup(), "none")
+        with self.assertRaises(ValueError):
+            practices.set_claude_setup("all")
+
+    def test_unreadable_settings_are_set_aside_not_wiped(self):
+        p = practices.path("settings.json")
+        open(p, "w").write('{"github": true,}')
+        with self.assertRaises(practices.BadFile):
+            practices.set_claude_setup("recommended")
+        self.assertEqual(len(glob.glob(p + ".bad-*")), 1)
+
+    def test_rules_draft_is_refused_when_claude_is_left_alone(self):
+        practices.set_claude_setup("none")
+        with self.assertRaises(SystemExit) as e:
+            cli.main(["rules", "draft", "1"])
+        self.assertIn("leave your Claude Code setup", str(e.exception.code))
 
 
 class ShortIds(unittest.TestCase):
