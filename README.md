@@ -32,8 +32,9 @@ into Claude Code:
 Set up Wimym on this computer for me. Read the guide with curl -fsSL https://wimym.matricetechnologies.com/setup.md and follow it step by step: say what each step does, and ask me before anything that changes my computer.
 ```
 
-The guide it follows is [site/setup.md](site/setup.md): the backup, the checks, the code, the demo,
-your own record, then the command, the skills, the limits and the labels, each offered.
+The guide it follows is [site/setup.md](site/setup.md): the checks, then every question at once (the
+backup, the demo, the command, the skills, the limits and the labels, each offered), then the steps
+without stopping, back to you only for a TypeSafe key and the price of the labels.
 
 ## What you see
 

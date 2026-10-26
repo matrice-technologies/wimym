@@ -581,9 +581,9 @@ pre code { background: none; border: 0; padding: 0; font: inherit; overflow-wrap
           <p class="card-top"><span>Claude Code</span><span>One prompt</span></p>
           <div class="card-body">
             <h3>Let Claude set it up</h3>
-            <p>Paste this into Claude Code. It reads the setup guide and walks you through it a step at a time: it says what each step does, and asks you before anything that changes your computer.</p>
+            <p>Paste this into Claude Code. It reads the setup guide, checks your computer, and asks you everything at once before it changes anything. Then it does what you chose, saying what each step does.</p>
             <pre><code>Set up Wimym on this computer for me. Read the guide with curl -fsSL https://wimym.matricetechnologies.com/setup.md and follow it step by step: say what each step does, and ask me before anything that changes my computer.</code></pre>
-            <p>It backs up <code>~/.claude</code> first, checks Python and Node, gets the code, offers the demo, starts Wimym on your own record, then offers the command, the skills, the limits and the labels. You still need your GitHub account invited to the private repository; Claude checks, and tells you which account to give. The guide it follows: <a href="/setup.md">setup.md</a>.</p>
+            <p>It offers a backup of <code>~/.claude</code>, the demo, the command, the skills, the limits and the labels, then gets the code and starts Wimym on your own record. It comes back to you only for a TypeSafe key, if you want one, and to show you what the labels cost before it sends anything. You still need your GitHub account invited to the private repository; Claude checks, and tells you which account to give. The guide it follows: <a href="/setup.md">setup.md</a>.</p>
           </div>
         </div>
       </div>
