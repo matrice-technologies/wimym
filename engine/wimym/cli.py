@@ -716,6 +716,9 @@ def rule_groups(c):
                 g[k] = json.loads(g[k]) if isinstance(g.get(k), str) and g[k].startswith("[") else g.get(k)
             out.append(g)
         return out, "rules.json"
+    # the messages table gets its label columns from the labels, so before the labeller's first run there is no rule
+    if "rule" not in {r[1] for r in c.execute('pragma table_info("messages")')}:
+        return [], None
     ms = c.execute("select id, day, project, rule, text from messages where rule is not null order by ts").fetchall()
     groups = []
     for m in ms:
@@ -756,6 +759,12 @@ def cmd_rules(a):
             sys.exit(f"wimym rules draft: no rule {a.n} (wimym rules lists them)")
         return draft(c, g, a.json)
     shown = [g for g in groups if a.all or g["n"] >= 2]
+    if source is None:
+        if a.json:
+            return jout({"source": None, "groups": []})
+        out("No rules yet: they come from the labeller's reading of your messages, and it hasn't run. "
+            "wimym label --dry-run says what it would send and the cost.")
+        return
     if a.json:
         return jout({"source": source, "groups": shown, "claudeSetup": practices.claude_setup()})
     out(f"Instructions you gave more than once ({source}). A model's reading of your messages: open them before trusting it.")
