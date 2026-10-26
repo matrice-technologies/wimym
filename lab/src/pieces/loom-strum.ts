@@ -8,7 +8,7 @@
 // from there.
 import { heft, tokensIn, type Mind } from "../shared/data";
 import { FAM_NAMES, hex, type Theme } from "../shared/palette";
-import { fmtDay, fmtHour, fmtTokens, type PieceFactory } from "../shared/piece";
+import { fmtDay, fmtHour, fmtTokens, tokenScale, type PieceFactory } from "../shared/piece";
 import { EDGE, GAP, Loom, lowerBound, SHED, type LoomOptions, type Session, type Stage } from "./loom";
 import { Mass } from "./loom-mass";
 
@@ -700,6 +700,7 @@ export class Strum extends Loom {
       sub: c.sub.replace("each have a column,", "each have a column, which rests while the project is quiet,")
         .replace("each thread in a column is a session", `each thread in a column is a session, a string the shuttle strums as it passes${out ? ", as hard as all Claude wrote for the message" : ""}`)
         + (out && this.massOn ? " The aurora weighs each project by how much Claude wrote for it." : ""),
+      ...(out ? { scale: tokenScale(out) } : {}),
     };
   }
 }

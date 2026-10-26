@@ -34,7 +34,7 @@ export default function ThisWeek() {
   const pts = points && points !== "absent" ? points : null;
   const nav = useNavigate();
   const wide = useWide();
-  const [caption, setCaption] = useState<{ line: string; sub: string } | null>(null);
+  const [caption, setCaption] = useState<{ line: string; sub: string; scale?: string[] } | null>(null);
   const vitals = useVitals();
   const wk = useWeek();
   const [open, setOpen] = useState<string | null>(null);
@@ -85,6 +85,8 @@ export default function ThisWeek() {
         <div className="pl-words">
           <h1 className="wiym">Where is your <span className="hl">mind</span>?</h1>
           <p className="pl-line" key={caption?.line ? "c" : "w"}>{caption?.line || "\u00a0"}</p>
+          {/* what Claude's tokens would fill, a row at a time */}
+          {caption?.scale?.length ? <ul className="pl-scale">{caption.scale.map((r, i) => <li key={i} style={{ animationDelay: `${0.6 + 0.7 * i}s` }}>{r}</li>)}</ul> : null}
           {caption?.sub && <p className="pl-sub">{caption.sub}</p>}
           <div className="pl-week">
             <p className="kicker">This week, from {fmtDay(week.mon, { day: "numeric", month: "long" })}, {WORDS[dayN].toLowerCase()} in</p>

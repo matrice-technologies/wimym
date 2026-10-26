@@ -45,7 +45,7 @@ export interface HeroProps {
   /** A click on a light or a slice: the day it belongs to, YYYY-MM-DD. */
   onSelect?: (day: string) => void;
   /** The piece's own one-line caption and sub-line, whenever they change. */
-  onCaption?: (caption: { line: string; sub: string }) => void;
+  onCaption?: (caption: { line: string; sub: string; scale?: string[] }) => void;
   /** An image to show where WebGL isn't available. By default a still of the planet drawn on made-up data. */
   fallbackSrc?: string;
   className?: string;
@@ -115,7 +115,8 @@ export const Hero = forwardRef<HeroHandle, HeroProps>(function Hero(props, ref) 
     let lastCaption = "";
     const overlay = () => {
       const c = p.caption();
-      if (c.line + c.sub !== lastCaption) { lastCaption = c.line + c.sub; latest.current.onCaption?.(c); }
+      const key = c.line + c.sub + (c.scale?.join() ?? "");
+      if (key !== lastCaption) { lastCaption = key; latest.current.onCaption?.(c); }
       const box = labelRef.current;
       if (!box) return;
       const ls = latest.current.labels ? p.labels?.() ?? [] : [];
