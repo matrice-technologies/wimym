@@ -10,13 +10,17 @@ that every folder wimym uses is inside a tests' temporary folder. When another t
 imported wimym into its own temporary folder (test_signals, which loads first), those folders are used
 and checked the same way. It deletes nothing outside these folders.
 """
+import argparse
+import contextlib
 import glob
+import io
 import json
 import os
 import sqlite3
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 TMP = tempfile.mkdtemp(prefix="wimym-tests-")
 if "wimym.paths" not in sys.modules:
@@ -142,6 +146,24 @@ class ShortIds(unittest.TestCase):
         self.assertNotEqual(sa, sb)
         self.assertFalse(b.startswith(sa) or a.startswith(sb))
         self.assertEqual(cli.short("3e5bf6dd-6977-4b60-b4e2-f69c5d8a508f"), "3e5bf6dd")
+
+
+class NoLabelsYet(unittest.TestCase):
+    """A fresh install: the messages table has no label columns until the labeller has run."""
+    def rules(self, as_json):
+        a = argparse.Namespace(action=None, n=None, all=False, per=2, json=as_json)
+        buf = io.StringIO()
+        with mock.patch.object(cli, "conn", lambda args: db.connect(tiny_db())), contextlib.redirect_stdout(buf):
+            cli.cmd_rules(a)
+        return buf.getvalue()
+
+    def test_rules_says_none_yet(self):
+        said = self.rules(False)
+        self.assertIn("No rules yet", said)
+        self.assertIn("wimym label --dry-run", said)
+
+    def test_rules_json_is_empty(self):
+        self.assertEqual(json.loads(self.rules(True))["groups"], [])
 
 
 if __name__ == "__main__":
