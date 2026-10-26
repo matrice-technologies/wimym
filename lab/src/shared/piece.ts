@@ -14,8 +14,8 @@ export interface Piece {
   setShift?(x: number): void;
   /** The day (YYYY-MM-DD) under the pointer, for a click to open; optional. */
   select?(x: number, y: number): string | null;
-  /** One sentence for the caption, from the data. */
-  caption(): { line: string; sub: string };
+  /** One sentence for the caption, from the data; scale, rows to set under it (the Loom's lines, pages and books). */
+  caption(): { line: string; sub: string; scale?: string[] };
   /** Small words placed on the picture (CSS pixels), redrawn every frame; alpha fades one out. */
   labels?(): { x: number; y: number; text: string; align?: "left" | "center" | "right"; alpha?: number }[];
   dispose(): void;
@@ -35,6 +35,19 @@ export const roundN = (n: number) => { if (n < 100) return String(n); const p = 
 export const fmtN =(n: number) => n.toLocaleString("en");
 /** Tokens, rounded as roundN does, in millions from what rounds to a million: 870,000, 1 million, 1.7 million, 98 million. */
 export const fmtTokens = (n: number) => (n < 995_000 ? roundN(Math.round(n)) : `${n < 1e7 ? (n / 1e6).toFixed(1).replace(/\.0$/, "") : Math.round(n / 1e6)} million`);
+// What tokens would fill, in things a reader can hold: a token is about three quarters of a word, a line ten words, a
+// page thirty lines, a book three hundred pages (90,000 words).
+const WORDS_PER_TOKEN = 0.75;
+const SCALE = [{ one: "line", words: 10 }, { one: "page", words: 300 }, { one: "book", words: 90_000 }];
+/** The lines, pages and books tokens would fill, one row for each filled at least once: "≈ 25,000 lines",
+ * "≈ 850 pages", "≈ 2.8 books"; "≈ 11 million lines" from a million. */
+export function tokenScale(tokens: number) {
+  const words = tokens * WORDS_PER_TOKEN;
+  return SCALE.filter(u => words >= u.words).map(u => {
+    const x = words / u.words, s = x < 9.95 ? x.toFixed(1).replace(/\.0$/, "") : fmtTokens(x);
+    return `≈ ${s} ${u.one}${s === "1" ? "" : "s"}`;
+  });
+}
 export const esc = (s: string) => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
 
 /** A tooltip line for message i: always when it was sent, and what it said only outside share mode. */

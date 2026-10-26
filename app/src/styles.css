@@ -812,6 +812,8 @@ a.vsb:hover { background: var(--raised); }
 .chip.reading { border-style: dashed; white-space: normal; }
 .wiym { font: 500 clamp(40px, 5.4vw, 80px)/1.02 var(--font-heading); letter-spacing: -.035em; text-transform: uppercase; margin: 0; text-wrap: balance; }
 .pl-line { margin: 20px 0 0; color: var(--ink-2); font: 400 clamp(16px, 1.35vw, 19px)/1.45 var(--text); max-width: 36ch; text-wrap: pretty; min-height: 1.45em; animation: fade .8s ease both; }
+.pl-scale { margin: 6px 0 0; padding: 0; list-style: none; color: var(--ink-2); font: 400 clamp(14px, 1.1vw, 16px)/1.5 var(--text); font-variant-numeric: tabular-nums; }
+.pl-scale li { animation: rise .7s ease both; }
 .pl-sub { margin: 8px 0 0; color: var(--muted); font-size: var(--t-s); max-width: 40ch; text-wrap: pretty; animation: fade .8s ease .15s both; }
 .pl-week { margin-top: 34px; padding-top: 20px; border-top: 1px dashed var(--line-2); max-width: 40ch; animation: fade .8s ease .1s both; }
 .pl-week .kicker { margin-bottom: 12px; }
