@@ -1,4 +1,4 @@
-// One of Robin's days, replayed, for the public page's "A new kind of work". Each project is a string across the
+// One of Robin's days, replayed, for the public page's "Working with agents". Each project is a string across the
 // stage and each message plucks it at its hour, in the Loom's colour for its type, as long as it is wordy; a thread
 // runs from string to string at each switch. A clock runs the day in about half a minute, the counts climb, and the
 // risks the page names are said at the moment they show in the record. Past the hour Robin meant to stop, it is night.
@@ -38,15 +38,15 @@ function read(r: RobinFile, day: string) {
   const first = ms[0].h, last = ms[ms.length - 1].h;
   const moments: Moment[] = [], beats: Beat[] = [];
 
-  // No end of day: the run of days with work in it, up to this one
+  // No day off: the run of days with work in it, up to this one
   const n = new Map(r.days.map(row => [row[0] as string, row[1] as number]));
   let streak = 0;
   for (let t = new Date(day + "T12:00:00"); (n.get(t.toISOString().slice(0, 10)) ?? 0) > 0; t = new Date(t.getTime() - 864e5)) streak++;
-  moments.push({ key: "streak", name: "No end of day", num: String(streak), unit: streak > 1 ? "days in a row" : "day back", at: first, marks: new Set(),
+  moments.push({ key: "streak", name: "No day off", num: String(streak), unit: streak > 1 ? "days in a row" : "day back", at: first, marks: new Set(),
     fact: streak > 1 ? `without a day off, this one from ${hm(first)} to ${hm(last)}.` : `after a day off, from ${hm(first)} to ${hm(last)}.` });
   beats.push({ h: first, key: "streak", title: `${hm(first)}, the first message`, text: streak > 1 ? `Day ${streak} in a row without a day off.` : `The first day back after a day off.` });
 
-  // Loss of depth: the longest stretch on one project in the working day
+  // Shallow work: the longest stretch on one project in the working day
   let best: [number, number] = [0, 0];
   for (let a = 0, b = 0; a < ms.length; a = b) {
     for (b = a + 1; b < ms.length && ms[b].p === ms[a].p; b++);
@@ -54,9 +54,9 @@ function read(r: RobinFile, day: string) {
   }
   const deep = ms.slice(best[0], best[1] + 1), d0 = deep[0].h, d1 = deep[deep.length - 1].h;
   const mins = Math.round((d1 - d0) * 60);
-  moments.push({ key: "deep", name: "Loss of depth", num: mins < 90 ? String(mins) : (mins / 60).toFixed(1), unit: mins < 90 ? "minutes" : "hours", at: d0, marks: new Set(deep.map(m => m.i)), span: [d0, d1, deep[0].p],
+  moments.push({ key: "deep", name: "Shallow work", num: mins < 90 ? String(mins) : (mins / 60).toFixed(1), unit: mins < 90 ? "minutes" : "hours", at: d0, marks: new Set(deep.map(m => m.i)), span: [d0, d1, deep[0].p],
     fact: `the longest stretch on one project before ${hm(DEEP_BY)}, from ${hm(d0)}.` });
-  beats.push({ h: d1, key: "deep", title: "Loss of depth", text: `${cap(dur(d1 - d0))} on ${r.projects[deep[0].p]}, from ${hm(d0)}: as deep as the day will go before ${hm(DEEP_BY)}.` });
+  beats.push({ h: d1, key: "deep", title: "Shallow work", text: `${cap(dur(d1 - d0))} on ${r.projects[deep[0].p]}, from ${hm(d0)}: as deep as the day will go before ${hm(DEEP_BY)}.` });
 
   // Rubber-stamping: go-aheads of a few words
   const approve = FAMILIES.indexOf("approve");
@@ -82,9 +82,9 @@ function read(r: RobinFile, day: string) {
     fact: steer.length ? `At ${hm(sharp.h)}: ${quote(sharp.text, 56)}` : `Nothing sent back all day.` });
   if (sharp) beats.push({ h: sharp.h, key: "steer", title: `Strain, at ${hm(sharp.h)}`, text: quote(sharp.text, 110) });
 
-  // Losing the hours: what came after the stopping hour
+  // Working late: what came after the stopping hour
   const late = ms.filter(m => m.h >= STOP);
-  moments.push({ key: "late", name: "Losing the hours", num: String(late.length), unit: late.length === 1 ? "message" : "messages", at: STOP, marks: new Set(late.map(m => m.i)),
+  moments.push({ key: "late", name: "Working late", num: String(late.length), unit: late.length === 1 ? "message" : "messages", at: STOP, marks: new Set(late.map(m => m.i)),
     fact: late.length ? `after ${hm(STOP)}, the hour Robin meant to stop. The last at ${hm(last)}.` : `after ${hm(STOP)}: done at ${hm(last)}, before the hour Robin set.` });
   beats.push(late.length
     ? { h: STOP, key: "late", title: `${hm(STOP)}, the hour Robin meant to stop`, text: `It passes. ${late.length} more message${late.length > 1 ? "s" : ""} to come.` }
