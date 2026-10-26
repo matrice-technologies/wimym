@@ -100,7 +100,8 @@ for a new person's quick build, `?seconds=34` for Alex's from nothing, `?real` t
 A postcard tells one day: the last day with a message on it (or `opts.day`). The strummed Loom in share
 mode weaves that day from its first message to its last, each message striking its string, under its
 aurora, with "Where is your mind?", the date, three true lines about the day, a clock at the corner
-keeping the time of the last message woven, and a small Wimym mark. No project names, no message text:
+keeping the time of the last message woven (and, under the tokens Claude wrote, what they would
+fill: lines, then pages, then books, a row appearing as each is first filled), and a small Wimym mark. No project names, no message text:
 counts and times only. It opens on the morning, the strings of the day before lit; a day takes 4 to 10
 seconds to weave however full it was (the loom's `pace`, the light keeping its own); then a hand sweeps
 across and it ends with every string ringing.
