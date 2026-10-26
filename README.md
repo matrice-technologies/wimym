@@ -32,9 +32,11 @@ into Claude Code:
 Set up Wimym on this computer for me. Read the guide with curl -fsSL https://wimym.matricetechnologies.com/setup.md and follow it step by step: say what each step does, and ask me before anything that changes my computer.
 ```
 
-The guide it follows is [site/setup.md](site/setup.md): the checks, then every question at once (the
-backup, the demo, the command, the skills, the limits and the labels, each offered), then the steps
-without stopping, back to you only for a TypeSafe key and the price of the labels.
+The guide it follows is [site/setup.md](site/setup.md): the checks, then one question, whether Wimym may
+change your Claude Code setup (a year of transcripts and the `/wimym` and `/retro` skills, or nothing at
+all), with the rest of the plan stated as defaults you can change. Then the steps without stopping, back
+to you only for the price of the labels. If you say to leave your Claude Code setup as it is, nothing in
+`~/.claude` is written and nothing offers to again; `wimym claude-setup` shows or changes that answer.
 
 ## What you see
 
@@ -68,6 +70,7 @@ bin/wimym sql "select day, active, night from day_vitals order by day desc limit
 bin/wimym rules                   # instructions you keep giving the agents
 bin/wimym label --dry-run         # what labelling what's new would send and cost; --yes sends it
 bin/wimym practice add …          # and practice list | check, log add | list, limits
+bin/wimym claude-setup            # whether Wimym may offer changes to your Claude Code setup
 ```
 
 Two Claude Code skills use it: `skills/wimym` answers open questions about yourself with the data in
@@ -78,8 +81,9 @@ context, and `skills/retro` runs the weekly retro. To use them, link them into `
 
 Set a stopping hour, days off a week or a ceiling on sessions at once, on the front page or with
 `wimym limits`. `hooks/limits.py` then adds one line to Claude's context when one is crossed, and
-`hooks/statusline.sh` shows today's hours and the days in a row. They aren't installed by default;
-[docs/hooks.md](docs/hooks.md) has the settings to add.
+`hooks/statusline.sh` shows today's hours and the days in a row. They aren't installed by default, and
+never offered if you chose to leave your Claude Code setup as it is; [docs/hooks.md](docs/hooks.md) has
+the settings to add.
 
 ## Where things live
 

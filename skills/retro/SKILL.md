@@ -52,7 +52,8 @@ Do this without narrating it; the person sees only the opening.
    kind open and the sessions whose outcome is partial or abandoned, and check git for what landed.
 3. `wimym practice check` and `wimym log list --limit 15`: what is in flight, what was concluded
    before, what the person said they wanted to grow in. If they never said, that is a question for
-   today.
+   today. `wimym claude-setup` too: whether the person let Wimym offer changes to their Claude Code
+   setup (step 4 of the conversation needs it).
 4. Treat the candidates as leads, not the answer: they are picked by how unusual a number is, not by
    what matters to the person. For each one you consider, and for any pattern of your own,
    `wimym moments --about <key> --week <monday>` and read the strongest
@@ -89,8 +90,15 @@ Do this without narrating it; the person sees only the opening.
      explicit yes**, then record it with `--owner agents --where "…"`. `wimym rules` lists the
      instructions the person keeps repeating, the best candidates; `wimym rules draft <n>` drafts the
      memory note or CLAUDE.md line for one of them.
+   - **If `wimym claude-setup` says to leave the Claude Code setup as it is, offer none of that**: no
+     memory note, CLAUDE.md line, skill, permission or hook, and no `wimym rules draft`. Every practice
+     is then the person's own. They chose this at setup; don't ask them to reconsider. If they bring it
+     up themselves, `wimym claude-setup recommended` changes it.
    - A limit (stopping hour, days off a week, sessions at once) is a practice that speaks at the
-     moment: `wimym limits set stopHour 21` once the person agrees.
+     moment: `wimym limits set stopHour 21` once the person agrees. Unless the Claude Code setup is
+     left as it is, and only if `~/.claude/settings.json` doesn't already run `hooks/limits.py`, say in
+     one line that the limit can also speak in Claude Code (`docs/hooks.md`), and add the hooks only on
+     a yes.
    Then `wimym practice add "…" --measure … --target … --trial 14 --why "…"`.
 5. **Close.** Read back what was decided in two or three lines. Record the findings the person
    agreed with, in their words: `wimym log add "…" --kind finding --week <monday> --ref <ids>`, and

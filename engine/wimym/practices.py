@@ -14,6 +14,10 @@ practices.json  {"practices": [practice, …]}. A practice:
 limits.json     {"stopHour": 21, "daysOffPerWeek": 1, "maxSessions": 4, "at": iso}; absent keys mean not set.
 log.jsonl       one line per entry: {"at", "kind": finding|retro|practice|limit|note, "text", "week", "refs": [message ids],
                 "practice"}. Appended, never rewritten.
+settings.json   {"claudeSetup": "none" | "recommended" | "custom", …}: what Wimym may change in the person's Claude Code
+                setup, chosen at setup (site/setup.md). "none" means nothing: no memory note, CLAUDE.md line, skill,
+                hook or setting is offered. Not set means not asked yet. The file's other keys (github, updates) are
+                read by gitlog.py and update.py.
 
 Nothing here is written without the person asking for it: the CLI and the skills call these
 functions only after the person's yes.
@@ -83,6 +87,7 @@ STATUSES = ("trying", "kept", "changed", "dropped")
 VERDICTS = {"keep": "kept", "change": "changed", "drop": "dropped"}
 KINDS = ("finding", "retro", "practice", "limit", "note")
 LIMITS = {"stopHour": (0, 30), "daysOffPerWeek": (0, 7), "maxSessions": (1, 50)}
+CLAUDE_SETUP = ("none", "recommended", "custom")
 TARGET = re.compile(r"^\s*(<=|>=|<|>|==)\s*(-?\d+(?:\.\d+)?)\s*$")
 
 
@@ -205,6 +210,25 @@ def verdict(pid, v, note=None):
         _write("practices.json", {"practices": ps})
     log_add(f"{v.capitalize()}: {p['text']}" + (f" ({note})" if note else ""), kind="practice", practice=pid)
     return p
+
+
+# -- the Claude Code setup ---------------------------------------------------------------------
+
+def claude_setup():
+    """The person's answer to "may Wimym change your Claude Code setup?": "none", "recommended", "custom", or None
+    when it was never asked. Only "none" changes what Wimym does: nothing then offers a change there."""
+    v = _read("settings.json", {}).get("claudeSetup")
+    return v if v in CLAUDE_SETUP else None
+
+
+def set_claude_setup(value):
+    if value not in CLAUDE_SETUP:
+        raise ValueError(f"the Claude Code setup is one of {', '.join(CLAUDE_SETUP)}")
+    with _lock:
+        d = _read("settings.json", {}, writing=True)
+        d["claudeSetup"] = value
+        _write("settings.json", d)
+    return value
 
 
 # -- limits ------------------------------------------------------------------------------------

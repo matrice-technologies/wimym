@@ -9,6 +9,7 @@
     wimym log add|list
     wimym limits [set <key> <value> | clear <key>]
     wimym rules [draft <n>]                   instructions you keep giving the agents, and a draft to approve
+    wimym claude-setup [none|recommended|custom]   what Wimym may change in your Claude Code setup
     wimym build                               rebuild the database now
     wimym label [--dry-run | --yes]           label what's new since the last run, today left out; says the cost first
 
@@ -739,6 +740,10 @@ def rule_groups(c):
 
 
 def cmd_rules(a):
+    leave = practices.claude_setup() == "none"
+    if a.action == "draft" and leave:
+        sys.exit("wimym rules draft: you chose to leave your Claude Code setup as it is, so there is no draft for the "
+                 "agents. `wimym claude-setup recommended` changes that choice.")
     c = conn(a)
     groups, source = rule_groups(c)
     docs = instructions()
@@ -752,7 +757,7 @@ def cmd_rules(a):
         return draft(c, g, a.json)
     shown = [g for g in groups if a.all or g["n"] >= 2]
     if a.json:
-        return jout({"source": source, "groups": shown})
+        return jout({"source": source, "groups": shown, "claudeSetup": practices.claude_setup()})
     out(f"Instructions you gave more than once ({source}). A model's reading of your messages: open them before trusting it.")
     if not shown:
         out(f"None given twice yet ({len(groups)} given once; --all lists them).")
@@ -764,7 +769,10 @@ def cmd_rules(a):
             m = c.execute("select * from messages where id = ?", [mid]).fetchone()
             if m:
                 out("       " + msg_line(m, 90))
-    out("A draft for the agents, to approve before anything is written: wimym rules draft <n>")
+    if leave:
+        out("You chose to leave your Claude Code setup as it is: one you want kept is a practice of your own (wimym practice add).")
+    else:
+        out("A draft for the agents, to approve before anything is written: wimym rules draft <n>")
 
 
 def _slug(cwd):
@@ -937,6 +945,19 @@ def cmd_limits(a):
         out(f"{n:<22} {(hh(v) if k == 'stopHour' and v is not None else v) if v is not None else 'not set'}")
 
 
+SETUP = {"none": "Leave it as it is: Wimym changes nothing in your Claude Code setup, and nothing offers to.",
+         "recommended": "The recommended set: Wimym may offer changes to your Claude Code setup, each one after your yes.",
+         "custom": "Your own pick: Wimym may offer changes to your Claude Code setup, each one after your yes.",
+         None: "Not chosen yet: anything that would change your Claude Code setup asks first."}
+
+
+def cmd_claude_setup(a):
+    v = practices.set_claude_setup(a.choice) if a.choice else practices.claude_setup()
+    if a.json:
+        return jout({"claudeSetup": v})
+    out(SETUP[v])
+
+
 # ---------------------------------------------------------------------------------------------
 
 def main(argv=None):
@@ -1020,6 +1041,9 @@ def main(argv=None):
     s.add_argument("key", nargs="?", choices=list(practices.LIMITS))
     s.add_argument("value", nargs="?")
     s.set_defaults(f=cmd_limits)
+    s = sp("claude-setup", help="what Wimym may change in your Claude Code setup: none, recommended or custom (shows it without one)")
+    s.add_argument("choice", nargs="?", choices=practices.CLAUDE_SETUP)
+    s.set_defaults(f=cmd_claude_setup)
 
     a = p.parse_args(argv)
     if a.cmd == "practice":

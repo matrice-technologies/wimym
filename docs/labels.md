@@ -103,7 +103,7 @@ and the run logs in `logs/`.
 `label.py --engine jev` labels categories, signals and acts with TypeSafe's Jev instead of Haiku, through its
 API with the person's own key, not their Claude plan. The key is optional: `label.py --key` asks for it
 without showing it, checks it with TypeSafe and keeps it in `~/.wimym/typesafe.key` (mode 600), and while
-that file exists Jev is the default engine; setup offers it in step 2 and asks for it in step 4 (`site/setup.md`). `TYPESAFE_API_KEY`
+that file exists Jev is the default engine; setup offers it in step 10, once the labels have a price (`site/setup.md`). `TYPESAFE_API_KEY`
 works too but doesn't change the default, so a key in the environment never switches a run by surprise. One request per message: the state is the message,
 Claude's message before it and, for acts, the project; each choice field is a Choice question and each yes/no
 field a Noul, in the same words as `definitions.json` (`--engine jev --prompt` prints them). A Noul over 0.5

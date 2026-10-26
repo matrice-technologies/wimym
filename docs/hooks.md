@@ -1,7 +1,9 @@
 # Limits at the moment: hooks and status line
 
 Two small scripts bring the limits you set in Wimym into Claude Code itself (STRATEGY.md §4). Nothing is
-installed yet: the snippet below goes into `~/.claude/settings.json` only once you approve it.
+installed by default: the snippet below goes into `~/.claude/settings.json` only once you approve it, and is
+never offered if you chose to leave your Claude Code setup as it is (`wimym claude-setup` says which; the
+setup asks it first, `site/setup.md`). `/retro` offers it once you set a limit.
 
 - `hooks/limits.py`, a hook on SessionStart and UserPromptSubmit. When a limit is crossed it adds one
   plain line to Claude's context, for example
@@ -28,8 +30,11 @@ python3 hooks/limits.py --status    # what the status line would show
 
 ## Install (after your yes)
 
-Your settings already have a `statusLine` and a `PreToolUse` hook. Merge, don't replace: add the two
-entries under `hooks`, and swap `statusLine` only if you want Wimym's in place of yours.
+First check `wimym claude-setup` doesn't say to leave the Claude Code setup as it is. Copy the settings file
+to `~/.claude/settings.json.before-wimym` if that copy doesn't exist yet. Then merge, never replace: keep
+every hook already there and add these two entries to their lists (skip one already present). Add the
+`statusLine` only if there is none, or if you said to swap yours for Wimym's (`9h35 today · 85 days in a
+row`). Check the file still parses with `python3 -m json.tool ~/.claude/settings.json > /dev/null`.
 
 ```json
 {
@@ -52,3 +57,7 @@ shell Claude Code runs there reads the same way; the status line is the hook wit
 
 The paths assume Wimym is cloned into `~/wimym`; write your own folder in its place. To turn them off, remove the entries. Set your limits
 with `wimym limits set stopHour 21.5` (the CLI) or on the app's limits page; they live in `~/.wimym/limits.json`.
+
+Wimym doesn't start at login. Until `./install.sh` runs again after a restart, the engine is off, and the status
+line and the hook read what it last wrote: the status line shows no hours for today, and its days in a row stop
+keeping up. The stopping hour and the sessions at once still speak, since they don't need the engine.
