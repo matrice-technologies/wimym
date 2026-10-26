@@ -6,7 +6,7 @@
 import { mindFrom, mindFromPoints, tokensIn, type Mind, type PointsPayload, type RawDay, type RawMessage } from "../src/shared/data";
 import { DARK } from "../src/shared/palette";
 import { SWEEP_RINGS } from "../src/pieces/loom-strum";
-import { clockLine, dayClock, dayLines, dayMind, drawNames, lastActiveDay, longDay, openDay, pack, postcardLoom, type PostcardNames } from "./postcard-day";
+import { clockLine, clockScale, dayClock, dayLines, dayMind, drawNames, lastActiveDay, longDay, openDay, pack, postcardLoom, type PostcardNames } from "./postcard-day";
 
 export type PostcardFormat = "landscape" | "portrait";
 export interface PostcardOptions {
@@ -144,8 +144,8 @@ async function wordsFor(mind: Mind, d: number, format: PostcardFormat, W: number
 const ACCENT = "#ffb85c";
 
 /** The day's clock, top right: the time of the last message woven, how many of the day's are in, and the tokens Claude
- * wrote on their turns. */
-function clock(g: CanvasRenderingContext2D, c: ReturnType<typeof dayClock>, format: PostcardFormat, W: number) {
+ * wrote on their turns, with what they'd fill under them, each row fading in at t as it's first filled (seen keeps when). */
+function clock(g: CanvasRenderingContext2D, c: ReturnType<typeof dayClock>, format: PostcardFormat, W: number, t: number, seen: number[]) {
   const s = format === "landscape" ? 1 : 1.3, x = W - 56 * s;
   g.save();
   g.textAlign = "right"; g.textBaseline = "alphabetic";
@@ -154,6 +154,11 @@ function clock(g: CanvasRenderingContext2D, c: ReturnType<typeof dayClock>, form
   g.letterSpacing = "0px";
   g.fillStyle = "#8b93a5"; g.font = `400 ${15 * s}px ${TEXT}`;
   g.fillText(clockLine(c), x, 114 * s);
+  clockScale(c).forEach((row, i) => {
+    seen[i] ??= t;
+    g.globalAlpha = Math.min(1, (t - seen[i]) / 0.6);
+    g.fillText(row, x, (114 + 22 * (i + 1)) * s);
+  });
   g.restore();
 }
 
@@ -209,13 +214,14 @@ export async function makePostcardFilm(mind: Mind, opts: PostcardOptions = {}): 
   try {
     await film.start();
     let sweepAt = Infinity, end = Infinity;
+    const seen: number[] = [];
     for (let f = 0; t < end && f < 30 * FPS; f++) {
       if (f) { t += dt; if (t >= lead) loom.pace = pace; loom.frame(t, dt); }
       drawNames(loom);
       if (sweepAt === Infinity && loom.cur >= n) sweepAt = t + HOLD;
       if (end === Infinity && t >= sweepAt) { loom.sweep(t); end = t + SWEEP_RINGS; }
       compose(g, loom.canvas, words, W, H);
-      clock(g, dayClock(loom, start), format, W);
+      clock(g, dayClock(loom, start), format, W, t, seen);
       await source.add(f / FPS, dt);
       if (f % 10 === 0) {
         opts.onProgress?.(Math.min(0.99, f / frames));
@@ -277,6 +283,7 @@ ul{margin:0;padding:0;list-style:none;font-size:clamp(17px,1.6vw,22px);line-heig
 .clock{position:fixed;top:40px;right:48px;text-align:right;pointer-events:none;text-shadow:0 0 18px var(--ground)}
 .clock b{display:block;font:600 36px/1 var(--display);letter-spacing:-.01em;font-variant-numeric:tabular-nums}
 .clock span{display:block;margin-top:8px;font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+.clock .scale{margin-top:4px;min-height:1.4em;opacity:0;transition:opacity .6s}.clock .scale.on{opacity:1}
 .mark{position:fixed;left:64px;bottom:36px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);pointer-events:none}
 .mark i{width:18px;height:18px;border-radius:50%;background:linear-gradient(90deg,#aea38a 50%,#1b2a44 50%);position:relative;flex:none}
 .mark i::after{content:"";position:absolute;width:4px;height:4px;border-radius:50%;left:11px;top:5px;background:#ffb85c;box-shadow:0 0 8px #ff8a3d}
@@ -303,7 +310,7 @@ ul{margin:0;padding:0;list-style:none;font-size:clamp(17px,1.6vw,22px);line-heig
   <div><ul>${lines.map(l => `<li>${esc(l)}</li>`).join("")}</ul>
   <p class="legend">${esc(legend)}</p></div>
 </main>
-<div class="clock"><b id="time"></b><span id="count"></span></div>
+<div class="clock"><b id="time"></b><span id="count"></span><span class="scale"></span><span class="scale"></span><span class="scale"></span></div>
 <div class="mark"><i></i><b>Wimym</b><span>reads your own transcripts, on your own machine</span></div>
 <button id="again" hidden>Weave the day again</button>
 <div id="tip"></div>

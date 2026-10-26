@@ -1,7 +1,7 @@
 // The postcard page's own script (bundled into the page by player-plugin.ts): the day read from the page, woven live
 // on the strummed Loom, wide or tall as the window is; the clock kept at the corner; a hand sweeping across now and
 // then once the day is woven, and a string plucked where it is pointed at. Reduced motion shows the day woven, still.
-import { clockLine, dayClock, dayStart, drawNames, fitLoom, openDay, postcardLoom, unpack, type Packed } from "./postcard-day";
+import { clockLine, clockScale, dayClock, dayStart, drawNames, fitLoom, openDay, postcardLoom, unpack, type Packed } from "./postcard-day";
 
 const AGAIN = 8;   // seconds between the sweeps once the day is woven
 const LEAD = 0.8;  // seconds on the morning before it weaves
@@ -9,6 +9,9 @@ const LEAD = 0.8;  // seconds on the morning before it weaves
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const data = JSON.parse($("shapes").textContent!) as Packed, mind = unpack(data), named = !!data.names;
 const canvas = $<HTMLCanvasElement>("loom"), time = $("time"), count = $("count"), again = $<HTMLButtonElement>("again"), tip = $("tip");
+// the rows of what Claude's tokens would fill, gone when the day's tokens aren't known
+const scale = [...document.querySelectorAll<HTMLElement>(".clock .scale")];
+if (!mind.out) scale.forEach(el => el.remove());
 const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const size = () => [innerWidth, innerHeight, Math.min(2, devicePixelRatio || 1)] as const;
 
@@ -27,6 +30,8 @@ function show() {
   const c = dayClock(loom, start);
   time.textContent = c.time;
   count.textContent = clockLine(c);
+  const rows = clockScale(c);
+  scale.forEach((el, i) => { el.classList.toggle("on", i < rows.length); if (rows[i]) el.textContent = rows[i]; });
 }
 function tick(now: number) {
   const dt = last ? Math.min(0.05, (now - last) / 1000) : 0;

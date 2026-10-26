@@ -3,7 +3,7 @@
 // columns and sessions it opens on), counts and times only, packed small.
 import { monday, type DayRow, type Mind } from "../src/shared/data";
 import { DARK } from "../src/shared/palette";
-import { fmtHour, fmtTokens } from "../src/shared/piece";
+import { fmtHour, fmtTokens, roundN } from "../src/shared/piece";
 import { Strum } from "../src/pieces/loom-strum";
 
 const BEFORE = 2;          // days of shapes kept before the day, for the columns and sessions it opens on
@@ -136,6 +136,19 @@ export function dayClock(loom: Strum, start: number) {
 /** The clock's second line: "12 of 159 messages", and "· 340,000 tokens" once any are known. */
 export function clockLine(c: ReturnType<typeof dayClock>) {
   return `${fmt(c.woven)} of ${fmt(c.of)} messages${c.tokens != null ? ` · ${fmtTokens(c.tokens)} tokens` : ""}`;
+}
+// What the tokens would fill, in things a reader can hold: a token is about three quarters of a word, a line ten
+// words, a page thirty lines, a book three hundred pages (90,000 words).
+const WORDS_PER_TOKEN = 0.75;
+const SCALE = [{ one: "line", words: 10 }, { one: "page", words: 300 }, { one: "book", words: 90_000 }];
+/** The rows under the clock's tokens, one more as each is filled: "≈ 25,000 lines", then "≈ 850 pages", then
+ * "≈ 2.8 books". None while the tokens aren't known. */
+export function clockScale(c: ReturnType<typeof dayClock>) {
+  const words = (c.tokens ?? 0) * WORDS_PER_TOKEN;
+  return SCALE.filter(u => words >= u.words).map(u => {
+    const x = words / u.words, s = x < 9.95 ? x.toFixed(1).replace(/\.0$/, "") : roundN(Math.round(x));
+    return `≈ ${s} ${u.one}${s === "1" ? "" : "s"}`;
+  });
 }
 
 /** The day's shapes as the page carries them: per message its day, minute, project rank, type and Claude's output tokens
