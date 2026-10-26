@@ -266,15 +266,32 @@ class Store:
 # One call: a batch of messages → labels
 
 EMPTY = tempfile.mkdtemp(prefix="wimym-labeller-")
+_QUIET = None
+
+
+def quiet_flags():
+    """Keep the person's hooks, plugins and settings out of each call. --safe-mode and --permission-prompts are
+    newer than some Claude Code installs (2.1.133 has neither), so fall back to the options those have."""
+    global _QUIET
+    if _QUIET is None:
+        try:
+            h = subprocess.run([CLAUDE_BIN, "--help"], capture_output=True, text=True, encoding="utf-8",
+                               errors="replace", timeout=30).stdout
+        except (OSError, subprocess.TimeoutExpired):
+            h = ""
+        _QUIET = (["--safe-mode"] if "--safe-mode" in h else ["--setting-sources", "project"]) + \
+                 (["--permission-prompts", "none"] if "--permission-prompts" in h else ["--permission-mode", "dontAsk"])
+    return _QUIET
 
 
 def ask(prompt, system, model, timeout, think):
     cmd = [CLAUDE_BIN, "-p", "--output-format", "json", "--tools", "",
            "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}',
-           "--safe-mode", "--disable-slash-commands", "--permission-prompts", "none",
+           *quiet_flags(), "--disable-slash-commands",
            "--no-session-persistence", "--model", model, "--system-prompt", system]
     env = os.environ if think else {**os.environ, "MAX_THINKING_TOKENS": "0"}
-    r = subprocess.run(cmd, input=prompt, capture_output=True, text=True, timeout=timeout, cwd=EMPTY, env=env)
+    r = subprocess.run(cmd, input=prompt, capture_output=True, text=True, encoding="utf-8", errors="replace",
+                       timeout=timeout, cwd=EMPTY, env=env)
     if r.returncode != 0 and not r.stdout.strip():
         raise RuntimeError((r.stderr or f"claude exited with {r.returncode}").strip()[:300])
     o = json.loads(r.stdout)
