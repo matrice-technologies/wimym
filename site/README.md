@@ -20,7 +20,8 @@ python3 lab/site/export-demo.py
 ```
 
 It refuses an engine that isn't the demo, shows Robin's demo home as `/Users/robin`, writes nothing it finds a path or
-the name of this computer in, and warns if a day the page frames (`/demo/days/...`) isn't in the record.
+the name of this computer in, and warns if a day the page frames (`/demo/days/...`) isn't in the record. A frame of one
+part tells its height once drawn; keep its `data-h` and `aspect-ratio` at that height, or the page below it jumps.
 
 Two parts are live: `live/live.js`, built from `lab/site/` with `npm --prefix lab run build:site` (23 KB
 gzipped, no React or three). The hero is the strummed Loom and its aurora, the piece the app's This week page
@@ -29,8 +30,9 @@ project plucked by each message, a clock and counts that run the day in half a m
 said at the moment each shows in that day's record. Both read `media/robin.json`, exported from a
 demo engine, never from a real one, by `python3 lab/site/export-robin.py` with `./install.sh --demo` running (it
 refuses an engine whose projects aren't Robin's). After a new export, pick the day buttons in `#day` from the new
-record and copy the default day's moments and counts into the page's no-script text. Rebuild after changing anything
-in `lab/site` or the Loom's pieces.
+record and copy the default day's moments and counts into the page's no-script text, and its number of projects into
+the strings' `--lanes`: the page keeps the replay's room from that before the record comes, so nothing below it jumps.
+Rebuild after changing anything in `lab/site` or the Loom's pieces.
 
 Hosted on Vercel, project `wimym` (shanoirs-projects). `demo/` isn't kept in git: build it before every deploy, with
 `./install.sh --demo` running, then publish from this folder:
