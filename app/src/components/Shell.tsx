@@ -35,8 +35,14 @@ export default function Shell() {
   const empty = !!core?.profile.empty && !WITHOUT_MESSAGES.includes(loc.pathname);
   useEffect(() => {
     if (!loc.hash) window.scrollTo(0, 0);
-    // on a phone the rail is a row that scrolls sideways: keep the current page in view
-    document.querySelector(".rail a.active")?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    // on a phone the rail is a row that scrolls sideways: keep the current page in view, scrolling the rail alone
+    // (scrollIntoView would scroll every page around it too, the public page around a frame of the demo among them)
+    const rail = document.querySelector<HTMLElement>(".rail"), a = rail?.querySelector<HTMLElement>("a.nav.active");
+    if (rail && a) {
+      const r = rail.getBoundingClientRect(), b = a.getBoundingClientRect();
+      if (b.left < r.left) rail.scrollLeft += b.left - r.left;
+      else if (b.right > r.right) rail.scrollLeft += b.right - r.right;
+    }
   }, [loc.pathname]);
   useEffect(() => {
     const p = loc.pathname;
