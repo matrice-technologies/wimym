@@ -176,7 +176,7 @@ img, video { display: block; max-width: 100%; height: auto; }
 .statement .lead { margin: 24px 0 0; max-width: 42rem; font-size: 17px; line-height: 1.65; color: var(--muted-foreground); }
 
 /* Working with agents: one of Robin's days, replayed (live/live.js) */
-.replay { position: relative; margin: 0; overflow: hidden; }
+.replay { position: relative; margin: 0; overflow: hidden; container-type: inline-size; }
 .rp-hud { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 28px 40px; padding: 48px var(--px) 0; }
 .rp-label { margin: 0 0 14px; font: 400 11px/1.3 var(--font-heading); letter-spacing: .14em; text-transform: uppercase; color: var(--muted-foreground); }
 .rp-time { display: block; font: 500 clamp(64px, 11vw, 140px)/.88 var(--font-heading); letter-spacing: -.05em; font-variant-numeric: tabular-nums;
@@ -190,7 +190,9 @@ img, video { display: block; max-width: 100%; height: auto; }
 .rp-counts dd { margin: 8px 0 0; font: 500 clamp(28px, 3.2vw, 40px)/1 var(--font-heading); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
 .rp-counts dd.tick { animation: tick .7s ease-out; }
 @keyframes tick { from { color: #fff3d6; text-shadow: 0 0 22px rgba(255, 243, 214, .7); } }
-.rp-strings { position: relative; height: 250px; margin-top: 36px; touch-action: pan-y; }
+/* the height day.ts gives the strings, for the default day's --lanes (its projects), before it does */
+.rp-strings { position: relative; height: calc(64px + var(--lanes, 4) * max(34px, min(72px, max(52px, 100cqw / 22), 340px / var(--lanes, 4))));
+  margin-top: 36px; touch-action: pan-y; }
 .rp-strings::before { content: ""; position: absolute; inset: -160px 0; pointer-events: none; opacity: 0; transition: opacity 1.6s ease;
   background: radial-gradient(34% 50% at 86% 50%, rgba(141, 143, 245, .12), rgba(141, 143, 245, 0) 100%); }
 .replay.is-night .rp-strings::before { opacity: 1; }
@@ -213,7 +215,10 @@ img, video { display: block; max-width: 100%; height: auto; }
 .rp-scrub::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; margin-top: -6px; border: 0; border-radius: 0; background: var(--foreground); }
 .rp-scrub::-moz-range-thumb { width: 14px; height: 14px; border: 0; border-radius: 0; background: var(--foreground); }
 .dy-days { display: flex; flex-wrap: wrap; gap: 6px; }
-.replay:not(.is-live) .rp-hud, .replay:not(.is-live) .rp-strings, .replay:not(.is-live) .rp-bar { display: none; }
+/* until Robin's record comes, the replay keeps its room, so the page below doesn't jump under someone scrolling;
+   without scripts it never comes, and the room goes */
+@media (scripting: enabled) { .replay:not(.is-live) :is(.rp-hud, .rp-strings, .rp-bar) { visibility: hidden; } }
+@media not (scripting: enabled) { .replay:not(.is-live) :is(.rp-hud, .rp-strings, .rp-bar) { display: none; } }
 
 /* the moments: a grid of cells with hairlines between them */
 .rp-moments { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; grid-template-columns: 1fr;
@@ -405,7 +410,7 @@ pre code { background: none; border: 0; padding: 0; font: inherit; overflow-wrap
             <div><dt>Agent sent back</dt><dd data-c="steer">5</dd></div>
           </dl>
         </div>
-        <div class="rp-strings"></div>
+        <div class="rp-strings" style="--lanes: 4"></div>
         <div class="rp-bar">
           <p class="rp-caption" aria-live="polite"></p>
           <div class="rp-controls">
@@ -476,7 +481,7 @@ pre code { background: none; border: 0; padding: 0; font: inherit; overflow-wrap
             </div>
             <div class="pic">
               <figure class="shot">
-                <div class="live-frame" data-src="/demo/?embed=health" data-w="1280" data-h="800" data-title="Robin's health signs in Wimym, live" style="aspect-ratio: 1280 / 800"></div>
+                <div class="live-frame" data-src="/demo/?embed=health" data-w="1280" data-h="792" data-title="Robin's health signs in Wimym, live" style="aspect-ratio: 1280 / 792"></div>
                 <figcaption>Robin's health signs, live. Click one to see what it measures. <a href="/demo/#health">Open it in the demo</a></figcaption>
               </figure>
             </div>
@@ -507,7 +512,7 @@ pre code { background: none; border: 0; padding: 0; font: inherit; overflow-wrap
             </div>
             <div class="pic">
               <figure class="shot">
-                <div class="live-frame" data-src="/demo/?embed=week" data-w="1280" data-h="760" data-title="Robin's week as a spiral in Wimym, live" style="aspect-ratio: 1280 / 760"></div>
+                <div class="live-frame" data-src="/demo/?embed=week" data-w="1280" data-h="714" data-title="Robin's week as a spiral in Wimym, live" style="aspect-ratio: 1280 / 714"></div>
                 <figcaption>The week turn by turn, with the stopping hour Robin set. <a href="/demo/#week">Open it in the demo</a></figcaption>
               </figure>
             </div>
