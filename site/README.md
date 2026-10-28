@@ -43,5 +43,4 @@ python3 ../lab/site/export-demo.py && vercel deploy --prod
 
 The setup starts with one prompt people paste into Claude Code; it has Claude read `setup.md`, the guide
 written for Claude, and follow it step by step. Change the steps there and in the page's "by hand"
-list together. Both point at the private repo matrice-technologies/wimym (by invitation), whose
-`main` is what people run.
+list together. Both point at the public repo matrice-technologies/wimym, whose `main` is what people run.
