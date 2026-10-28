@@ -588,7 +588,7 @@ pre code { background: none; border: 0; padding: 0; font: inherit; overflow-wrap
             <h3>Let Claude set it up</h3>
             <p>Paste this into Claude Code. It reads the setup guide, checks your computer, and asks you one question before it changes anything: whether Wimym may change your Claude Code setup. Then it does what you chose, saying what each step does.</p>
             <pre><code>Set up Wimym on this computer for me. Read the guide with curl -fsSL https://wimym.matricetechnologies.com/setup.md and follow it step by step: say what each step does, and ask me before anything that changes my computer.</code></pre>
-            <p>Say to leave your Claude Code setup as it is, and nothing in <code>~/.claude</code> is written, now or later. Otherwise it keeps your transcripts for a year and adds the <code>/wimym</code> and <code>/retro</code> skills. Either way it backs up <code>~/.claude</code>, gets the code, adds the <code>wimym</code> command and starts Wimym on your own record, unless you say otherwise. It comes back to you only to show you what the labels cost before it sends anything. You still need your GitHub account invited to the private repository; Claude checks, and tells you which account to give. The guide it follows: <a href="/setup.md">setup.md</a>.</p>
+            <p>Say to leave your Claude Code setup as it is, and nothing in <code>~/.claude</code> is written, now or later. Otherwise it keeps your transcripts for a year and adds the <code>/wimym</code> and <code>/retro</code> skills. Either way it backs up <code>~/.claude</code>, gets the code, adds the <code>wimym</code> command and starts Wimym on your own record, unless you say otherwise. It comes back to you only to show you what the labels cost before it sends anything. The guide it follows: <a href="/setup.md">setup.md</a>.</p>
           </div>
         </div>
       </div>
@@ -608,7 +608,7 @@ du -sh ~/.claude ~/Backups/claude-*</code></pre>
       <ol class="steps">
         <li><div>
           <h3>Get the code</h3>
-          <p>For now, Wimym is shared by invitation, in a private GitHub repository. Ask the person who sent you this page to add your GitHub account, then:</p>
+          <p>Wimym is open source, under the AGPL-3.0, in a public GitHub repository. No account needed:</p>
           <pre><code>git clone https://github.com/matrice-technologies/wimym.git ~/wimym</code></pre>
           <p>The steps below assume it is in <code>~/wimym</code>. To update later: <code>git pull</code>, then <code>./install.sh</code> again.</p>
         </div></li>

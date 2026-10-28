@@ -150,7 +150,8 @@ Show the two sizes; they should be close.
 
 ## 4. Get the code
 
-Wimym is shared by invitation, in the private GitHub repository `matrice-technologies/wimym`.
+Wimym is open source, in the public GitHub repository `matrice-technologies/wimym`: cloning it needs no
+GitHub account or login.
 
 If step 1 found a copy (or they told you where theirs is), update it with `git -C WIMYM pull --ff-only`;
 if the pull fails because of local changes, say so and leave it. Otherwise clone it where they said
@@ -160,16 +161,8 @@ if the pull fails because of local changes, say so and leave it. Otherwise clone
 git clone https://github.com/matrice-technologies/wimym.git ~/wimym
 ```
 
-If the clone fails with "Repository not found", "Authentication failed" or a prompt for a password:
-
-- Run `gh auth status`. If the person is logged in, tell them the GitHub account name and that it
-  needs to be invited to the repository by whoever shared Wimym with them. Once they accept the
-  invitation (from the e-mail, or github.com/notifications), try again; with `gh` logged in,
-  `gh repo clone matrice-technologies/wimym ~/wimym` uses that login.
-- If `gh` is missing or logged out, the person can sign in with `gh auth login` in their own
-  terminal (installed with `brew install gh`). Don't run the login for them and don't handle tokens:
-  it is theirs to type.
-- Then stop and wait. Nothing else in this guide works without the code.
+If the clone fails, show the error's last lines and say what you think it means (no network, a proxy, a
+folder already there), then stop and wait: nothing else in this guide works without the code.
 
 ## 5. Keep their answer
 

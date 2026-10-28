@@ -111,7 +111,8 @@ the settings to add.
 ## Making changes
 
 This repository, matrice-technologies/wimym, is the one copy: everyone who runs Wimym clones it, and
-`main` is what they run. Work on a branch and open a pull request; merging it into `main` is the
+`main` is what they run. Anyone can propose a change: work on a branch (of a fork, if you aren't on the
+team) and open a pull request; merging it into `main` is the
 release, and the next day every page says a new version is out. Give the pull request a title that
 says the change in a sentence: `./install.sh --update` shows people those titles as what's new.
 
@@ -147,3 +148,9 @@ does the same for your own page: it hides every piece of text and every name, an
 `/api/labels`, `/api/practices`, `/api/rules`, `/api/limits`. `POST /api/checkin` with
 `{"day": "YYYY-MM-DD", "energy"|"mood"|"focus": 1-5 or null, "note": "…"}` and `POST /api/limits`
 with `stopHour`, `daysOffPerWeek`, `maxSessions` or `priorities` (null clears one).
+
+## Licence
+
+Wimym is free software, © 2026 Matrice Technologies, under the GNU Affero General Public License,
+version 3 ([LICENSE](LICENSE)). You can run it, change it and share it. If you share a changed copy, or
+let other people use one over a network, you give them its source under the same licence.
