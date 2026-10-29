@@ -149,6 +149,11 @@ does the same for your own page: it hides every piece of text and every name, an
 `{"day": "YYYY-MM-DD", "energy"|"mood"|"focus": 1-5 or null, "note": "…"}` and `POST /api/limits`
 with `stopHour`, `daysOffPerWeek`, `maxSessions` or `priorities` (null clears one).
 
+## Contact
+
+Tried it, liked it, or want to say what's missing: alex@matricetechnologies.com. A bug is best as a
+[GitHub issue](https://github.com/matrice-technologies/wimym/issues), with what you ran and what it said.
+
 ## Licence
 
 Wimym is free software, © 2026 Matrice Technologies, under the GNU Affero General Public License,
