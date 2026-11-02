@@ -82,6 +82,15 @@ export default function Shell() {
         </div>
       </nav>
       <main className="page">{empty ? <Empty title={loc.pathname === "/" ? "Where is your mind?" : undefined} /> : <Outlet />}</main>
+      {DEMO && !EMBED && (
+        // the demo at /demo is a page of the public site: a way back to it, and to setting Wimym up, from anywhere in it
+        <div className="demo-cta">
+          <a className="home" href="/" aria-label="Back to Wimym's page" title="Back to Wimym's page">
+            <svg {...P}><path d="M2.5 8.5 9 3l6.5 5.5M4.5 7v8h9V7" /><path d="M7.5 15v-4h3v4" /></svg>
+          </a>
+          <a className="setup" href="/#setup">Set it up<svg {...P}><path d="M3.5 9h11M10 4.5 14.5 9 10 13.5" /></svg></a>
+        </div>
+      )}
       {shareOn && <button className="sharechip" onClick={() => setShare(false)}><span className="long">Share mode: words and project names are hidden.</span><span className="short">Share mode</span> <u>Turn off</u></button>}
     </div>
   );
