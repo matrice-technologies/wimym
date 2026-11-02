@@ -43,7 +43,7 @@ if (DEMO) {
   if (EMBED) {
     document.documentElement.classList.add("embed");
     if (EMBED !== "page") document.documentElement.classList.add("embed-one");
-  }
+  } else document.documentElement.classList.add("demo");  // the demo on its own page, with its way back (Shell.tsx)
 }
 
 /** ?embed=<id>: once the element is on the page, show it alone and keep the parent told of its height. */

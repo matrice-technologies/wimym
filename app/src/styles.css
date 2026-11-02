@@ -759,7 +759,8 @@ a.vsb:hover { background: var(--raised); }
 .sharechip .short { display: none; }
 @media (max-width: 860px) { .sharechip { right: 12px; bottom: 12px; padding: 5px 11px; } .sharechip .long { display: none; } .sharechip .short { display: inline; } }
 /* the demo's way back to the public page and its setup, Matrice's square buttons as site/index.html draws them */
-.demo-cta { position: fixed; z-index: 46; right: 16px; bottom: 16px; display: flex; gap: 8px; }
+/* under the drawers and the message's panel (their close button is where these are), over the page */
+.demo-cta { position: fixed; z-index: 25; right: 16px; top: 16px; display: flex; gap: 8px; }
 .demo-cta a { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 16px; border: 1px solid transparent; text-decoration: none; white-space: nowrap;
   font: 500 13px/1 var(--font-heading); letter-spacing: .06em; text-transform: uppercase; box-shadow: var(--shadow); transition: background-color .15s, color .15s, border-color .15s; }
 .demo-cta a:active { transform: translateY(1px); }
@@ -768,8 +769,10 @@ a.vsb:hover { background: var(--raised); }
 .demo-cta .home:hover { color: var(--background); background: var(--foreground); }
 .demo-cta .setup { color: var(--primary-foreground); background: var(--primary); }
 .demo-cta .setup:hover { background: color-mix(in oklch, var(--primary) 80%, var(--background)); }
-.demo-cta ~ .sharechip { bottom: 64px; }
-@media (max-width: 860px) { .demo-cta { right: 12px; bottom: 12px; } .demo-cta ~ .sharechip { bottom: 60px; } }
+/* on a phone the rail is a row along the top (67px with its scroll bar): just under it */
+@media (max-width: 860px) { .demo-cta { right: 12px; top: 79px; } }
+/* and the page starts below them, so nothing at its top (a day's previous and next) is under them before a scroll */
+html.demo .wrap, html.demo .msgs { padding-top: 72px; }
 
 /* ---------- the planet, first thing on the front page ---------- */
 .planet {
